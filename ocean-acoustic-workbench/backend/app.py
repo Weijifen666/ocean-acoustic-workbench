@@ -1,5 +1,5 @@
 from __future__ import annotations
-import os, sys, json, sqlite3, threading, subprocess, queue, uuid, time, shutil, io, zipfile, re, math, hashlib
+import os, sys, json, sqlite3, threading, subprocess, queue, uuid, time, shutil, io, zipfile, re, math, hashlib, asyncio
 from pathlib import Path
 from datetime import datetime
 from contextlib import asynccontextmanager
@@ -264,25 +264,193 @@ class Chat(BaseModel):
     message:str=Field(min_length=1,max_length=12000)
     mode:str='chat'
     session:str='default'
+
+def parse_simulation_intent(text:str)->dict|None:
+    text_lower = text.lower()
+    sim_keywords = ['仿真', '计算声场', '模拟', '跑一下', '运行声场', 'kraken', 'munk', '传播损失', '声场分布']
+    if not any(k in text_lower for k in sim_keywords):
+        return None
+    # 提取频率 (10-200 Hz)
+    freqs = []
+    for m in re.finditer(r'(\d+(?:\.\d+)?)\s*(?:hz|赫兹)', text, re.I):
+        f = float(m.group(1))
+        if 10 <= f <= 200: freqs.append(f)
+    if not freqs:
+        m = re.search(r'频率\s*[:：=]?\s*(\d+(?:\.\d+)?)', text)
+        if m and 10 <= float(m.group(1)) <= 200: freqs.append(float(m.group(1)))
+    if not freqs:
+        freqs = [50.0]
+        
+    # 提取声源深度 (0-5000 m)
+    source_depths = []
+    for m in re.finditer(r'(?:源深|声源深度|声源|发射深度)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*m?', text):
+        d = float(m.group(1))
+        if 0 < d < 5000: source_depths.append(d)
+    if not source_depths:
+        if '声道轴' in text or '轴线' in text:
+            source_depths = [1000.0]
+        else:
+            source_depths = [1000.0]
+            
+    # 提取接收深度
+    rec_depth = 1000.0
+    m = re.search(r'(?:接收深(?:度)?|接收器深度|接收点深度|接收)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*m?', text)
+    if m and 0 < float(m.group(1)) < 5000:
+        rec_depth = float(m.group(1))
+        
+    # 提取距离 (0.1-100 km)
+    r_max = 50.0
+    m = re.search(r'(?:最大距离|距离|范围|传播距离)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*km', text)
+    if m and 0.1 < float(m.group(1)) <= 100:
+        r_max = float(m.group(1))
+        
+    return {
+        'frequencies_hz': sorted(list(set(freqs))),
+        'source_depths_m': sorted(list(set(source_depths))),
+        'receiver_depth_m': rec_depth,
+        'range_min_km': 1.0,
+        'range_max_km': r_max,
+        'range_points': 201,
+        'depth_points': 251,
+        'template': 'munk_5000m'
+    }
+
+async def execute_simulation_and_wait(plan_data:dict, timeout:int=150)->dict:
+    try:
+        p = Plan(**plan_data)
+        p.checked()
+    except Exception as e:
+        return {'status': 'error', 'error': f'参数校验失败: {str(e)}'}
+    
+    sub = submit(p)
+    job_ids = sub.get('ids', [])
+    if not job_ids:
+        return {'status': 'error', 'error': '任务提交失败，未生成任务标识'}
+    
+    start_t = time.time()
+    results = []
+    for jid in job_ids:
+        while time.time() - start_t < timeout:
+            jinfo = job(jid)
+            if jinfo['state'] in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+                break
+            await asyncio.sleep(1.0)
+        jinfo = job(jid)
+        folder = run_dir(jid)
+        item = {
+            'job_id': jid,
+            'state': jinfo['state'],
+            'plan': jinfo['plan'],
+            'error': jinfo.get('error')
+        }
+        if jinfo['state'] == 'SUCCEEDED':
+            sum_path = folder / 'summary.json'
+            if sum_path.exists():
+                item['summary'] = json.loads(sum_path.read_text(encoding='utf-8'))
+            item['tl_map_url'] = f"/api/jobs/{jid}/artifact/tl_map.png"
+            item['tl_curve_url'] = f"/api/jobs/{jid}/artifact/tl_curve.png"
+            item['download_url'] = f"/api/jobs/{jid}/download"
+        results.append(item)
+    return {'status': 'success', 'results': results}
+
 @app.get('/api/chat/history')
 def history(session:str='default'):
     with connect() as c:rows=c.execute('SELECT * FROM messages WHERE session=? ORDER BY id DESC LIMIT 40',(session,)).fetchall()
     return [dict(r) for r in reversed(rows)]
+
 @app.post('/api/chat')
 async def chat(body:Chat):
     cfg=config();evidence=search(body.message)
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
+    
+    sim_plan = parse_simulation_intent(body.message)
+    # 模式一：离线自然语言仿真（当未配置 API Key 时，基于声学意图规则解析器自动提取参数并执行仿真）
+    if not cfg.get('api_key') and sim_plan:
+        sim_res = await execute_simulation_and_wait(sim_plan)
+        if sim_res.get('status') == 'success':
+            lines = [
+                "### 🌊 海洋声学仿真智能体已自动解析并执行任务",
+                "**任务拆解与参数提取**：",
+                f"- **频率组合**：{', '.join(f'{f:g} Hz' for f in sim_plan['frequencies_hz'])}",
+                f"- **声源深度**：{', '.join(f'{z:g} m' for z in sim_plan['source_depths_m'])}",
+                f"- **接收深度**：{sim_plan['receiver_depth_m']:g} m",
+                f"- **计算距离**：{sim_plan['range_min_km']:g} ~ {sim_plan['range_max_km']:g} km",
+                "- **声场模型**：KRAKEN 简正波求解器（Munk 5000m 理想深海声道剖面）",
+                ""
+            ]
+            for r in sim_res['results']:
+                jid = r['job_id']
+                if r['state'] == 'SUCCEEDED':
+                    s = r.get('summary', {})
+                    lines.extend([
+                        f"#### 📊 仿真结果 [任务 ID: {jid}]",
+                        f"- **计算工况**：频率 {r['plan'].get('frequency_hz')} Hz | 声源深度 {r['plan'].get('source_depth_m')} m | 实际接收深度 {s.get('actual_receiver_depth_m')} m",
+                        f"- **统计指标**：中位传播损失 **{s.get('tl_median_db', 0):.2f} dB** | 最小损失 **{s.get('tl_min_db', 0):.2f} dB** | 最大损失 **{s.get('tl_max_db', 0):.2f} dB**",
+                        f"- **有效网格**：{s.get('valid_ratio', 1.0)*100:.1f}% 有效点（忽略海面近零声压残差）",
+                        "",
+                        f"![传播损失声场分布图]({r['tl_map_url']})",
+                        f"![接收深度传播损失曲线]({r['tl_curve_url']})",
+                        "",
+                        "💡 **物理机理分析**：",
+                        "1. **深海声道约束**：声源位于深海声道轴附近时，声能受到上下水层折射（Snell定律）的反转约束，能量长距离滞留在声道内，避免了海面和海底的反射损耗；",
+                        "2. **模态干涉效应**：随着传播距离增加，各阶简正波模态相位差累积，引起局部周期性的干涉加强与相消（反转点间距约 30~50 km）；",
+                        "3. **传播损失趋势**：远场损失曲线在柱面几何扩展规律的基础上叠加了相干干涉纹波。",
+                        f"[📥 下载本次完整仿真结果包]({r['download_url']})",
+                        ""
+                    ])
+                else:
+                    lines.append(f"❌ 任务 {jid} 运行失败：{r.get('error')}")
+            reply = '\n'.join(lines)
+            with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
+            return {'reply':reply,'model_used':False,'evidence_ids':[e['id'] for e in evidence]}
+    
+    # 模式二：未配置 API Key 且非仿真指令，回退到知识卡检索
     if not cfg.get('api_key'):
-        reply=('尚未配置模型 API Key。以下为课程知识卡检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c['formula'] else '')+f"\n适用条件：{c['conditions']}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语。'
-        if body.mode=='agent':reply='Agent 当前接入文件列表与读取工具。云端项目分析需要 API Key；自动修改代码尚未实现。项目面板和模板仿真可直接使用。\n\n'+reply
+        reply=('尚未配置模型 API Key。以下为课程知识卡检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c['formula'] else '')+f"\n适用条件：{c['conditions']}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语，或直接输入例如：“帮我仿真 50Hz 声源 1000m 的声场传播”。'
+        if body.mode=='agent':reply='Agent 模式已接入任务编排与项目读取工具。直接输入仿真需求可自动执行仿真并分析。\n\n'+reply
         used=False
     else:
-        msgs=[{'role':'system','content':'你是海洋声学助手。依据所附知识卡及 related_triples 图谱关系回答并引用编号；hierarchy 是课程分类，prerequisite 是建议阅读顺序，不能当作物理因果。明确假设与缺失条件。数字不得编造。当前阶段仅允许检索知识与读取项目；不能宣称运行或修改过代码。'+json.dumps(evidence,ensure_ascii=False)}]
+        # 模式三：已配置大模型 API Key，调用带有 Function Calling 的大模型智能体
+        sys_prompt = (
+            "你是现代海洋声学智能体助手。依据所附知识卡及 related_triples 图谱关系回答并引用编号。\n"
+            "你具备两大核心能力：\n"
+            "1. 专业海洋声学原理检索与工程分析；\n"
+            "2. 自然语言驱动声场建模仿真（通过 run_ocean_simulation 工具调用本机 MATLAB KRAKEN 简正波求解器）。\n"
+            "当用户提出仿真需求（例如“计算声场”、“仿真传播损失”、“比较不同深度/频率”），你应当：\n"
+            "- 识别并提取水声参数（frequencies_hz 范围10-200, source_depths_m 范围0-5000, receiver_depth_m, range_max_km）；未指定时结合 Munk 深海声道给出合理物理缺省值；\n"
+            "- 调用 run_ocean_simulation 工具执行计算；\n"
+            "- 结合返回的声场数据和图表，对传播损失、深海声道轴、反转点、模态干涉等物理现象进行严谨的声学理论解读；并在回答中使用 Markdown 图片语法 ![二维声场图](tl_map_url) 展示图表。"
+            + json.dumps(evidence, ensure_ascii=False)
+        )
+        msgs=[{'role':'system','content':sys_prompt}]
         for m in history(body.session)[-12:]:msgs.append({'role':m['role'],'content':m['text']})
-        tools=[{'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},{'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}] if body.mode=='agent' else []
+        
+        sim_tool = {
+            'type': 'function',
+            'function': {
+                'name': 'run_ocean_simulation',
+                'description': '执行海洋声场建模仿真计算(调度本机 MATLAB KRAKEN 简正波求解器，Munk深海剖面)。支持输入频率、源深、接收深度和距离，返回计算结果统计与声场图URL。',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'frequencies_hz': {'type': 'array', 'items': {'type': 'number'}, 'description': '频率列表(Hz)，范围10-200，如[50]或[50, 100]'},
+                        'source_depths_m': {'type': 'array', 'items': {'type': 'number'}, 'description': '声源深度列表(m)，范围0-5000，如[1000]或[500, 1000]'},
+                        'receiver_depth_m': {'type': 'number', 'description': '接收深度(m)，默认1000'},
+                        'range_min_km': {'type': 'number', 'description': '起始距离(km)，默认1'},
+                        'range_max_km': {'type': 'number', 'description': '终止距离(km)，默认50'}
+                    },
+                    'required': ['frequencies_hz', 'source_depths_m']
+                }
+            }
+        }
+        tools=[
+            sim_tool,
+            {'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},
+            {'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}
+        ]
         try:
-            async with httpx.AsyncClient(timeout=90) as client:
-                for turn in range(4):
+            async with httpx.AsyncClient(timeout=180) as client:
+                for turn in range(5):
                     payload=models.chat_payload(cfg,msgs,tools)
                     r=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=payload)
                     if r.status_code!=200:raise RuntimeError('模型接口返回 '+str(r.status_code))
@@ -291,10 +459,15 @@ async def chat(body:Chat):
                     msgs.append(result)
                     for call in calls:
                         try:
-                            args=json.loads(call['function']['arguments']);value=files() if call['function']['name']=='list_project_files' else read_file(args['path']) if call['function']['name']=='read_project_file' else {'error':'不允许的工具'}
+                            args=json.loads(call['function']['arguments'])
+                            fname=call['function']['name']
+                            if fname=='list_project_files':value=files()
+                            elif fname=='read_project_file':value=read_file(args['path'])
+                            elif fname=='run_ocean_simulation':value=await execute_simulation_and_wait(args)
+                            else:value={'error':'不允许的工具'}
                         except Exception as e:value={'error':str(e)}
                         msgs.append({'role':'tool','tool_call_id':call['id'],'content':json.dumps(value,ensure_ascii=False)})
-                else:reply='已达到首版工具调用次数上限，请缩小问题范围。'
+                else:reply='已达到工具调用轮次上限。'
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))

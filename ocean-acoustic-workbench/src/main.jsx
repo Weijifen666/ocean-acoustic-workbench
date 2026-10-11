@@ -18,7 +18,7 @@ function App(){
  const title=pages.find(x=>x[0]===page)?.[1]||'环境配置';
  return <div className="app"><aside className="sidebar"><div className="brand"><span className="brand-icon"><Waves size={23}/></span><div>海洋声学<span>Ocean Acoustics</span></div></div><div className="side-label">工作空间</div><nav>{pages.map(([id,label,Icon])=><button key={id} className={page===id?'nav-item active':'nav-item'} onClick={()=>setPage(id)}><Icon size={18}/>{label}{id==='graph'&&<span className="nav-count">{health?.knowledge_cards||46}</span>}</button>)}</nav><div className="sidebar-note"><GitBranch size={16}/><div>课程资源项目<span>Munk 深海示例 · 本地工作区</span></div></div><div className="side-bottom"><button className={page==='settings'?'nav-item active':'nav-item'} onClick={()=>setPage('settings')}><Settings2 size={18}/>环境配置</button><div className="local-status"><i className={health?'green':'orange'}/><span>{health?'本地服务已连接':'正在连接本地服务'}</span><small>v0.2</small></div><div className="team">高嘉豪 · 周子涵 · 刘继洲 · 李杰</div></div></aside><div className="main"><header><div className="breadcrumb">海洋声学工作台<ChevronRight size={14}/><strong>{title}</strong></div><div className="header-status"><span><i className={health?.matlab_available?'green':'orange'}/>MATLAB R2024a</span><button onClick={()=>setPage('settings')}><span className={'mini-dot '+(health?.model_configured?'green':'orange')}/>{health?.model_name||'选择具体模型'}{health?.model_configured?'':' · 待配置'}<ChevronRight size={13}/></button></div></header><main>
  {page==='graph'&&<GraphExplorer setImage={setImage} notify={setToast} onAsk={node=>{setInitialQuestion({id:Date.now(),text:`请解释知识图谱中的“${node.label}”，结合公式、适用条件和相关知识点，并给出资料出处。`});setPage('chat')}} onSimulation={()=>setPage('simulation')}/>}
- {page==='chat'&&<ChatView initialQuestion={initialQuestion} health={health} notify={setToast} openSettings={()=>setPage('settings')}/>}
+ {page==='chat'&&<ChatView initialQuestion={initialQuestion} health={health} notify={setToast} openSettings={()=>setPage('settings')} setImage={setImage}/>}
  {page==='simulation'&&<Simulation notify={setToast} onSubmit={id=>{setActiveJob(id);setPage('jobs')}}/>}
  {page==='project'&&<Project notify={setToast}/>}
  {page==='jobs'&&<Jobs notify={setToast} activeJob={activeJob} setActiveJob={setActiveJob} openSim={()=>setPage('simulation')} setImage={setImage}/>}
@@ -26,12 +26,64 @@ function App(){
  </main></div>{toast&&<div className="toast"><AlertCircle size={17}/>{toast}<button onClick={()=>setToast('')}><X size={15}/></button></div>}{image&&<div className="modal-backdrop" onClick={()=>setImage(null)}><div className="image-modal" onClick={e=>e.stopPropagation()}><div className="modal-title">{image.caption}<button aria-label="关闭图片" onClick={()=>setImage(null)}><X/></button></div><img src={image.url} alt={image.caption}/>{image.source_url&&<a target="_blank" rel="noreferrer" href={image.source_url}>查看原始来源 <ExternalLink size={14}/></a>}</div></div>}</div>
 }
 function PageTitle({eyebrow,title,description,children}){return <div className="page-title"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{description&&<p>{description}</p>}</div><div className="page-actions">{children}</div></div>}
-function ChatView({health,notify,openSettings,initialQuestion}){
- const [mode,setMode]=useState('chat'),[text,setText]=useState(''),[msgs,setMsgs]=useState([]),[busy,setBusy]=useState(false);const bottom=useRef(null);
+function FormattedText({text, setImage}){
+ if(!text)return null;
+ const lines=text.split('\n');
+ return (
+  <div className="formatted-chat-msg">
+   {lines.map((line,idx)=>{
+    const imgMatch=line.match(/^!\[(.*?)\]\((.*?)\)$/);
+    if(imgMatch){
+     const caption=imgMatch[1];
+     const url=imgMatch[2];
+     return (
+      <div key={idx} style={{margin:'10px 0'}}>
+       <div
+        style={{border:'1px solid #d2e1e6',borderRadius:8,overflow:'hidden',background:'#f8fbfc',cursor:'pointer',boxShadow:'0 2px 6px rgba(0,0,0,0.05)'}}
+        onClick={()=>setImage&&setImage({url,caption:caption||'声场计算结果'})}
+       >
+        <img src={url} alt={caption} style={{width:'100%',display:'block'}}/>
+        <div style={{padding:'6px 12px',fontSize:11,color:'#4b7582',display:'flex',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid #e5eff2'}}>
+         <span>🖼️ {caption}</span>
+         <small style={{color:'#15868e',fontWeight:500}}>点击放大查看 🔍</small>
+        </div>
+       </div>
+      </div>
+     );
+    }
+    const linkMatch=line.match(/\[(.*?)\]\((.*?)\)/);
+    if(linkMatch){
+     const parts=line.split(/\[.*?\]\(.*?\)/);
+     return (
+      <div key={idx} style={{margin:'4px 0'}}>
+       {parts[0]}
+       <a href={linkMatch[2]} target="_blank" rel="noreferrer" style={{color:'#13868e',textDecoration:'underline',fontWeight:500}}>
+        {linkMatch[1]}
+       </a>
+       {parts[1]||''}
+      </div>
+     );
+    }
+    if(line.startsWith('### ')){
+     return <h3 key={idx} style={{fontSize:14,margin:'10px 0 4px',color:'#13868e',fontWeight:600}}>{line.slice(4)}</h3>;
+    }
+    if(line.startsWith('#### ')){
+     return <h4 key={idx} style={{fontSize:12,margin:'8px 0 3px',color:'#2b5866',fontWeight:600}}>{line.slice(5)}</h4>;
+    }
+    if(line.trim()===''){
+     return <div key={idx} style={{height:6}}/>;
+    }
+    return <div key={idx} style={{margin:'2px 0'}}>{line}</div>;
+   })}
+  </div>
+ );
+}
+function ChatView({health,notify,openSettings,initialQuestion,setImage}){
+ const [mode,setMode]=useState('agent'),[text,setText]=useState(''),[msgs,setMsgs]=useState([]),[busy,setBusy]=useState(false);const bottom=useRef(null);
  useEffect(()=>{api('/chat/history').then(setMsgs).catch(e=>notify(e.message))},[]);useEffect(()=>{bottom.current?.scrollIntoView({behavior:'smooth'})},[msgs,busy]);
  async function send(){if(!text.trim()||busy)return;const message=text;setText('');setMsgs(m=>[...m,{role:'user',text:message}]);setBusy(true);try{const r=await api('/chat',{method:'POST',body:JSON.stringify({message,mode})});setMsgs(m=>[...m,{role:'assistant',text:r.reply}])}catch(e){notify(e.message);setMsgs(m=>[...m,{role:'assistant',text:'请求未完成：'+e.message}])}finally{setBusy(false)}}
  useEffect(()=>{if(initialQuestion)setText(initialQuestion.text)},[initialQuestion]);
- return <><PageTitle eyebrow="ACOUSTIC ASSISTANT" title="对话工作台" description="结合课程知识查询原理，或读取本地项目。"><div className="segmented">{[['chat','对话模式'],['agent','Agent 模式']].map(([id,name])=><button className={mode===id?'active':''} key={id} onClick={()=>setMode(id)}>{id==='agent'?<FolderCode size={14}/>:<MessageSquare size={14}/>} {name}</button>)}</div></PageTitle><div className="chat-layout"><div className="chat-panel panel"><div className="chat-scroll">{msgs.length===0&&<div className="chat-welcome"><span className="welcome-logo"><Waves size={32}/></span><h2>从一个声学问题开始</h2><p>原理、参数与来源，放在同一个工作台。</p><div className="prompt-grid">{['声源深度如何影响模态激发？','传播损失 TL 的参考压力是什么？','相干与非相干模态求和有什么区别？','读取当前项目，说明 KRAKEN 的调用流程'].map(s=><button key={s} onClick={()=>setText(s)}><span>{s}</span><ArrowUpRight size={17}/></button>)}</div></div>}{msgs.map((m,i)=><div className={'message '+m.role} key={m.id||i}><div className="avatar">{m.role==='assistant'?<Waves size={17}/>: '我'}</div><div><div className="message-label">{m.role==='assistant'?'海洋声学助手':'你'}</div><div className="message-text">{m.text}</div></div></div>)}{busy&&<div className="thinking"><Loader2 className="spin" size={16}/>正在检索与处理…</div>}<div ref={bottom}/></div><div className="composer"><textarea aria-label="输入问题" placeholder={mode==='agent'?'描述项目分析要求…':'输入海洋声学问题…'} value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send()}}}/><div><span><BookOpen size={13}/>{health?.model_configured?'课程知识检索已启用':'未配置模型 · 使用知识卡检索'}</span><Button ariaLabel="发送问题" variant="primary icon" disabled={busy||!text.trim()} onClick={send}><ArrowUp size={18}/></Button></div></div></div><aside className="chat-context panel"><div className="panel-heading">当前工作上下文</div><div className="context-item"><BookOpen size={19}/><div>课程知识库<span>{health?.knowledge_cards||46} 张知识卡 · 20 份来源</span></div></div><div className="context-item"><FlaskConical size={19}/><div>Munk 深海模板<span>5000 m · 简正波计算</span></div></div><div className="context-item"><FolderCode size={19}/><div>本地授权项目<span>可查看脚本与输入文件</span></div></div><div className="context-note"><strong>{mode==='agent'?'Agent 接入状态':'模型连接状态'}</strong><p>{mode==='agent'?'已实现文件列表与读取工具。代码自动修改与修复循环尚未接通，当前不会自动更改项目。':health?.model_configured?'使用后台配置的模型接口。回答应回到知识卡与来源。':'添加 API Key 后可调用云端模型；不配置也可浏览图谱、读取文件、运行模板仿真。'}</p></div><Button onClick={openSettings}><Settings2 size={15}/>配置模型接口</Button></aside></div></>
+ return <><PageTitle eyebrow="ACOUSTIC ASSISTANT" title="海洋声学智能体" description="自然语言指令分解、声场建模仿真与多维度声学机理分析。"><div className="segmented">{[['agent','Agent 仿真模式'],['chat','知识问答模式']].map(([id,name])=><button className={mode===id?'active':''} key={id} onClick={()=>setMode(id)}>{id==='agent'?<FlaskConical size={14}/>:<MessageSquare size={14}/>} {name}</button>)}</div></PageTitle><div className="chat-layout"><div className="chat-panel panel"><div className="chat-scroll">{msgs.length===0&&<div className="chat-welcome"><span className="welcome-logo"><Waves size={32}/></span><h2>自然语言驱动海洋声学仿真</h2><p>说出一个声学任务，智能体将自动提取参数、调度 MATLAB 求解并解读声场。</p><div className="prompt-grid">{['帮我在深海声道轴(1000m)处仿真 50Hz 声场并分析传播损失','对比声源 500m 与 1000m 时 50km 内的传播损失','声源深度如何影响模态激发？','相干与非相干模态求和有什么区别？'].map(s=><button key={s} onClick={()=>setText(s)}><span>{s}</span><ArrowUpRight size={17}/></button>)}</div></div>}{msgs.map((m,i)=><div className={'message '+m.role} key={m.id||i}><div className="avatar">{m.role==='assistant'?<Waves size={17}/>: '我'}</div><div><div className="message-label">{m.role==='assistant'?'海洋声学助手':'你'}</div><div className="message-text"><FormattedText text={m.text} setImage={setImage}/></div></div></div>)}{busy&&<div className="thinking"><Loader2 className="spin" size={16}/>正在解析任务并调度 MATLAB 计算声场，请稍候…</div>}<div ref={bottom}/></div><div className="composer"><textarea aria-label="输入问题" placeholder={mode==='agent'?'输入仿真任务（例如：帮我仿真 50Hz 源深 1000m 接收 1000m 在 50km 内的传播损失）...':'输入海洋声学原理问题…'} value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send()}}}/><div><span><BookOpen size={13}/>{health?.model_configured?'云端大模型 Agent 已就绪':'离线声学智能体已就绪 (支持一句话自动仿真)'}</span><Button ariaLabel="发送问题" variant="primary icon" disabled={busy||!text.trim()} onClick={send}><ArrowUp size={18}/></Button></div></div></div><aside className="chat-context panel"><div className="panel-heading">智能体能力与上下文</div><div className="context-item"><FlaskConical size={19}/><div>KRAKEN 仿真执行器<span>Munk 5000 m · MATLAB R2024b</span></div></div><div className="context-item"><BookOpen size={19}/><div>课程知识库<span>{health?.knowledge_cards||46} 张知识卡 · 20 份来源</span></div></div><div className="context-item"><FolderCode size={19}/><div>本地项目环境<span>支持任务编排与图表导出</span></div></div><div className="context-note"><strong>{mode==='agent'?'自然语言仿真 Agent':'知识问答状态'}</strong><p>{mode==='agent'?'已接通自然语言任务拆解与全自动 MATLAB 计算闭环！支持提取频率、源深、接收深度，自动绘制 TL 二维图并分析物理机理。':health?.model_configured?'已启用云端大模型接口。回答严格对应课程知识点。':'未配置 API Key 时可直接体验离线自然语言仿真与知识卡检索。'}</p></div><Button onClick={openSettings}><Settings2 size={15}/>配置模型接口</Button></aside></div></>
 }
 const initialPlan={frequencies_hz:'50, 100',source_depths_m:'500, 1000',receiver_depth_m:1000,range_min_km:1,range_max_km:50,range_points:201,depth_points:251};
 function Simulation({notify,onSubmit}){

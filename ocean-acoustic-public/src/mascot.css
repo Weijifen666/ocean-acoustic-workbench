@@ -1,0 +1,524 @@
+.mascot-dock {
+  position: fixed;
+  width: 92px;
+  height: 126px;
+  z-index: 72;
+  user-select: none;
+}
+.mascot-launcher {
+  width: 100%;
+  padding: 0;
+  display: block;
+  cursor: grab;
+  border-radius: 15px;
+  color: #244c68;
+  touch-action: none;
+  background: transparent;
+  border: 0;
+}
+.mascot-launcher:focus-visible {
+  outline: 2px solid #3f91aa;
+  outline-offset: 3px;
+}
+.is-dragging .mascot-launcher {
+  cursor: grabbing;
+}
+.mascot-figure {
+  display: block;
+  width: 100%;
+  height: 109px;
+  overflow: visible;
+  pointer-events: none;
+}
+.mascot-name {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  color: #284f69;
+  text-shadow: 0 1px #fff;
+}
+.mascot-name > span {
+  font-size: 9px;
+  font-weight: 400;
+  color: #5c7b8d;
+  background: #f7fbfce8;
+  border: 1px solid #dbe9ef;
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.mascot-position-button {
+  position: absolute;
+  top: 5px;
+  right: -3px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #dbe7ed;
+  border-radius: 50%;
+  background: #ffffffed;
+  color: #7e9aa9;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.mascot-dock:hover .mascot-position-button,
+.mascot-dock:focus-within .mascot-position-button {
+  opacity: 1;
+}
+.mascot-preferences {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  width: 218px;
+  max-width: calc(100vw - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 76;
+  padding: 12px;
+  border: 1px solid #d2e0e9;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 22px #143c5517;
+  color: #3d627b;
+}
+.mascot-preferences > strong {
+  font-size: 12px;
+  display: block;
+  padding: 0 4px 8px;
+}
+.mascot-preferences button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 4px;
+  font-size: 12px;
+  width: 100%;
+  text-align: left;
+}
+.mascot-preferences button:hover {
+  color: #176887;
+  background: #f1f7fa;
+}
+.mascot-preferences small {
+  display: block;
+  border-top: 1px solid #e7eef2;
+  padding-top: 9px;
+  margin-top: 4px;
+  color: #8197a6;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.mascot-restore {
+  position: fixed;
+  right: 16px;
+  bottom: calc(41px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 11px;
+  border: 1px solid #c9dfe8;
+  border-radius: 5px;
+  background: #f7fbfc;
+  color: #47748d;
+  font-size: 11px;
+}
+.mascot-body {
+  transform-origin: 91px 132px;
+  animation: ocean-explorer-idle 5.4s ease-in-out infinite;
+}
+.mascot-shadow {
+  transform-origin: 91px 204px;
+  animation: ocean-explorer-shadow 5.4s ease-in-out infinite;
+}
+.mascot-eyes {
+  transform-origin: 92px 76px;
+  animation: ocean-explorer-blink 7.2s infinite;
+}
+.mascot-arm-wave {
+  transform-origin: 117px 120px;
+}
+.mascot-launcher:hover .mascot-arm-wave,
+.mascot-figure.is-waving .mascot-arm-wave {
+  animation: ocean-explorer-wave 0.8s ease-in-out 3;
+}
+.mascot-figure.is-thinking .mascot-body {
+  animation: ocean-explorer-think 2.6s ease-in-out infinite;
+}
+.mascot-figure.is-thinking .mascot-suit-light {
+  animation: ocean-explorer-light 1.5s ease-in-out infinite;
+}
+.mascot-bubbles {
+  opacity: 0.65;
+}
+.is-dragging .mascot-body {
+  animation-play-state: paused;
+}
+@keyframes ocean-explorer-idle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1deg);
+  }
+}
+@keyframes ocean-explorer-shadow {
+  0%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.12;
+  }
+  50% {
+    transform: scaleX(0.9);
+    opacity: 0.08;
+  }
+}
+@keyframes ocean-explorer-blink {
+  0%,
+  42%,
+  46%,
+  100% {
+    transform: scaleY(1);
+  }
+  44% {
+    transform: scaleY(0.12);
+  }
+}
+@keyframes ocean-explorer-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(-12deg);
+  }
+  65% {
+    transform: rotate(7deg);
+  }
+}
+@keyframes ocean-explorer-think {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-2px) rotate(-3deg);
+  }
+}
+@keyframes ocean-explorer-light {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mascot-chat-panel {
+  position: fixed;
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  max-height: 70dvh;
+  min-height: 0;
+  border: 1px solid #cbdfe9;
+  border-top: 3px solid #2e718f;
+  border-radius: 8px;
+  background: #fff;
+  color: #315267;
+  box-shadow: 0 14px 44px #153b5429;
+  overflow: hidden;
+}
+.mascot-chat-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px;
+  gap: 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #e4edf2;
+  background: #f5fafc;
+}
+.mascot-chat-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.mascot-heading-icon {
+  color: #51849c;
+}
+.mascot-chat-heading strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mascot-chat-heading div div > span {
+  display: block;
+  font-size: 10px;
+  color: #8a9faa;
+  margin-top: 4px;
+}
+.mascot-chat-heading button {
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  color: #6f8c9e;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+}
+.mascot-chat-heading button:hover {
+  background: #e7f1f6;
+  color: #245f7c;
+}
+.mascot-chat-panel > .chat-model-controls {
+  margin: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  flex-shrink: 0;
+  background: #f9fcfd;
+}
+.mascot-chat-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 15px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #c3d8e3 transparent;
+}
+.mascot-chat-empty h3 {
+  font-size: 14px;
+  margin: 8px 0 10px;
+  color: #365970;
+}
+.mascot-chat-empty p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #7893a5;
+  margin-bottom: 17px;
+}
+.mascot-chat-empty button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  padding: 10px 0;
+  color: #447893;
+  border-bottom: 1px solid #e6eef2;
+}
+.mascot-chat-empty button:hover {
+  color: #1d6485;
+}
+.mascot-message {
+  border-bottom: 1px solid #edf2f5;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+.mascot-message-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #7994a5;
+  font-size: 10px;
+}
+.mascot-message-label > span:last-child {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.mascot-message > p {
+  font-size: 12px;
+  line-height: 1.85;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #3d5b70;
+}
+.mascot-message.user > p {
+  color: #265f7e;
+}
+.mascot-message.request-failed > p {
+  color: #9a6a58;
+}
+.mascot-coverage-note {
+  display: block;
+  background: #f9f7f0;
+  color: #948260;
+  border-left: 2px solid #cbbf9d;
+  margin-top: 10px;
+  padding: 8px 9px;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.mascot-answer-sources {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #68879b;
+}
+.mascot-answer-sources summary {
+  cursor: pointer;
+}
+.mascot-answer-sources summary svg {
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+.mascot-answer-sources > div {
+  padding: 10px 0 4px;
+  border-top: 1px solid #e6eef2;
+  margin-top: 8px;
+}
+.mascot-answer-sources strong {
+  font-size: 11px;
+  display: block;
+  color: #4b728a;
+}
+.mascot-answer-sources small {
+  display: block;
+  font-size: 10px;
+  color: #8a9fae;
+  margin-top: 5px;
+}
+.mascot-answer-sources div div {
+  display: flex;
+  gap: 15px;
+  margin-top: 6px;
+}
+.mascot-answer-sources button,
+.mascot-answer-sources a {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: #427c98;
+  padding: 3px 0;
+  font-size: 10px;
+}
+.mascot-thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #668c9f;
+  padding: 6px 0;
+}
+.mascot-thinking > span {
+  display: flex;
+  gap: 3px;
+}
+.mascot-thinking i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #69a3b9;
+  animation: ocean-explorer-light 1.5s infinite;
+}
+.mascot-thinking i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.mascot-thinking i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.mascot-load-error {
+  font-size: 11px;
+  line-height: 1.7;
+  color: #9a785b;
+  padding: 9px;
+  background: #faf5ed;
+  border-radius: 3px;
+}
+.mascot-chat-composer {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  background: #fff;
+  border-top: 1px solid #dfeaf0;
+}
+.mascot-chat-composer textarea {
+  width: 100%;
+  height: 58px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  font-size: 12px;
+  line-height: 1.75;
+  color: #34576d;
+  background: transparent;
+  box-shadow: none;
+}
+.mascot-chat-composer textarea:focus {
+  box-shadow: none !important;
+}
+.mascot-chat-composer > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mascot-chat-composer small {
+  font-size: 10px;
+  color: #8ca2af;
+}
+.mascot-chat-composer button {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  color: #fff;
+  background: #2d7898;
+  border-radius: 5px;
+  border: 0;
+}
+.mascot-chat-composer button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+@media (max-width: 760px) {
+  .mascot-position-button {
+    opacity: 0.8;
+  }
+  .mascot-chat-panel {
+    border-radius: 7px;
+  }
+  .mascot-chat-heading {
+    padding: 12px;
+  }
+  .mascot-chat-messages {
+    padding: 14px;
+  }
+  .mascot-chat-composer {
+    padding: 10px 12px;
+  }
+}
+@media (max-height: 500px) {
+  .mascot-chat-panel .chat-knowledge-notice,
+  .mascot-chat-panel .chat-model-status {
+    display: none;
+  }
+  .mascot-chat-panel .chat-model-controls {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  .mascot-chat-composer textarea {
+    height: 38px;
+  }
+  .mascot-chat-heading {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-figure *,
+  .mascot-thinking i {
+    animation: none !important;
+  }
+  .mascot-position-button {
+    transition: none;
+  }
+}

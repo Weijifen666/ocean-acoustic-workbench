@@ -748,6 +748,7 @@ export default function GraphExplorer({
                     const linked = knowledge.filter((n) =>
                       n.references.some((r) => r.source_id === s.id),
                     );
+                    const sourceCoverage = knowledgeStatus?.source_coverage?.find((row) => row.source_id === s.id);
                     return (
                       <div className="course-resource-card" key={s.id}>
                         <div className="resource-cover">
@@ -768,6 +769,7 @@ export default function GraphExplorer({
                               ? `已关联 ${linked.length} 个知识点`
                               : "资料已登记，知识内容待进一步整理"}
                           </p>
+                          {sourceCoverage && <p className="resource-indexed">已处理 {sourceCoverage.processed_pages} 页 · 已索引 {sourceCoverage.indexed_pages} 页 · {sourceCoverage.chunks} 个片段{sourceCoverage.failed_or_needs_ocr_pages > 0 && <> · {sourceCoverage.failed_or_needs_ocr_pages} 页待核查</>}</p>}
                           <div className="resource-node-links">
                             {linked.slice(0, 3).map((n) => (
                               <button key={n.id} onClick={() => choose(n.id)}>
@@ -788,6 +790,8 @@ export default function GraphExplorer({
                             <span className="resource-pending">
                               {s.id === "S20"
                                 ? "AT 已导入计算节点"
+                                : sourceCoverage?.indexed_pages > 0
+                                  ? "正文已进入私有检索索引 · 回答可引用原页"
                                 : s.type === ".pdf" && linked.length > 0
                                   ? "提供知识点对应原页片段"
                                   : "元数据已登记 · 内容未入库"}
@@ -1045,7 +1049,7 @@ function KnowledgeIndexStatus({ status, cards }) {
           [status.indexed_sources || 0, "已索引来源"],
           [status.indexed_pages || 0, "资料页"],
           [status.chunks || 0, "文本片段"],
-          [status.needs_ocr || 0, "待 OCR 来源"],
+          [status.needs_ocr || 0, "待核查页"],
         ].map(([value, label]) => (
           <span key={label}>
             <strong>{value}</strong>
@@ -1056,6 +1060,8 @@ function KnowledgeIndexStatus({ status, cards }) {
       <p>
         使用关键词检索（BM25）、中英术语别名与课程关系补充，回答附原页引用。无需训练大模型。
       </p>
+      {!!status.source_coverage?.length && <div className="source-coverage-table"><table><thead><tr><th>来源</th><th>资料总页</th><th>已索引页</th><th>片段</th><th>待核查</th></tr></thead><tbody>{status.source_coverage.map((row) => <tr key={row.source_id}><td title={row.title}>{row.source_id} · {row.title}</td><td>{row.total_pages ?? "—"}</td><td>{row.indexed_pages}</td><td>{row.chunks}</td><td>{row.failed_or_needs_ocr_pages}</td></tr>)}</tbody></table></div>}
+      <p>资料覆盖逐步扩充。空文本不一定是真正空白页；公式、图表和新提取片段仍需核查。当前没有训练模型、自动抽取物理关系或执行 OCR。</p>
       <p>
         课程资料由维护者通过导入命令建立索引，扫描 PDF 需先完成 OCR。
         <a

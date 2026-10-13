@@ -8,7 +8,7 @@
       "base_url": "https://api.deepseek.com",
       "website": "https://platform.deepseek.com",
       "documentation": "https://api-docs.deepseek.com/api/list-models/",
-      "note": "官方显示名称与 API 标识不同：V4.1-Flash 使用 deepseek-flash。"
+      "note": "V4.1-Flash 使用 deepseek-flash；V4-Pro 为兼容入口，官方当前将 deepseek-v4-pro 路由至 V4.1-Flash。"
     },
     {
       "id": "Qwen",
@@ -56,14 +56,15 @@
       "key": "DeepSeek:deepseek-v4-pro",
       "provider": "DeepSeek",
       "id": "deepseek-v4-pro",
-      "name": "DeepSeek-V4-Pro",
+      "name": "DeepSeek-V4-Pro（兼容入口）",
       "developer": "DeepSeek",
-      "kind": "通用 / 推理",
-      "description": "复杂问题与长上下文分析。",
-      "documentation": "https://api-docs.deepseek.com/api/list-models/",
-      "verified_date": "2026-10-08",
+      "kind": "兼容入口",
+      "description": "官方自 2026-09-14 起将此入口路由至 V4.1-Flash；实际返回模型以响应记录为准。",
+      "documentation": "https://www.deepseek.com/news/deepseek-v4-1-flash/",
+      "verified_date": "2026-10-13",
       "verification": "官方文档已核对；账户权限待验证",
-      "request_options": {}
+      "request_options": {},
+      "compatibility_note": "当前官方转至 V4.1-Flash"
     },
     {
       "key": "Qwen:qwen3.8-max",

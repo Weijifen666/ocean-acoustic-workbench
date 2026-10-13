@@ -8,6 +8,7 @@ No embeddings, model training or paid API calls are needed by this module.
 from copy import deepcopy
 from contextlib import closing
 from functools import lru_cache
+import hashlib
 import json
 import re
 import sqlite3
@@ -95,6 +96,30 @@ def load_chunks(path):
     return list(_load_chunks_cached(str(path.resolve()), path.stat().st_mtime_ns, path.stat().st_size))
 
 
+def load_index_report(path):
+    path=Path(path)
+    if not path.is_file():return {}
+    return deepcopy(_load_report_cached(str(path.resolve()),path.stat().st_mtime_ns,path.stat().st_size))
+
+
+@lru_cache(maxsize=3)
+def _load_report_cached(filename,modified,size):
+    path=Path(filename);report={}
+    if path.suffix in {'.sqlite','.sqlite3','.db'}:
+        with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True)) as database:
+            if database.execute("SELECT 1 FROM sqlite_master WHERE name='metadata' AND type='table'").fetchone():
+                row=database.execute("SELECT value FROM metadata WHERE key='report'").fetchone()
+                if row:report=json.loads(row[0])
+    if not report:
+        sidecar=path.with_suffix('.report.json')
+        if sidecar.is_file():report=json.loads(sidecar.read_text(encoding='utf-8'))
+    digest=hashlib.sha256()
+    with path.open('rb') as handle:
+        for block in iter(lambda:handle.read(1024*1024),b''):digest.update(block)
+    report['index_revision']=digest.hexdigest()
+    return report
+
+
 @lru_cache(maxsize=3)
 def _load_chunks_cached(filename, modified, size):
     path = Path(filename)
@@ -117,21 +142,31 @@ def _load_chunks_cached(filename, modified, size):
     return tuple(chunks)
 
 
-@lru_cache(maxsize=3)
-def _bm25_index(corpus):
-    return BM25Okapi(corpus)
-
-
-def _card_text(card, node):
+def _raw_card_text(card, node):
     if card.get("evidence_type") == "source_excerpt":
-        text = card.get("text", "")
-    else:
-        text = " ".join([card.get("label", ""), card.get("label", ""), card.get("text", ""), card.get("formula", ""), card.get("conditions", ""), node.get("misconception", ""), *node.get("tags", [])])
+        return card.get("text", "")
+    return " ".join([card.get("label", ""), card.get("label", ""), card.get("text", ""), card.get("formula", ""), card.get("conditions", ""), node.get("misconception", ""), *node.get("tags", [])])
+
+
+def _expanded_text(text):
     normalized = normalize(text)
     # Bilingual course vocabulary is expanded on both sides, so Chinese
     # questions can find English original pages without a paid embedding API.
     expansions = [phrase for term, (phrase, _) in ALIASES.items() if contains_term(normalized, term)]
-    return text + " " + " ".join(expansions)
+    return normalized + " " + " ".join(normalize(phrase) for phrase in expansions)
+
+
+@lru_cache(maxsize=2)
+def _lexical_corpus(raw_texts):
+    """Cache tokenization and BM25 together; rebuild only when text changes.
+
+    Loaded source strings are themselves cached by file revision. Repeated
+    queries hash those strings instead of expanding/retokenizing thousands of
+    snippets. Only selected results are deep-copied by the request path.
+    """
+    expanded = tuple(_expanded_text(text) for text in raw_texts)
+    corpus = tuple(tuple(tokenize(text)) for text in expanded)
+    return expanded, tuple(frozenset(terms) for terms in corpus), BM25Okapi(corpus) if any(corpus) else None
 
 
 def retrieve(graph, cards, query, limit=8, chunks=()):
@@ -159,19 +194,18 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         if edge["group"] == "related" and (edge["source"] in focus or edge["target"] in focus):
             context.update((edge["source"], edge["target"]))
 
-    documents = [deepcopy(card) for card in cards] + [deepcopy(chunk) for chunk in chunks]
+    documents = list(cards) + list(chunks)
     if not documents:
         return []
-    corpus = [tokenize(_card_text(card, by_id.get(card.get("node_id"), {}))) for card in documents]
-    if not any(corpus):
+    expanded_texts, term_sets, scorer = _lexical_corpus(tuple(_raw_card_text(card, by_id.get(card.get("node_id"), {})) for card in documents))
+    if scorer is None:
         return []
     query_terms = list(dict.fromkeys(tokenize(query + " " + " ".join(expansions))))
     if not query_terms:
         return []
     query_term_set = set(query_terms)
-    scorer = _bm25_index(tuple(tuple(terms) for terms in corpus))
     scores = scorer.get_scores(query_terms)
-    lexical_order = sorted((i for i, terms in enumerate(corpus) if query_term_set.intersection(terms) and scores[i] > 0), key=lambda i: (-float(scores[i]), documents[i]["id"]))
+    lexical_order = sorted((i for i, terms in enumerate(term_sets) if query_term_set.intersection(terms) and scores[i] > 0), key=lambda i: (-float(scores[i]), documents[i]["id"]))
     lexical_ranks = {index: rank for rank, index in enumerate(lexical_order, 1)}
     ranked = []
     for index, card in enumerate(documents):
@@ -187,13 +221,24 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         if focus and not context.intersection(node_ids):
             # Unmapped document text can still answer a focused question when
             # the actual concept appears in the text, not just its source link.
-            focus_terms = [term for term, (_, node_id) in ALIASES.items() if node_id in focus and contains_term(query, term)]
-            focus_terms += [part for node_id in focus for part in re.findall(r"[\u4e00-\u9fff]{2,}", by_id[node_id]["label"]) if part in query]
-            if not is_excerpt or not lexical_rank or not any(contains_term(normalize(card.get("text", "")), term) for term in focus_terms):
+            focus_terms = [term for term, (_, node_id) in ALIASES.items() if node_id in focus]
+            focus_terms += [part for node_id in focus for part in re.findall(r"[\u4e00-\u9fff]{2,}|[a-z][a-z0-9_]{2,}", normalize(by_id[node_id]["label"]))]
+            if not is_excerpt or not lexical_rank or not any(contains_term(expanded_texts[index], term) for term in focus_terms):
                 continue
         if not lexical_rank and not focused and (not adjacent or is_excerpt):
             continue
-        fusion = (3 / (60 + lexical_rank) if lexical_rank else 0) + (0.25 if focused else 0.04 if adjacent else 0)
+        # An actually matched original excerpt should reach the answer context
+        # ahead of a loosely related graph card. Exact reviewed concepts remain
+        # first, preserving their assumptions and equation checks.
+        source_prior=0.06 if is_excerpt and lexical_rank and not adjacent else 0
+        fusion = (3 / (60 + lexical_rank) if lexical_rank else 0) + (0.25 if focused else 0.04 if adjacent else 0) + source_prior
+        ranked.append((fusion, focused, index, adjacent))
+    ranked.sort(key=lambda item: (-item[0], not item[1], documents[item[2]]["id"]))
+    result=[]
+    for fusion, focused, index, adjacent in ranked[:limit]:
+        card=deepcopy(documents[index])
+        node_ids=set(card.get('node_ids',[]))|{card.get('node_id')}
+        lexical_rank=lexical_ranks.get(index)
         card["retrieval"] = {"method": "bm25+curated-graph", "bm25_score": round(float(scores[index]), 6), "fusion_score": round(fusion, 6), "role": "question_focus" if focused else "graph_context" if adjacent else "text_match", "is_direct_evidence": bool(focused or (lexical_rank and not adjacent))}
         card["evidence_type"] = card.get("evidence_type", "reviewed_course_card")
         card["citation"] = {"source_id": card.get("source_id"), "pdf_page": card.get("pdf_page"), "printed_page": card.get("printed_page"), "locator": card.get("locator", ""), "citation_id": card["id"]}
@@ -206,6 +251,5 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
                 continue
             card["related_triples"].append({"source": by_id[edge["source"]]["label"], "relation": edge["label"], "target": by_id[edge["target"]]["label"], "relation_kind": edge["group"], "note": edge.get("note", ""), "provenance": "人工整理的课程关联或建议学习顺序；不能替代物理定律及原文证据。"})
         card["related_triples"] = card["related_triples"][:10]
-        ranked.append((fusion, focused, card))
-    ranked.sort(key=lambda item: (-item[0], not item[1], item[2]["id"]))
-    return [card for _, _, card in ranked[:limit]]
+        result.append(card)
+    return result

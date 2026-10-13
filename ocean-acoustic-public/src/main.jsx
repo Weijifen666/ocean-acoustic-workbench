@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import GraphExplorer from "./GraphExplorer";
 import ModelPanel from "./ModelPanel";
+import { ChatProvider, useChatSession, ChatModelSwitcher } from "./chat-session";
+import OceanBanner from "./OceanBanner";
+import MascotDock from "./MascotDock";
 import {
   Waves,
   MessageSquare,
@@ -38,6 +41,7 @@ import {
 } from "lucide-react";
 import "./style.css";
 import "./workbench.css";
+import "./ocean-theme.css";
 const api = async (path, options = {}) => {
   const r = await fetch("/api" + path, {
     headers: { "Content-Type": "application/json" },
@@ -113,8 +117,8 @@ function Badge({ state }) {
   );
 }
 function App() {
+  const chat = useChatSession();
   const [page, setPage] = useState("graph");
-  const [initialQuestion, setInitialQuestion] = useState(null);
   const [initialKnowledge, setInitialKnowledge] = useState(null);
   const [health, setHealth] = useState(null);
   const [toast, setToast] = useState("");
@@ -124,6 +128,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
+    if (!chat.ready) return;
     let alive = true;
     const check = () =>
       api("/health")
@@ -140,7 +145,14 @@ function App() {
       alive = false;
       clearInterval(timer);
     };
-  }, [refresh]);
+  }, [refresh, chat.ready]);
+  useEffect(() => {
+    const open = () => { setPage("settings"); setSidebarOpen(false); };
+    const changed = () => { void chat.reloadConfig(); setRefresh((value) => value + 1); };
+    window.addEventListener("ocean-open-settings", open);
+    window.addEventListener("ocean-model-config-changed", changed);
+    return () => { window.removeEventListener("ocean-open-settings", open); window.removeEventListener("ocean-model-config-changed", changed); };
+  }, [chat.reloadConfig]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 7000);
@@ -164,10 +176,16 @@ function App() {
   }, []);
 
   const title = pages.find((item) => item[0] === page)?.[1] || "模型与环境";
-  const navigate = (id) => {
+  const navigate = useCallback((id) => {
     setPage(id);
     setSidebarOpen(false);
-  };
+  }, []);
+  const openMascotChat = useCallback(() => navigate("chat"), [navigate]);
+  const openMascotSettings = useCallback(() => navigate("settings"), [navigate]);
+  const openMascotKnowledge = useCallback((id) => {
+    setInitialKnowledge({ id, request: Date.now() });
+    navigate("graph");
+  }, [navigate]);
   const connected = !!health?.matlab_available;
 
   return (
@@ -286,33 +304,31 @@ function App() {
             <button onClick={() => navigate("settings")}>
               <span
                 className={
-                  "mini-dot " + (health?.model_configured ? "green" : "orange")
+                  "mini-dot " + (chat.config?.api_key_set ? "green" : "orange")
                 }
               />
-              {health?.model_configured ? health.model_name : "模型未配置"}
+              {chat.config?.api_key_set ? chat.catalog.models.find((m) => m.provider === chat.config.provider && m.id === chat.config.model)?.name || chat.config.model : "模型未配置"}
               <ChevronRight size={13} />
             </button>
           </div>
         </header>
         <main id="workspace-content" tabIndex={-1}>
-          {page === "graph" && (
+          {(page === "graph" || page === "chat") && <OceanBanner />}
+          {!chat.ready && <section className="panel visitor-loading"><Loader2 className="spin" size={20}/><h2>正在准备课程空间</h2><p>{chat.loadError || "载入你的模型配置与对话。"}</p>{chat.loadError && <Button onClick={() => chat.reloadConfig()}>重新载入</Button>}</section>}
+          {chat.ready && page === "graph" && (
             <GraphExplorer
               setImage={setImage}
               notify={setToast}
               initialKnowledge={initialKnowledge}
               onAsk={(node) => {
-                setInitialQuestion({
-                  id: Date.now(),
-                  text: `请解释知识图谱中的“${node.label}”，结合公式、适用条件和相关知识点，并给出资料出处。`,
-                });
+                chat.setText(`请解释知识图谱中的“${node.label}”，结合公式、适用条件和相关知识点，并给出资料出处。`);
                 navigate("chat");
               }}
               onSimulation={() => navigate("simulation")}
             />
           )}
-          {page === "chat" && (
+          {chat.ready && page === "chat" && (
             <ChatView
-              initialQuestion={initialQuestion}
               health={health}
               notify={setToast}
               openSettings={() => navigate("settings")}
@@ -322,7 +338,7 @@ function App() {
               }}
             />
           )}
-          {page === "simulation" && (
+          {chat.ready && page === "simulation" && (
             <Simulation
               notify={setToast}
               onSubmit={(id) => {
@@ -331,8 +347,8 @@ function App() {
               }}
             />
           )}
-          {page === "project" && <Project notify={setToast} />}
-          {page === "jobs" && (
+          {chat.ready && page === "project" && <Project notify={setToast} />}
+          {chat.ready && page === "jobs" && (
             <Jobs
               notify={setToast}
               activeJob={activeJob}
@@ -341,10 +357,10 @@ function App() {
               setImage={setImage}
             />
           )}
-          {page === "settings" && (
+          {chat.ready && page === "settings" && (
             <Config
               notify={setToast}
-              onSaved={() => setRefresh((value) => value + 1)}
+              onSaved={() => { void chat.reloadConfig(); setRefresh((value) => value + 1); }}
             />
           )}
         </main>
@@ -358,10 +374,11 @@ function App() {
                 : "课程图谱可用 · 计算节点待连接"}
           </span>
           <span>
-            课程空间<span className="status-divider">|</span>v0.4
+            课程空间<span className="status-divider">|</span>v0.5
           </span>
         </footer>
       </div>
+      <MascotDock onOpenChat={openMascotChat} onOpenSettings={openMascotSettings} onKnowledge={openMascotKnowledge} />
       {toast && (
         <div className="toast" role="status">
           <AlertCircle size={17} />
@@ -417,62 +434,19 @@ function ChatView({
   health,
   notify,
   openSettings,
-  initialQuestion,
   onKnowledge,
 }) {
-  const [mode, setMode] = useState("chat"),
-    [text, setText] = useState(""),
-    [msgs, setMsgs] = useState([]),
-    [busy, setBusy] = useState(false);
+  const {mode,setMode,text,setText,msgs,busy,send,selectionBusy,ready,config,knowledgeMode,knowledgeStatus,gaps} = useChatSession();
   const bottom = useRef(null);
-  useEffect(() => {
-    api("/chat/history")
-      .then(setMsgs)
-      .catch((e) => notify(e.message));
-  }, []);
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, busy]);
-  async function send() {
-    if (!text.trim() || busy) return;
-    const message = text;
-    setText("");
-    setMsgs((m) => [...m, { role: "user", text: message }]);
-    setBusy(true);
-    try {
-      const r = await api("/chat", {
-        method: "POST",
-        body: JSON.stringify({ message, mode }),
-      });
-      setMsgs((m) => [
-        ...m,
-        {
-          role: "assistant",
-          text: r.reply,
-          citations: r.citations || [],
-          evidence: r.evidence || [],
-          retrieval: r.retrieval,
-        },
-      ]);
-    } catch (e) {
-      notify(e.message);
-      setMsgs((m) => [
-        ...m,
-        { role: "assistant", text: "请求未完成：" + e.message },
-      ]);
-    } finally {
-      setBusy(false);
-    }
-  }
-  useEffect(() => {
-    if (initialQuestion) setText(initialQuestion.text);
-  }, [initialQuestion]);
   return (
     <>
       <PageTitle
         eyebrow="ACOUSTIC ASSISTANT"
         title="知识问答"
-        description="结合课程知识查询原理，或阅读课程公开 MATLAB 模板。"
+      description="选择模型与知识范围，核对课程原文，或阅读课程 MATLAB 模板。"
       >
         <div className="segmented">
           {[
@@ -482,6 +456,7 @@ function ChatView({
             <button
               className={mode === id ? "active" : ""}
               key={id}
+              disabled={busy || selectionBusy}
               onClick={() => setMode(id)}
             >
               {id === "agent" ? (
@@ -496,6 +471,7 @@ function ChatView({
       </PageTitle>
       <div className="chat-layout">
         <div className="chat-panel panel">
+          <ChatModelSwitcher onOpenSettings={openSettings} />
           <div className="chat-scroll">
             {msgs.length === 0 && (
               <div className="chat-welcome">
@@ -517,15 +493,17 @@ function ChatView({
               </div>
             )}
             {msgs.map((m, i) => (
-              <div className={"message " + m.role} key={m.id || i}>
+              <div className={"message " + m.role + (m.request_failed ? " failed" : "")} key={m.id || i}>
                 <div className="avatar">
                   {m.role === "assistant" ? <Waves size={17} /> : "我"}
                 </div>
                 <div>
                   <div className="message-label">
-                    {m.role === "assistant" ? "海洋声学助手" : "你"}
+                    {m.role === "assistant" ? m.request_failed ? "请求未完成" : "海洋声学助手" : "你"}
                   </div>
+                  {m.role === "assistant" && <div className="message-provenance">{m.model_used ? <span>{m.model_provider} · 请求 {m.requested_model}{m.response_model && <> · 返回 {m.response_model}</>}</span> : !m.request_failed && m.model_used === false ? <span>课程检索 · 未调用模型</span> : null}{m.knowledge_scope && <span>{m.knowledge_scope === "general" ? "模型一般知识" : "课程依据"}</span>}</div>}
                   <div className="message-text">{m.text}</div>
+                  {m.coverage_notice && <p className="answer-coverage-notice">{m.coverage_notice}</p>}
                   <AnswerSources message={m} onKnowledge={onKnowledge} />
                 </div>
               </div>
@@ -560,14 +538,14 @@ function ChatView({
             <div>
               <span>
                 <BookOpen size={13} />
-                {health?.model_configured
-                  ? "课程知识检索已启用"
+                {config?.api_key_set
+                  ? knowledgeMode === "general" ? "模型一般知识 · 课程来源单独标注" : "课程依据 · 来源不足会明确说明"
                   : "未配置模型 · 使用课程资料检索"}
               </span>
               <Button
                 ariaLabel="发送问题"
                 variant="primary icon"
-                disabled={busy || !text.trim()}
+                disabled={!ready || busy || selectionBusy || !text.trim()}
                 onClick={send}
               >
                 <ArrowUp size={18} />
@@ -581,7 +559,7 @@ function ChatView({
             <BookOpen size={19} />
             <div>
               课程知识库
-              <span>{health?.knowledge_cards || 46} 张知识卡 · 20 份来源</span>
+              <span>{knowledgeStatus?.cards || 46} 张知识卡 · {knowledgeStatus?.indexed_sources || 0} 份已索引资料<br/>{knowledgeStatus?.indexed_pages || 0} 页 · {knowledgeStatus?.chunks || 0} 个片段</span>
             </div>
           </div>
           <div className="context-item">
@@ -603,8 +581,8 @@ function ChatView({
             <p>
               {mode === "agent"
                 ? "Agent 可结合课程公开模板分析代码。读取或操纵访问设备上的 MATLAB，需另装本地连接程序，当前公开版尚未提供。"
-                : health?.model_configured
-                  ? "使用你自己配置的模型接口。回答应回到知识卡与来源。"
+                : config?.api_key_set
+                  ? "使用所选供应商已保存的 Key。每条新回答记录请求模型与实际返回标识。"
                   : "添加 API Key 后可调用云端模型；不配置也可浏览图谱、读取文件、运行模板仿真。"}
             </p>
           </div>
@@ -612,6 +590,8 @@ function ChatView({
             <Settings2 size={15} />
             配置模型接口
           </Button>
+          <div className="knowledge-growth-note"><strong>知识库可以持续扩充</strong><p>新增资料会进入私有检索索引，无需训练大模型。模型一般知识可补充未覆盖的问题；新增来源须保留出处并核查公式。</p><a href="https://github.com/Weijifen666/ocean-acoustic-workbench/blob/main/docs/KNOWLEDGE_EXPANSION.md" target="_blank" rel="noreferrer">扩库方法与开源参考 <ExternalLink size={12}/></a></div>
+          {!!gaps.length && <div className="knowledge-gap-list"><strong>你的待补资料问题 · {gaps.length}</strong>{gaps.slice(0,4).map((gap) => <button key={gap.id} onClick={() => setText(gap.question)}>{gap.question}<small>出现 {gap.count} 次 · 待补来源</small></button>)}<p>只记录当前访客的问题，尚未作为知识入库。</p></div>}
         </aside>
       </div>
     </>
@@ -1561,4 +1541,4 @@ function Config({ notify, onSaved }) {
     </>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<ChatProvider><App /></ChatProvider>);

@@ -25,8 +25,11 @@ assert all(next(e for e in graph['edges'] if e['id']==id)['group']=='related' fo
 expect('/graph/path?source=invalid&target=transmission_loss',422)
 retrieved=json.loads(expect('/knowledge/search?q='+urllib.parse.quote('请解释 Munk 理想剖面，并说明适用条件'),200))
 assert retrieved[0]['node_id']=='munk_profile'
-assert {c['node_id'] for c in retrieved}=={'munk_profile','deep_sound_channel','env_file'}
-assert retrieved[0]['related_triples'] and retrieved[0]['formula']
+assert {c['node_id'] for c in retrieved if c['node_id']} <= {'munk_profile','deep_sound_channel','env_file'}
+assert retrieved[0]['related_triples']
+assert any(c['node_id']=='munk_profile' and c['formula'] for c in retrieved)
+assert all(c['source_id'] and (c.get('pdf_page') or c.get('locator')) for c in retrieved)
+assert any(c.get('evidence_type')=='source_excerpt' and c['pdf_page']>38 for c in retrieved)
 assert json.loads(expect('/knowledge/search?q=zzzznonexistent',200))==[]
 with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
     images=list(pool.map(lambda p:expect('/source/S17/page/'+str(p),200),[375,376,356,357,359,478]))

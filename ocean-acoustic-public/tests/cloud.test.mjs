@@ -1,22 +1,51 @@
-import assert from 'node:assert/strict';import {test} from 'node:test';import {DatabaseSync} from 'node:sqlite';import fs from 'node:fs';
-import {createCourseRetriever} from '../server/course-retrieval.mjs';import {createCloudModels,providerFetch} from '../server/cloud-models.mjs';
-const graph=JSON.parse(fs.readFileSync(new URL('../data/graph.json',import.meta.url),'utf8')),catalog=JSON.parse(fs.readFileSync(new URL('../data/models.json',import.meta.url),'utf8'));
-const retrieve=createCourseRetriever(graph);
-async function cryptoKey(secret){return crypto.subtle.importKey('raw',await crypto.subtle.digest('SHA-256',new TextEncoder().encode(secret)),'AES-GCM',false,['encrypt','decrypt'])}
-const encrypt=async(value,secret)=>{const iv=crypto.getRandomValues(new Uint8Array(12)),data=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await cryptoKey(secret),new TextEncoder().encode(JSON.stringify(value))));return Buffer.concat([Buffer.from(iv),Buffer.from(data)]).toString('base64')};
-const decrypt=async(value,secret)=>{const bytes=Buffer.from(value,'base64');return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(0,12)},await cryptoKey(secret),bytes.subarray(12))))};
-function setup(fetcher=async()=>{throw Error('Network calls forbidden')}){
- const sqlite=new DatabaseSync(':memory:');for(const name of fs.readdirSync(new URL('../drizzle/',import.meta.url)).filter(s=>s.endsWith('.sql')).sort())sqlite.exec(fs.readFileSync(new URL('../drizzle/'+name,import.meta.url),'utf8'));
- const DB={prepare(sql){let args=[];return {bind(...values){args=values;return this},async first(){return sqlite.prepare(sql).get(...args)||null},async run(){const r=sqlite.prepare(sql).run(...args);return {meta:{changes:r.changes}}}}}};
- const env={DB,GATEWAY_SECRET:'TEST-ONLY-CLOUD-ENCRYPTION-KEY'},ctx={waitUntil(){}};
- const handler=createCloudModels({catalog,retrieve,encrypt,decrypt,heartbeat:async()=>false,proxy:async()=>{throw Error('Node should be offline')},template:'% audited example',fetcher});
- async function call(path,method='GET',body, cookie=''){
-  const url=new URL(path,'https://course.test'),headers={'content-type':'application/json',origin:url.origin,...(cookie?{cookie}:{})};const r=await handler(new Request(url,{method,headers,...(body===undefined?{}:{body:JSON.stringify(body)})}),env,ctx,url);return {r,data:await r.clone().json(),cookie:r.headers.get('set-cookie')?.split(';')[0]||cookie};
- }
- return {call,sqlite,env,handler,ctx};
-}
+import assert from 'node:assert/strict';import {test} from 'node:test';
+import {providerFetch} from '../server/cloud-models.mjs';
+import {setup,retrieve,decrypt} from './test-support.mjs';
 test('BM25 aliases, bounded relation context, unknown query and source URL',()=>{const rows=retrieve('Munk 声速剖面');assert.equal(rows[0].node_id,'munk_profile');assert(rows.every(c=>c.citation.source_id));assert(rows.some(c=>c.citation.url?.includes('/page/')));assert.deepEqual(retrieve('世界杯足球冠军是哪国'),[]);assert(retrieve('programming basics').every(c=>c.node_id!=='ram'))});
 test('offline cloud health/knowledge/chat keep evidence without a model call',async()=>{const s=setup();const c=await s.call('/api/config');assert.match(c.r.headers.get('set-cookie'),/HttpOnly; Secure/);const health=await s.call('/api/health','GET',undefined,c.cookie);assert.equal(health.data.matlab_available,false);assert.equal(health.data.cloud_model_available,true);const chat=await s.call('/api/chat','POST',{message:'Munk 声速剖面'},c.cookie);assert.equal(chat.data.model_used,false);assert(chat.data.evidence.length&&chat.data.citations.length);assert.equal((await s.call('/api/chat/history','GET',undefined,c.cookie)).data.length,2);s.sqlite.close()});
+test('general requested without a key and with evidence records actual course retrieval',async()=>{
+ let providerCalls=0;
+ const s=setup(async()=>{providerCalls++;throw Error('No provider request allowed')});
+ try{
+  const a=await s.call('/api/config');
+  const result=await s.call('/api/chat','POST',{message:'Munk 声速剖面',knowledge_mode:'general'},a.cookie);
+  assert.equal(result.r.status,200);
+  assert.equal(providerCalls,0);
+  assert.equal(result.data.model_used,false);
+  assert.equal(result.data.model_provider,null);
+  assert.equal(result.data.response_model,null);
+  assert.equal(result.data.requested_knowledge_mode,'general');
+  assert.equal(result.data.knowledge_scope,'course');
+  assert.equal(result.data.coverage_status,'course_evidence');
+  assert(result.data.evidence.length&&result.data.citations.length);
+  assert.match(result.data.coverage_notice,/尚未配置.*仅展示.*课程资料.*未调用模型/);
+  const saved=(await s.call('/api/chat/history','GET',undefined,a.cookie)).data.at(-1);
+  assert.equal(saved.knowledge_scope,'course');
+  assert.equal(saved.requested_knowledge_mode,'general');
+ }finally{s.sqlite.close()}
+});
+test('general requested without a key and without evidence never claims pretrained generation',async()=>{
+ let providerCalls=0;
+ const s=setup(async()=>{providerCalls++;throw Error('No provider request allowed')});
+ try{
+  const a=await s.call('/api/config');
+  const result=await s.call('/api/chat','POST',{message:'世界杯足球冠军是哪国',knowledge_mode:'general'},a.cookie);
+  assert.equal(result.r.status,200);
+  assert.equal(providerCalls,0);
+  assert.equal(result.data.model_used,false);
+  assert.equal(result.data.requested_knowledge_mode,'general');
+  assert.equal(result.data.knowledge_scope,'course');
+  assert.equal(result.data.coverage_status,'no_course_evidence');
+  assert.deepEqual(result.data.evidence,[]);
+  assert.deepEqual(result.data.citations,[]);
+  assert.match(result.data.coverage_notice,/尚未配置.*未检索到课程依据/);
+  assert.match(result.data.coverage_notice,/没有使用模型一般知识/);
+  assert(!result.data.coverage_notice.includes('本次使用模型一般知识'));
+  assert.match(result.data.reply,/需要先配置.*API Key/);
+  const gaps=(await s.call('/api/knowledge/gaps','GET',undefined,a.cookie)).data;
+  assert(gaps.some(gap=>gap.question==='世界杯足球冠军是哪国'));
+ }finally{s.sqlite.close()}
+});
 test('keys encrypted, redacted, retained per provider and isolated by visitor',async()=>{const s=setup(),a=await s.call('/api/config'),b=await s.call('/api/config');const saved=await s.call('/api/config','PUT',{api_key:'TEST-NOT-A-REAL-KEY'},a.cookie);assert(saved.data.api_key_set);assert(!JSON.stringify(saved.data).includes('TEST-NOT'));assert(!s.sqlite.prepare('SELECT ciphertext FROM cloud_visitors').all().some(r=>r.ciphertext.includes('TEST-NOT')));assert.equal((await s.call('/api/config','GET',undefined,b.cookie)).data.api_key_set,false);await s.call('/api/config','PUT',{provider:'GLM',base_url:'https://open.bigmodel.cn/api/paas/v4',model:'glm-5.3'},a.cookie);assert.equal((await s.call('/api/config','GET',undefined,a.cookie)).data.api_key_set,false);await s.call('/api/config','PUT',{provider:'Qwen',base_url:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen3.7-plus'},a.cookie);assert.equal((await s.call('/api/config','GET',undefined,a.cookie)).data.api_key_set,true);await s.call('/api/session/clear-keys','POST',{},a.cookie);assert.equal((await s.call('/api/config','GET',undefined,a.cookie)).data.api_key_set,false);s.sqlite.close()});
 test('invalid provider address, missing own key, invalid JSON and cross-origin rejected',async()=>{const s=setup(),a=await s.call('/api/config');assert.equal((await s.call('/api/config','PUT',{base_url:'https://example.org/api'},a.cookie)).r.status,422);assert.equal((await s.call('/api/models/test','POST',{provider:'Qwen',model:'qwen3.7-plus'},a.cookie)).r.status,422);const url=new URL('https://course.test/api/config');const r=await s.handler(new Request(url,{method:'PUT',headers:{origin:'https://other.test'},body:'{}'}),s.env,s.ctx,url);assert.equal(r.status,403);s.sqlite.close()});
 test('short model test applies provider options and hides provider response errors',async()=>{let sent;const s=setup(async(url,options)=>{sent=JSON.parse(options.body);return new Response(JSON.stringify({model:sent.model,choices:[{message:{content:'OK'}}]}),{headers:{'content-type':'application/json'}})}),a=await s.call('/api/config');const r=await s.call('/api/models/test','POST',{provider:'GLM',base_url:'https://open.bigmodel.cn/api/paas/v4',model:'glm-5.3',api_key:'TEST-ONLY-KEY'},a.cookie);assert.equal(r.r.status,200);assert.equal(sent.max_tokens,256);assert.deepEqual(sent.thinking,{type:'enabled'});s.sqlite.close();const blocked=setup(async()=>new Response('TEST-ONLY-KEY secret', {status:403})),b=await blocked.call('/api/config'),error=await blocked.call('/api/models/test','POST',{provider:'Qwen',base_url:'https://dashscope.aliyuncs.com/compatible-mode/v1',model:'qwen3.7-plus',api_key:'TEST-ONLY-KEY'},b.cookie);assert.equal(error.r.status,502);assert(!JSON.stringify(error.data).includes('TEST-ONLY-KEY'));blocked.sqlite.close()});

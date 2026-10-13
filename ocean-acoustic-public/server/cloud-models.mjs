@@ -1,5 +1,6 @@
 // Anonymous visitor state stays server-side, encrypted at rest. No owner's key.
 import {courseCitation,COURSE_SYSTEM,noModelAnswer} from './course-retrieval.mjs';
+import {answerPolicy,noteKnowledgeGap} from './knowledge-policy.mjs';
 export function defaults(catalog){const provider=catalog.providers.find(p=>p.id==='Qwen')||catalog.providers[0],model=catalog.models.find(m=>m.provider===provider.id&&m.id==='qwen3.7-plus')||catalog.models.find(m=>m.provider===provider.id);return {provider:provider.id,base_url:provider.base_url,model:model.id,api_key:''}}
 export const publicConfig=cfg=>({provider:cfg.provider,base_url:cfg.base_url,model:cfg.model,api_key_set:!!cfg.api_key,public_mode:true,storage:'cloud_encrypted'});
 export function validateConnection(cfg,catalog){
@@ -7,10 +8,10 @@ export function validateConnection(cfg,catalog){
  const host=url.hostname,allowed={DeepSeek:host==='api.deepseek.com',Kimi:['api.moonshot.cn','api.moonshot.ai'].includes(host),GLM:host==='open.bigmodel.cn',Qwen:['dashscope.aliyuncs.com','dashscope-us.aliyuncs.com','dashscope-intl.aliyuncs.com'].includes(host)||host.endsWith('.maas.aliyuncs.com')};
  if(url.protocol!=='https:'||url.username||url.password||(url.port&&url.port!=='443')||url.search||url.hash||!allowed[cfg.provider])throw new Error('请使用与供应商匹配的官方 HTTPS API 地址');
  const api_key=String(cfg.api_key||'').trim();
- if(!cfg.model||cfg.model.length>160||api_key.length>4096)throw new Error('模型标识或密钥长度不合法');
+ if(typeof cfg.model!=='string'||!cfg.model.trim()||cfg.model.length>160||/[\r\n]/.test(cfg.model)||api_key.length>4096)throw new Error('模型标识或密钥长度不合法');
  if(/^Bearer\s/i.test(api_key))throw new Error('API Key 只填写密钥本身，不要添加 Bearer 前缀');
  if(/[^\x21-\x7e]/.test(api_key))throw new Error('API Key 含空格、换行或非英文字符，请重新复制完整密钥');
- return {...cfg,api_key,base_url:cfg.base_url.trim().replace(/\/+$/,'')};
+ return {...cfg,model:cfg.model.trim(),api_key,base_url:cfg.base_url.trim().replace(/\/+$/,'')};
 }
 const providerError=status=>({401:'密钥无效或地域不匹配',402:'余额或额度不足',403:'账户没有该模型权限',404:'模型或接口不存在',429:'请求频率或额度受限'})[status]||'请求未成功，请核对官方参数';
 function transportError(message,code){const error=new Error(message);error.code=code;error.status=502;return error}
@@ -53,7 +54,7 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
   if(!id){id=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');fresh=true}
   let row=await store(env).one('SELECT ciphertext,version,updated FROM cloud_visitors WHERE id=?',id);
   if(row&&Date.now()-row.updated>2592000000){await store(env).run('DELETE FROM cloud_visitors WHERE id=? AND updated<?',id,Date.now()-2592000000);row=null;fresh=true}
-  if(!row){const data={selected:defaults(catalog),profiles:{},history:[],calls:[]};await store(env).run('INSERT INTO cloud_visitors(id,ciphertext,version,updated) VALUES(?,?,0,?) ON CONFLICT(id) DO NOTHING',id,await encrypt(data,env.GATEWAY_SECRET),Date.now());row=await store(env).one('SELECT ciphertext,version,updated FROM cloud_visitors WHERE id=?',id)}
+  if(!row){const data={selected:defaults(catalog),profiles:{},history:[],calls:[],gaps:[]};await store(env).run('INSERT INTO cloud_visitors(id,ciphertext,version,updated) VALUES(?,?,0,?) ON CONFLICT(id) DO NOTHING',id,await encrypt(data,env.GATEWAY_SECRET),Date.now());row=await store(env).one('SELECT ciphertext,version,updated FROM cloud_visitors WHERE id=?',id)}
   return {id,fresh,data:await decrypt(row.ciphertext,env.GATEWAY_SECRET),version:row.version};
  }
  async function mutate(id,env,change){
@@ -73,10 +74,10 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
   return retrieve(q);
  }
  return async(request,env,ctx,url)=>{
-  const path=url.pathname,known=['/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/health','/api/knowledge/search','/api/knowledge/status','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path))return null;
+  const path=url.pathname,known=['/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path))return null;
   if(!['GET','POST','PUT'].includes(request.method))return json({detail:'此操作不支持该请求方法'},405);
   if(request.method!=='GET'&&request.headers.get('origin')!==url.origin)return json({detail:'请从当前网站提交请求'},403);
-  const methods={'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
+  const methods={'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/knowledge/gaps':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
   let session;try{session=await load(request,env)}catch{return json({detail:'访客配置服务暂不可用，请稍后重试'},503)}
   const finish=r=>{const headers=new Headers(r.headers);if(session.fresh)headers.set('Set-Cookie',`ocean_visitor=${session.id}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers})};
   try{
@@ -91,15 +92,16 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    }
    if(path==='/api/models/profiles')return finish(json(Object.fromEntries(Object.entries({...session.data.profiles,[cfg.provider]:cfg}).map(([p,c])=>[p,publicConfig(c)]))));
    if(path==='/api/chat/history')return finish(json(session.data.history));
+   if(path==='/api/knowledge/gaps')return finish(json(session.data.gaps||[]));
    if(path==='/api/knowledge/search')return finish(json(await evidenceFor(url.searchParams.get('q')||'',request,env,ctx,session.id)));
    if(path==='/api/knowledge/status'){
     if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,path),env,ctx);if(r.ok)return finish(r)}catch{}}
-    return finish(json({mode:'course_graph_rag',cards:46,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,methods:['BM25','typed_graph_context','RRF'],training_required:false,node_online:false,scope:'计算节点离线，当前检索云端课程知识卡；教材全文索引未连接。'}));
+    return finish(json({mode:'course_graph_rag',cards:46,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,source_coverage:[],coverage:null,methods:['BM25','typed_graph_context','RRF'],training_required:false,node_online:false,scope:'计算节点离线，当前检索云端课程知识卡；教材全文索引未连接。'}));
    }
    if(path==='/api/health'||path==='/api/environment/check'){
-    let data={version:'0.4.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
+    let data={version:'0.5.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
     if(path==='/api/environment/check')return finish(json({checks:[{name:'MATLAB 计算节点',ok:data.matlab_available,detail:data.matlab_available?'计算节点已连接':'仅仿真依赖计算节点，云端知识卡和模型问答仍可用'},{name:'KRAKEN / FIELD',ok:data.solver_available,detail:'固定 Munk 模板，结果按输入和坐标验证'},{name:'你的模型 API Key',ok:!!cfg.api_key,detail:cfg.api_key?'云端加密保存，未代表已通过调用测试':'填写供应商 Key 后可调用模型'}]}));
-    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.4.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
+    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.5.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
    }
    const raw=await request.text();if(raw.length>65536)return finish(json({detail:'请求内容过长'},413));const body=JSON.parse(raw);
    if(path.startsWith('/api/models/')){
@@ -113,13 +115,26 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     const data=await remote(selected,catalog,testBody,fetcher);return finish(json({ok:true,provider,requested_model:selected.model,response_model:data.model||selected.model,reply:(data.choices[0].message.content||'').slice(0,200),usage:data.usage||{},note:'短请求已通过。请点击“保存并应用配置”后在知识问答中使用。'}));
    }
    const message=String(body.message||'');if(message.length<1||message.length>12000)throw Error('问题长度须为 1–12000 字符');if(!['chat','agent',undefined].includes(body.mode))throw Error('未知对话模式');
+   const provider=body.provider||cfg.provider;
+   if(!catalog.providers.some(p=>p.id===provider))throw Error('未知供应商');
+   const entry=catalog.providers.find(p=>p.id===provider),saved=provider===cfg.provider?cfg:session.data.profiles[provider]||{provider,base_url:entry.base_url,model:catalog.models.find(m=>m.provider===provider).id,api_key:''};
+   const selected=validateConnection({...saved,provider,model:body.model||saved.model},catalog);
+   const knowledgeScope=body.knowledge_mode||'course';if(!['course','general'].includes(knowledgeScope))throw Error('请选择课程依据或模型一般知识');
    await mutate(session.id,env,state=>{state.calls=(state.calls||[]).filter(t=>Date.now()-t<60000);if(state.calls.length>=12)throw Error('对话过于频繁，请稍后再试');state.calls.push(Date.now())});
-   const evidence=await evidenceFor(message,request,env,ctx,session.id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));let reply;
-   if(!cfg.api_key)reply=noModelAnswer(evidence);
-   else{validateConnection(cfg,catalog);const context={evidence,graph_context_note:'课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。'};const messages=[{role:'system',content:COURSE_SYSTEM+'\n'+JSON.stringify(context)+(body.mode==='agent'?'\n课程公开 MATLAB 模板（只读）：\n'+template:'')},...session.data.history.slice(-10).map(m=>({role:m.role,content:m.text})),{role:'user',content:message}];const data=await remote(cfg,catalog,{messages,max_tokens:4096},fetcher);reply=data.choices[0].message.content||'模型未返回文字内容';}
+   const evidence=await evidenceFor(message,request,env,ctx,session.id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null})),policy=answerPolicy(evidence,knowledgeScope,body.mode);let reply,used=false,responseModel=null;
+   if(!evidence.length&&body.mode!=='agent')await mutate(session.id,env,state=>noteKnowledgeGap(state,message));
+   if(!selected.api_key){
+    reply=(knowledgeScope==='general'?'模型一般知识需要先配置你的 API Key。当前仅提供课程资料检索。\n\n':'')+noModelAnswer(evidence);
+    // Actual answer provenance is course retrieval. Keep the user's requested
+    // mode separately; no pretrained generation or template analysis ran.
+    Object.assign(policy,{knowledge_scope:'course',coverage_status:evidence.length?'course_evidence':'no_course_evidence',coverage_notice:evidence.length?'尚未配置模型 API Key；本次仅展示检索到的课程资料，未调用模型。':'尚未配置模型 API Key，且未检索到课程依据；本次没有使用模型一般知识。'});
+   }
+   else if(!policy.can_generate)reply=policy.coverage_notice+'\n这条问题已加入你的待补资料记录，不会把无关知识点当作答案。';
+   else{const context={evidence,graph_context_note:'课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。'};const messages=[{role:'system',content:policy.system+'\n'+JSON.stringify(context)+(body.mode==='agent'?'\n课程公开 MATLAB 模板（只读）：\n'+template:'')},...session.data.history.slice(-10).map(m=>({role:m.role,content:m.text})),{role:'user',content:message}];const data=await remote(selected,catalog,{messages,max_tokens:4096},fetcher);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;}
    const retrieval={methods:evidence.some(c=>c.retrieval?.method==='bm25+curated-graph')?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:['BM25','typed_graph_context','RRF'],evidence_count:evidence.length,source_excerpts:evidence.filter(c=>c.evidence_type==='source_excerpt').length,scope:evidence.some(c=>c.evidence_type==='source_excerpt')?'课程知识卡与教材原文片段':'课程知识卡'};
-   await mutate(session.id,env,state=>{state.history.push({role:'user',text:message},{role:'assistant',text:reply,evidence,citations,retrieval,model_used:!!cfg.api_key});state.history=state.history.slice(-40)});
-   return finish(json({reply,model_used:!!cfg.api_key,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval}));
+   const metadata={model_used:used,model_provider:used?selected.provider:null,requested_model:used?selected.model:null,response_model:responseModel,requested_knowledge_mode:knowledgeScope,knowledge_scope:policy.knowledge_scope,coverage_status:policy.coverage_status,coverage_notice:policy.coverage_notice};
+   await mutate(session.id,env,state=>{state.history.push({role:'user',text:message},{role:'assistant',text:reply,evidence,citations,retrieval,...metadata});state.history=state.history.slice(-40)});
+   return finish(json({reply,...metadata,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval}));
   }catch(e){const msg=String(e.message||'').slice(0,220);const status=e.status===502||msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}
  };
 }

@@ -21,15 +21,37 @@ def knowledge_cards():
     return cards
 def retrieve(q,limit=8):
     return retrieval.retrieve(graph_data(),knowledge_cards(),q,limit,retrieval.load_chunks(CHUNKS))
+def source_coverage(chunks,report):
+    grouped={}
+    for chunk in chunks:grouped.setdefault(chunk['source_id'],[]).append(chunk)
+    reported={row['source_id']:row for row in report.get('source_coverage',[]) if row.get('source_id')}
+    warnings=report.get('warnings',[])
+    ids=set(grouped)|set(reported)|{w['source_id'] for w in warnings if w.get('source_id')}
+    rows=[]
+    for source_id in sorted(ids):
+        values=grouped.get(source_id,[]);metadata=reported.get(source_id,{})
+        pages={c['pdf_page'] for c in values if c.get('pdf_page') is not None}
+        issues=[w for w in warnings if w.get('source_id')==source_id]
+        attempted=pages|{w['pdf_page'] for w in issues if w.get('pdf_page') is not None}
+        total=metadata.get('total_pages');selected=metadata.get('selected_pages')
+        rows.append({'source_id':source_id,'title':metadata.get('title') or next((c.get('label') for c in values if c.get('label')),source_id),'type':metadata.get('type'),'total_pages':total,'selected_pages':selected,'processed_pages':metadata.get('processed_pages',len(attempted)),'indexed_pages':len(pages),'chunks':len(values),'failed_or_needs_ocr_pages':metadata.get('failed_or_needs_ocr_pages',len(issues)),'blank_or_short_pages':metadata.get('blank_or_short_pages',sum(w.get('category')=='blank_or_short' for w in issues)),'unreadable_pages':metadata.get('unreadable_pages',sum(w.get('category') in {'unreadable_text','parse_error'} for w in issues)),'coverage_ratio':round(len(pages)/total,6) if total else None,'selected_success_ratio':round(len(pages)/selected,6) if selected else None,'processed_units':metadata.get('processed_units'),'indexed_units':metadata.get('indexed_units'),'full_document_selected':metadata.get('full_document_selected')})
+    return rows
 def retrieval_status():
     status={'method':'BM25 + 人工课程图谱','reviewed_cards':len(knowledge_cards()),'source_chunks':0,'source_documents':0,'needs_ocr_pages':0,'index_ready':False,'embedding_enabled':False,'automatic_relation_extraction':False,'training_required':False,'scope':'人工核实的课程知识卡可直接检索；原文片段仅在本地授权入库后提供。','warnings':[]}
-    chunks=[]
+    chunks=[];report={}
     if CHUNKS.is_file():
         chunks=retrieval.load_chunks(CHUNKS)
-        report_path=CHUNKS.with_suffix('.report.json')
-        report=json.loads(report_path.read_text(encoding='utf-8')) if report_path.is_file() else {}
+        report=retrieval.load_index_report(CHUNKS)
         status.update({'source_chunks':len(chunks),'source_documents':len({c['source_id'] for c in chunks}),'needs_ocr_pages':report.get('needs_ocr_pages',len(report.get('warnings',[]))),'index_ready':bool(chunks),'index_revision':report.get('index_revision',''),'warnings':report.get('warnings',[]),'scope':'原页片段 + 有适用条件的课程卡 + 一跳课程关联。扫描页未做 OCR；空白/异常提取页须人工处理。'})
-    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors'],'ranking_note':'BM25 词项排行的倒数分数 + 明确概念及一跳关联的固定优先权重；未实现多个召回排行的 RRF，未接入向量检索。'})
+    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors'],'ranking_note':'BM25 词项排行的倒数分数 + 明确概念及一跳关联的固定优先权重；相关原文优先于宽泛图谱背景。未实现多个召回排行的 RRF，未接入向量检索。'})
+    rows=source_coverage(chunks,report)
+    coverage={field:sum(row.get(field) or 0 for row in rows) for field in ['total_pages','selected_pages','processed_pages','indexed_pages','failed_or_needs_ocr_pages','blank_or_short_pages','unreadable_pages']}
+    if not any(row.get('total_pages') is not None for row in rows):coverage['total_pages']=None
+    if not any(row.get('selected_pages') is not None for row in rows):coverage['selected_pages']=None
+    coverage['failed_or_needs_ocr_pages']=status['needs_ocr_pages']
+    coverage['coverage_ratio']=round(coverage['indexed_pages']/coverage['total_pages'],6) if coverage['total_pages'] else None
+    coverage['selected_success_ratio']=round(coverage['indexed_pages']/coverage['selected_pages'],6) if coverage['selected_pages'] else None
+    status.update({'source_coverage':rows,'coverage':coverage,'processed_sources':len(rows),'coverage_note':'覆盖率为成功入库的原页数 / 资料 PDF 总页数；空白或短文本不等于已确认空白，更不表示 OCR 已完成。未知总页数保留 null。'})
     return status
 def citations_for(evidence):
     citations=[];seen=set()

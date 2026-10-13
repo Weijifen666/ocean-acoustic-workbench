@@ -99,6 +99,7 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
       setProfiles({});
       setAccount(null);
       notify(cfg.public_mode ? "你的全部模型密钥已从云端删除。" : "本机模型密钥已清除。");
+      window.dispatchEvent(new CustomEvent("ocean-model-config-changed"));
     } catch (error) {
       notify(error.message);
     } finally {

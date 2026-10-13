@@ -1,12 +1,12 @@
 {
   "name": "ocean-acoustic-public",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "node build-worker.mjs",
-    "test": "node --test tests/cloud.test.mjs"
+    "test": "node --test tests/cloud.test.mjs tests/chat-routing.test.mjs"
   },
   "dependencies": {
     "cytoscape": "^3.33.1",

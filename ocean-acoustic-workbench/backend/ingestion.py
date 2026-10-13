@@ -47,24 +47,35 @@ def chunk_text(text, size=1100, overlap=160):
         start = max(end - overlap, start + 1)
 
 
-def pages_from_source(path, selected_pages=None):
+def pages_from_source(path, selected_pages=None, metadata=None):
     path = Path(path)
     suffix = path.suffix.lower()
+    metadata = metadata if metadata is not None else {}
+    metadata.update({"type": suffix, "total_pages": None, "selected_pages": None})
     if suffix == ".pdf":
         import pypdfium2 as pdfium
         document = pdfium.PdfDocument(str(path))
         try:
-            pages = list(selected_pages) if selected_pages is not None else range(1, len(document) + 1)
+            pages = list(dict.fromkeys(selected_pages)) if selected_pages is not None else list(range(1, len(document) + 1))
             for number in pages:
-                if not isinstance(number, int) or number < 1 or number > len(document):
+                if type(number) is not int or number < 1 or number > len(document):
                     raise ValueError("指定的 PDF 页码超出文档范围。")
-                page = document[number - 1]
-                text_page = page.get_textpage()
+            metadata.update({"total_pages": len(document), "selected_pages": len(pages)})
+            for number in pages:
+                page, text_page = None, None
+                text = None
                 try:
-                    yield number, text_page.get_text_range()
+                    page = document[number - 1]
+                    text_page = page.get_textpage()
+                    text = text_page.get_text_range()
+                except Exception:
+                    # A page-level parse failure is recorded without returning
+                    # parser messages that might contain private file paths.
+                    metadata.setdefault("read_error_pages", []).append(number)
                 finally:
-                    text_page.close()
-                    page.close()
+                    if text_page is not None:text_page.close()
+                    if page is not None:page.close()
+                yield number, text
         finally:
             document.close()
     elif suffix == ".docx":
@@ -84,43 +95,70 @@ def pages_from_source(path, selected_pages=None):
         raise ValueError("当前支持 PDF、DOCX、UTF-8 TXT 和 Markdown。")
 
 
-def ingest_source(source, base_directory, size=1100, overlap=160):
+def file_revision(path):
+    digest=hashlib.sha256()
+    with Path(path).open('rb') as handle:
+        for block in iter(lambda:handle.read(1024*1024),b''):digest.update(block)
+    return digest.hexdigest()
+
+
+def ingest_source(source, base_directory, size=1100, overlap=160, report=None):
     source_id = source.get("id", "")
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", source_id):
         raise ValueError("来源编号只能包含字母、数字、下划线和短横线。")
     path = Path(source["path"])
     if not path.is_absolute():
         path = Path(base_directory) / path
-    revision = hashlib.sha256(path.read_bytes()).hexdigest()
-    result, warnings = [], []
-    for page_number, text in pages_from_source(path, source.get("pages")):
-        text = clean_text(text)
-        if len(re.sub(r"\s", "", text)) < 35 or text.count("�") > max(1, len(text) // 200):
-            warnings.append({"source_id": source_id, "pdf_page": page_number, "status": "needs_ocr_or_review", "reason": "文本过少或含异常字符，未生成可供回答的知识片段。"})
+    revision = file_revision(path)
+    result, warnings, processed_pages, indexed_pages = [], [], set(), set()
+    metadata, processed_units, indexed_units = {}, 0, 0
+    for page_number, text in pages_from_source(path, source.get("pages"), metadata):
+        processed_units+=1
+        if page_number is not None:processed_pages.add(page_number)
+        if text is None:
+            warnings.append({"source_id": source_id, "pdf_page": page_number, "status": "needs_ocr_or_review", "category": "parse_error", "reason": "该页文本层读取失败；需重新解析或人工检查，尚未做 OCR。"})
             continue
+        text = clean_text(text)
+        count = len(re.sub(r"\s", "", text))
+        if count < 35:
+            warnings.append({"source_id": source_id, "pdf_page": page_number, "status": "needs_ocr_or_review", "category": "blank_or_short", "text_characters": count, "reason": "提取文字为空或过短；可能是封面/空白页，也可能为扫描内容，需查看原页，不能据此断言已识别。"})
+            continue
+        if text.count("�") > max(1, len(text) // 200):
+            warnings.append({"source_id": source_id, "pdf_page": page_number, "status": "needs_ocr_or_review", "category": "unreadable_text", "text_characters": count, "reason": "文本含过多异常字符，未生成回答片段；公式或编码需人工检查，尚未做 OCR。"})
+            continue
+        indexed_units+=1
+        if page_number is not None:indexed_pages.add(page_number)
         for number, piece in enumerate(chunk_text(text, size, overlap), 1):
             digest = hashlib.sha256((revision + str(page_number) + str(piece["char_start"]) + piece["text"]).encode()).hexdigest()[:14]
             locator = f"PDF 第 {page_number} 页" if page_number else f"段落片段 {number}，字符 {piece['char_start']}–{piece['char_end']}"
             node_ids = list(dict.fromkeys(source.get("page_nodes", {}).get(str(page_number), source.get("node_ids", []))))
             result.append({"id": f"D-{source_id}-{digest}", "label": source.get("title") or path.name, "text": piece["text"], "source_id": source_id, "pdf_page": page_number, "printed_page": page_number - int(source["printed_page_offset"]) if page_number and "printed_page_offset" in source else None, "locator": locator, "node_id": node_ids[0] if node_ids else None, "node_ids": node_ids, "formula": "", "conditions": source.get("conditions") or "以下为原文片段；适用条件、单位及公式需结合原页和人工核查，不能据此补造结论。", "evidence_type": "source_excerpt", "verification_status": "source_text_unreviewed", "source_revision": revision, "char_start": piece["char_start"], "char_end": piece["char_end"], "offset_basis": "normalized_page_text", "all_references": [{"source_id": source_id, "pdf_page": page_number, "locator": locator}]})
+    if report is not None:
+        total, selected = metadata.get('total_pages'), metadata.get('selected_pages')
+        report.update({'source_id':source_id,'title':source.get('title') or path.name,'type':path.suffix.lower(),'source_revision':revision,'total_pages':total,'selected_pages':selected,'processed_pages':len(processed_pages),'indexed_pages':len(indexed_pages),'chunks':len(result),'processed_units':processed_units,'indexed_units':indexed_units,'failed_or_needs_ocr_pages':len(warnings),'blank_or_short_pages':sum(w.get('category')=='blank_or_short' for w in warnings),'unreadable_pages':sum(w.get('category') in {'unreadable_text','parse_error'} for w in warnings),'coverage_ratio':round(len(indexed_pages)/total,6) if total else None,'selected_success_ratio':round(len(indexed_pages)/selected,6) if selected else None,'full_document_selected':source.get('pages') is None})
     return result, warnings
 
 
 def build_index(manifest, output=DEFAULT_OUTPUT, size=1100, overlap=160):
     manifest = Path(manifest)
     specification = json.loads(manifest.read_text(encoding="utf-8-sig"))
-    chunks, warnings, seen = [], [], set()
+    chunks, warnings, seen, source_reports = [], [], set(), []
     for source in specification["sources"]:
         if source.get("id") in seen:
             raise ValueError("同一入库清单包含重复来源编号。")
         seen.add(source.get("id"))
-        values, issues = ingest_source(source, manifest.parent, size, overlap)
+        source_report={}
+        values, issues = ingest_source(source, manifest.parent, size, overlap, source_report)
         chunks.extend(values)
         warnings.extend(issues)
+        source_reports.append(source_report)
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     # An interrupted refresh must not corrupt the previously usable index.
-    report = {"sources": len(seen), "chunks": len(chunks), "warnings": warnings, "needs_ocr_pages": len(warnings), "source_revisions": sorted({chunk["source_revision"] for chunk in chunks}), "retrieval": "BM25 + 人工核实的课程图谱；未训练、未调用付费模型。"}
+    counts={field:sum(source.get(field) or 0 for source in source_reports) for field in ['total_pages','selected_pages','processed_pages','indexed_pages','failed_or_needs_ocr_pages','blank_or_short_pages','unreadable_pages','processed_units','indexed_units']}
+    counts['coverage_ratio']=round(counts['indexed_pages']/counts['total_pages'],6) if counts['total_pages'] else None
+    counts['selected_success_ratio']=round(counts['indexed_pages']/counts['selected_pages'],6) if counts['selected_pages'] else None
+    report = {"sources": len(seen), "chunks": len(chunks), "warnings": warnings, "needs_ocr_pages": len(warnings), "source_coverage":source_reports,'coverage':counts, "source_revisions": sorted({chunk["source_revision"] for chunk in chunks}), "retrieval": "BM25 + 人工核实的课程图谱；未训练、未调用付费模型。"}
     with tempfile.NamedTemporaryFile(dir=output.parent, delete=False) as handle:
         temporary = Path(handle.name)
     try:
@@ -135,7 +173,7 @@ def build_index(manifest, output=DEFAULT_OUTPUT, size=1100, overlap=160):
         temporary.replace(output)
     finally:
         temporary.unlink(missing_ok=True)
-    report["index_revision"] = hashlib.sha256(output.read_bytes()).hexdigest()
+    report["index_revision"] = file_revision(output)
     output.with_suffix(".report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     return report
 

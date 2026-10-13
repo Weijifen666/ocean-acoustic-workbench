@@ -11,7 +11,7 @@ async function key(secret){return crypto.subtle.importKey('raw',await crypto.sub
 async function encrypt(data,secret){const iv=crypto.getRandomValues(new Uint8Array(12));const out=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(secret),encoder.encode(JSON.stringify(data))));return base64(new Uint8Array([...iv,...out]))}
 async function decrypt(data,secret){const b=bytes64(data);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},await key(secret),b.slice(12))))}
 const db=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run(),all:async(sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results});
-const offline=()=>({version:'0.4.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
+const offline=()=>({version:'0.5.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
 const coursePages=new Set(GRAPH.nodes.flatMap(n=>(n.images||[]).map(i=>i.url)).filter(u=>/^\/api\/source\/S\d{2}\/page\/\d+$/.test(u)));
 function graphPath(source,target){
  const ids=new Set(GRAPH.nodes.map(n=>n.id));if(!ids.has(source)||!ids.has(target))return null;

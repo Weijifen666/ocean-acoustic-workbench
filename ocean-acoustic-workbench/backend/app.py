@@ -6,9 +6,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import httpx
-import knowledge, models
+import knowledge, models, science
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=ROOT/'.local';LOCAL.mkdir(exist_ok=True)
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -34,6 +34,7 @@ def run_dir(id):
 Q=queue.Queue();PROCESSES={};PAUSED=False;STATELOCK=threading.RLock();PDFLOCK=threading.Lock()
 
 class Plan(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True)
     frequencies_hz:list[float]=Field(default=[50],min_length=1,max_length=4)
     source_depths_m:list[float]=Field(default=[1000],min_length=1,max_length=3)
     receiver_depth_m:float=Field(default=1000,gt=0,lt=5000)
@@ -57,11 +58,13 @@ class Plan(BaseModel):
         if self.template!='munk_5000m':raise HTTPException(422,'首版仅支持已接入的 Munk 模板')
         if len(self.frequencies_hz)*len(self.source_depths_m)>12:raise HTTPException(422,'单批最多12组')
 
-def plot_result(folder):
+def plot_result(folder,plan):
     import matplotlib;matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import numpy as np
     data=json.loads((folder/'result.json').read_text(encoding='utf-8-sig'))
+    validation=science.validate_result(data,plan)
+    analysis=science.analyze_result(data,plan)
     x=np.asarray(data['ranges_m'])/1000;z=np.asarray(data['depths_m']);tl=np.asarray(data['tl_db'],dtype=float)
     if tl.shape!=(len(z),len(x)) or not np.isfinite(tl).any():raise ValueError('结果维度或有效值校验失败')
     fig,ax=plt.subplots(figsize=(10,5),facecolor='#f6fafb');fig.subplots_adjust(left=.09,right=.95,bottom=.14,top=.9)
@@ -69,7 +72,9 @@ def plot_result(folder):
     fig.colorbar(im,ax=ax,label='TL (dB)');fig.savefig(folder/'tl_map.png',dpi=150);plt.close(fig)
     fig,ax=plt.subplots(figsize=(10,3.5),facecolor='#f6fafb');ax.plot(x,data['curve_tl_db'],color='#07828c',lw=1.2);ax.set(xlabel='Range (km)',ylabel='TL (dB)',title=f"Receiver depth {data['actual_receiver_depth_m']:g} m");ax.grid(alpha=.16);fig.tight_layout();fig.savefig(folder/'tl_curve.png',dpi=150);plt.close(fig)
     data['tl_min_db']=float(np.nanmin(tl));data['tl_max_db']=float(np.nanmax(tl));data['tl_median_db']=float(np.nanmedian(tl));data['created']=stamp()
+    data['validation']=validation;data['analysis']=analysis
     (folder/'summary.json').write_text(json.dumps({k:v for k,v in data.items() if k not in ['tl_db','ranges_m','depths_m','curve_tl_db']},ensure_ascii=False,indent=2),encoding='utf-8')
+    science.write_manifest(folder.name,plan,folder,validation,analysis,finished_at=data['created'])
 
 def worker():
     while True:
@@ -100,7 +105,7 @@ def worker():
             if job(id)['state']=='CANCELLED':continue
             if code!=0:raise RuntimeError('MATLAB 运行失败，退出码 '+str(code)+'；请查看日志')
             if not (folder/'result.json').exists():raise RuntimeError('缺少本次 result.json')
-            plot_result(folder)
+            plot_result(folder,plan)
             with STATELOCK:
                 if job(id)['state']!='CANCELLED':update(id,'SUCCEEDED')
         except Exception as exc:
@@ -125,10 +130,17 @@ async def local_guard(request:Request,call_next):
 @app.get('/api/health')
 def health():
     cfg=config();t=Path(cfg.get('toolbox_path','.'))
-    return {'version':'0.2.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
+    return {'version':'0.4.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
 @app.get('/api/config')
 def get_config():
-    cfg=config();cfg['api_key_set']=bool(cfg.pop('api_key',''));return cfg
+    cfg=config();cfg['api_key_set']=bool(cfg.pop('api_key',''));cfg.update(public_mode=False,storage='local_private');return cfg
+@app.post('/api/session/clear-keys')
+def clear_model_keys():
+    cfg=config();cfg['api_key']='';CONFIG.write_text(json.dumps(cfg,ensure_ascii=False,indent=2),encoding='utf-8')
+    saved=models.profiles(config)
+    for entry in saved.values():entry['api_key']=''
+    (LOCAL/'model-profiles.json').write_text(json.dumps(saved,ensure_ascii=False,indent=2),encoding='utf-8')
+    return {'cleared':True,**get_config()}
 @app.put('/api/config')
 async def save_config(request:Request):
     data=await request.json();cfg=config()
@@ -202,6 +214,10 @@ def knowledge_code(node:str,reference:int):
     return Response(content='来源：'+ref['locator']+'\n\n'+content,media_type='text/plain; charset=utf-8')
 @app.get('/api/knowledge/search')
 def search(q:str=''):return knowledge.retrieve(q)
+@app.get('/api/knowledge/status')
+def knowledge_status():return knowledge.retrieval_status()
+@app.get('/api/exercises')
+def exercises():return json.loads((ROOT/'backend/data/exercises.json').read_text(encoding='utf-8'))
 @app.post('/api/plans/preview')
 def preview(plan:Plan):
     plan.checked();return {'plan':plan.model_dump(),'case_count':len(plan.frequencies_hz)*len(plan.source_depths_m),'warnings':['Munk 5000 m 示例环境，不代表指定真实海域','接收深度使用最近网格点，结果显示实际深度','相干简正波计算；固定 TL 色标 40–110 dB'],'cases':[{'frequency_hz':f,'source_depth_m':z} for f in plan.frequencies_hz for z in plan.source_depths_m]}
@@ -277,7 +293,8 @@ async def chat(body:Chat):
         if body.mode=='agent':reply='Agent 当前接入文件列表与读取工具。云端项目分析需要 API Key；自动修改代码尚未实现。项目面板和模板仿真可直接使用。\n\n'+reply
         used=False
     else:
-        msgs=[{'role':'system','content':'你是海洋声学助手。依据所附知识卡及 related_triples 图谱关系回答并引用编号；hierarchy 是课程分类，prerequisite 是建议阅读顺序，不能当作物理因果。明确假设与缺失条件。数字不得编造。当前阶段仅允许检索知识与读取项目；不能宣称运行或修改过代码。'+json.dumps(evidence,ensure_ascii=False)}]
+        models.validate_endpoint(cfg['provider'],cfg['base_url'])
+        msgs=[{'role':'system','content':'你是海洋声学助手。明确假设与缺失条件，数字不得编造。当前仅允许检索知识与读取项目，不能宣称运行或修改过代码。'+knowledge.answer_context(evidence)}]
         for m in history(body.session)[-12:]:msgs.append({'role':m['role'],'content':m['text']})
         tools=[{'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},{'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}] if body.mode=='agent' else []
         try:
@@ -298,7 +315,7 @@ async def chat(body:Chat):
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
-    return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
+    return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status()}
 
 if (ROOT/'dist').exists():app.mount('/',StaticFiles(directory=ROOT/'dist',html=True),name='frontend')
 if __name__=='__main__':

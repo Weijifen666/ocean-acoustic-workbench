@@ -1,58 +1,75 @@
-# 海洋声学工作台 · 本地 v0.2
+# 海洋声学工作台 · v0.4
 
-本初版使用课程资料包中的知识卡、教材、AT 工具包和 Munk 示例。前端为 React，后台为 FastAPI，实际计算由本机 MATLAB R2024a 调用 AT 的 KRAKEN / FIELD 完成。
+用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。React 网页、FastAPI 计算节点与云端 Worker 分工运行；实际仿真由获授权的 MATLAB R2024a 调用 AT KRAKEN / FIELD 完成。项目原创代码采用 MIT 许可证，外部教材、AT 与 MATLAB 保留各自权利和许可。
 
-## 启动与使用
+公开网页：[海洋声学工作台](https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site/)。云端页面、课程图谱、课程卡检索与模型连接不依赖维护者电脑；MATLAB 仿真和私有原文索引需要计算节点在线。
 
-在这台电脑上双击 `启动工作台.cmd`，打开 **http://127.0.0.1:8765/**。也可以在 PowerShell 执行 `./start.ps1 -NoBrowser`。启动器会复用正在运行的服务。后台日志位于 `.local/server.stderr.log`。
+## 界面与使用
 
-1. **知识图谱**：参考智慧树 / 知到公开知识图谱手册的课程总览、章节目录、局部与全局切换、节点详情交互。六个课程单元包含 46 个知识点；全图 53 个节点、126 条关系，其中课程层级 52 条、建议阅读顺序 24 条、概念关联 50 条。点击节点查看讲解、公式、适用条件、易错点、示意图、原始教材页和源文件；支持跨单元跳转、路径查找、三种布局、缩放、全屏、浅色切换、搜索、收藏与已读标记。阅读进度只记录用户操作，不表示掌握程度。学习地图提供入门、实践、进阶三条建议路径。十张原理图均注明示意性质，其中 Munk 剖面曲线来自教师 ENV 的离散输入。
-2. **声场仿真**：填写频率、声源深度、接收深度、距离和网格，点击“检查并生成计划”，核对组合后点击“确认并运行 MATLAB”。任务串行执行，完成后在“任务与结果”查看声场图、接收深度曲线、日志和文件，或下载完整结果包。
-3. **项目文件**：浏览当前授权目录下的 `.m`、`.env`、`.flp` 等文本文件。环境配置可切换项目目录；读取限制在该目录内。
-4. **对话工作台**：未配置密钥时显示人工整理的课程知识卡；配置密钥后通过云端模型 API 生成回答。检索明确知识点时，优先提供该节点及直接关联节点，并把带类型的图谱三元组加入模型上下文。当前使用关键词与别名检索，未接入向量检索。节点“就此知识提问”会把问题带入对话输入框。Agent 模式提供列出项目文件和读取文件的工具。
-5. **环境配置**：登记 DeepSeek 官方、阿里云百炼北京、月之暗面 Kimi 官方、智谱 BigModel 官方四家供应商的 16 项具体模型预设。显示开发方、供应商、模型名称、API 标识、端点、官方文档和核对日期。可查询账户 /models、手动测试当前模型、填写其他模型标识。文档核对不代表账户已开通；连接测试会发起一次短请求，可能消耗少量 Token。按供应商保存连接配置，切换时不混用密钥。密钥保存在 `.local/config.json` 与 `.local/model-profiles.json`，配置读取接口只返回是否已保存，不返回完整密钥。
+v0.4 参考 JupyterLab / VS Code 的紧凑科研工作区，使用课程目录、图谱画布、知识详情、参数表单和任务结果视图。设计来源、直接复用代码及许可见[设计与复用说明](../docs/DESIGN_AND_REUSE.md)。
 
-## AT 已导入的位置
+- **知识图谱**：6 个课程单元、46 个知识点，53 个节点和 126 条有类型的关系。直接点击查看概念、公式、适用条件、图片和引用，无需调用大模型。课程层级、建议阅读顺序与概念关联分别展示，关系连接不等于物理因果。收藏和已读标记只表示浏览器中的操作记录。
+- **知识库与对话**：课程卡、术语别名、有类型的一跳关联与来源引用共同提供上下文。节点在线时额外检索授权原文片段；未配置 API Key 时只显示检索证据，配置后才调用用户选择的模型。未知问题不以相关背景冒充直接证据。
+- **课程命题与仿真**：12 道命题包含 9 道可填参数预设和 3 道缺参、工具边界或数值解释题。先填入参数、预览组合，再确认运行；完成后查看声场图、接收曲线、实际网格、验证记录与文件哈希，并下载结果包。
+- **项目阅读**：本地管理员可浏览授权目录内的文本项目；公共 Agent 只分析课程共享模板。自动修改 MATLAB 代码、自由执行命令和读取访客设备文件尚未实现。
+- **模型设置**：提供 DeepSeek 官方、阿里云百炼、Moonshot Kimi、智谱 GLM 的 16 个模型预设，并显示具体供应商、名称、API 标识和端点。账户模型列表与短连接测试均需自己的有效 API Key；测试可能产生供应商调用费用。预设与文档登记不代表账户已开通或已经完成真实调用验证。
 
-完整 AT 工具包已解压到 `<当前用户 Documents>/MATLAB/AcousticsToolbox/at`。`Documents/MATLAB/startup.m` 中增加了独立标记的路径注册块，保留原有内容。MATLAB 启动时注册根目录、`bin`、`ReadWrite`、`Plot` 和 `Misc`，并优先使用该版本。这是 MATLAB 搜索路径方式的安装，可直接调用函数；AT 并非 `.mltbx` 安装包。
+## 知识入库的实际范围
 
-已在新 MATLAB 进程中验证 `which kraken`、`which bellhop`、`which read_shd`、`which kraken.exe` 均指向该目录。工具包所有文件已保留，其他子目录可在具体使用时单独加到路径。
+v0.4 节点已从 3 份课程来源的 38 个引用页生成 90 个私有片段，与 46 个经整理的课程知识点关联。节点采用 BM25、双语别名、原文词项排序和概念优先权重；分块保留来源、PDF 实际页、字符位置和原文件 SHA-256。云端独立检索公开课程卡，节点离线时明确回退到课程卡，不宣称访问了私有原文。
 
-## 真实计算流程与范围
+导入器支持 PDF、DOCX、UTF-8 TXT 和 Markdown。原文索引放在 `.local/kb/chunks.sqlite3`，不提交 GitHub。此次仅索引选定引用页，未完成整个资料包的全文 OCR；扫描或异常文本页会报告待处理。当前没有向量检索、自动物理关系抽取或模型训练。详见[私有知识入库](../docs/KNOWLEDGE_IMPORT.md)和[检索技术说明](../docs/KNOWLEDGE_AND_RETRIEVAL.md)。
 
-网页参数 → 后台校验和任务目录 → `case.json` → 固定 MATLAB 入口 `backend/matlab/run_ocean_case.m` → 生成成对 ENV / FLP → 读取 ENV 检查频率和源深 → KRAKEN / FIELD → 本次 SHD 复声压 → TL 和曲线 → PNG、CSV、JSON。
+## 本地启动与环境
 
-首版支持 Munk 距离无关深海模板，水深 5000 m；频率 10–200 Hz，源深和接收深度严格位于水面与海底之间，距离 0.1–100 km，每批最多 12 组。接收深度采用最近网格点，结果保留请求值与实际值。海面近零声压不纳入有效 TL 统计。TL 按 AT FIELD 归一化声压计算，`TL = -20 log10 |p|`；图中使用固定 40–110 dB 色标，便于比较。
+在已经配置好本机依赖与资源的电脑上，双击 `启动工作台.cmd` 打开 `http://127.0.0.1:8765/`，或执行 `./start.ps1 -NoBrowser`。启动器会复用正在运行的服务；后台日志为 `.local/server.stderr.log`。
 
-这是教师示例环境的数值计算，不代表指定真实海域；尚未加入实际观测校准。仿真只运行固定入口，不执行大模型任意生成的代码。每次计算使用独立目录，后台重启时未结束任务会标记为失败，需重新提交。暂停领取不终止当前运行任务；取消会终止该任务的 MATLAB 子进程树。
-
-## 首版边界
-
-- 46 个知识点为人工整理，出处定位到教材 PDF 页或本项目 / AT 代码。20 份资料已登记，尚未宣称所有资料均已全文 OCR 与入库。全文 OCR、向量检索和自动图谱抽取仍待接入。
-- 模型配置和工具调用接口已写好，但没有用户 API Key，未验证真实云端模型回复。
-- Agent 当前提供项目读取。自动修改代码、差异审阅、自动修复和自由仿真编排尚未实现。
-- MATLAB 在这台电脑运行，需要已有许可。当前服务仅监听回环地址；跨电脑在线访问、云端 MATLAB 和公网部署尚未开展。
-
-## 开发与迁移
-
-当前机器使用已安装的 Node.js，以及独立目录中的 Python 依赖。启动器读取 `.local/runtime.json`，不修改系统 Python。换电脑时请安装 Python、Node.js、获授权的 MATLAB，并在项目中建立环境：
+换电脑需要 Python 3.12+、Node.js 22.13+、获授权的 MATLAB、AT 与自己有权使用的课程资料。原始资料和安装包不随公开源码分发。
 
 ```powershell
 python -m venv .venv
 ./.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
 npm.cmd ci
 npm.cmd run build
-./.venv/Scripts/python.exe backend/bootstrap.py "资料包路径/大作业资料包.zip"
+./.venv/Scripts/python.exe backend/bootstrap.py "你的资料包路径.zip"
+./start.ps1
 ```
 
-在环境配置中更新 MATLAB 和 AT 路径。开发时分别运行 `backend/app.py` 和 `npm.cmd run dev`。API 文档在 `/api/docs`。本机私有资源、数据库、运行结果与密钥位于 `.local`，不应作为公开源代码上传。
+在环境设置中填写 MATLAB 可执行文件、AT 与授权项目目录，再检查环境。开发时分别运行 `backend/app.py` 和 `npm.cmd run dev`；本地 API 文档在 `/api/docs`。当前机器的启动器读取 `.local/runtime.json`，不修改系统 Python。
 
-本地集成检查：`python tests/check_local.py`，需要服务已经启动及至少一组成功计算结果，结果维度按本次计划校验。`python tests/check_references.py` 检查全部教材页、代码来源和示意图；`python tests/test_models.py` 使用离线模拟响应检查供应商密钥隔离、参数与错误提示，不产生模型调用费用。实际核验记录见 `VALIDATION.md`，界面与模型来源见 `REFERENCE_DESIGN.md`。
+AT 使用 MATLAB 搜索路径方式接入，不是 `.mltbx` 安装包。安装脚本将资源导入当前用户 `Documents/MATLAB/AcousticsToolbox/at`，为 `startup.m` 登记根目录、`bin`、`ReadWrite`、`Plot` 和 `Misc` 并保留备份。既有节点已验证相关函数位置；迁移后须重新检查自己的环境。
 
-## 公网计算节点（v0.3）
+## 真实计算与结果边界
 
-公开网站已发布到 https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site 。运行 `启动公网计算节点.cmd` 或 `start-public.ps1 -NoBrowser` 会同时启动本机服务、仅接收受限请求的访客网关，以及主动连接云端的 HTTPS 程序。访客无需安装 MATLAB；计算节点需要联网且不休眠。此启动器不会改变系统电源设置。
+网页参数 → 严格 Plan 校验 → 独立任务目录 → 数值 `case.json` → 固定入口 `backend/matlab/run_ocean_case.m` → ENV / FLP → 读取 ENV 核对输入 → KRAKEN / FIELD → SHD 复声压 → TL、曲线与数值验证 → PNG、CSV、JSON 和 `manifest.json`。
 
-图谱、关联查询、模型目录和 38 张教材原页片段由云端直接提供。模型问答和 MATLAB 仿真使用计算节点；用户模型密钥、对话及任务按访客 Cookie 隔离。模型密钥仅保留在节点内存中，重启后需重新填写。网站不会读取访客设备上的 MATLAB 项目，公共 Agent 只阅读课程共享模板。完整公网源代码在相邻 `ocean-acoustic-public` 目录。
+当前只支持 5000 m Munk 距离无关模板、10–200 Hz、位于水面与海底之间的源/接收深度、0.1–100 km 距离。公网单批最多 4 组；本地管理端单批最多 12 组。频率和源深扫参去重，未知字段、非有限数值与越界输入被拒绝。接收深度使用最近网格点，并同时记录请求值、实际值和偏差。
 
-公网连接密钥保存在未入库的 `.local/public-runtime.json`，并作为云端运行时 secret 管理；源码包不包含该密钥。已有机器可直接使用上述启动器，迁移计算节点时需由网站维护者重新配置连接密钥和 MATLAB 授权环境。
+TL 使用 FIELD 归一化压力计算 `TL = -20 log10 |p|`，近零声压对应样本被屏蔽；固定 40–110 dB 色标用于展示。结果检查坐标排序、范围、采样点数、矩阵轴顺序、真实频率/源深、接收曲线对应行和有效比例。manifest 记录输入、脚本及产物哈希；未报告的 KRAKEN/FIELD 版本保留为未知。
+
+数值卡来自本次结果，不预测或捏造 TL。相干曲线不要求随距离单调增加；不同取样条件的中位数不能用于“最佳海域”排名。这些检查不证明数值收敛，也不替代真实海域观测、校准或实验验证。仿真只执行固定入口，不执行模型任意生成的代码。任务支持排队、日志、超时和取消；后台重启中断的任务需重新提交。
+
+## 公网部署与密钥存储
+
+运行 `启动公网计算节点.cmd` 或 `start-public.ps1 -NoBrowser`，启动本地服务、回环地址上的受限访客网关与主动发起 HTTPS 请求的云端连接程序。无需开放本机公网入站端口，也不依赖临时隧道；节点必须联网且不休眠。完整网页与云端源码在相邻 `ocean-acoustic-public` 目录，部署配置见[部署说明](../docs/DEPLOYMENT.md)。
+
+公网模型请求由云端 Worker 直接发送至供应商。模型配置、API Key 与对话按访客加密保存于 D1，节点重启不会清除这些云端配置；提供清除全部模型密钥入口。匿名访客空间绑定浏览器 Cookie，清除 Cookie 或更换设备会建立新空间，当前没有账号登录和跨设备历史同步。
+
+图谱、模型目录与课程卡在云端提供；已提供的教材页图片可缓存至 R2。节点离线时 MATLAB 与私有原文索引不可用，云端图谱、课程卡与已配置模型问答仍可使用。
+
+本地管理员的模型密钥仍保存在 `.local/config.json` 与 `.local/model-profiles.json`，并不会自动变成公共访客的密钥。连接密钥在 `.local/public-runtime.json`，同时作为云端运行时 Secret；本地资料、密钥、数据库、原文索引和求解产物均不上传 Git。
+
+## 验证
+
+v0.4 完成 51 项离线检查与一次新的公网真实 MATLAB 任务，验证记录见 [VALIDATION_V0_4.md](../docs/VALIDATION_V0_4.md)。真实模型供应商付费调用未测试；离线模拟响应不能代替模型账户权限、额度与生成质量验证。
+
+```powershell
+./.venv/Scripts/python.exe tests/test_knowledge.py
+./.venv/Scripts/python.exe tests/test_science.py
+./.venv/Scripts/python.exe tests/test_models.py
+./.venv/Scripts/python.exe tests/test_plans.py
+# 云端逻辑离线测试：在相邻 ocean-acoustic-public 目录运行 npm.cmd test
+# 以下检查需要本地服务、课程资料和已有成功计算结果：
+./.venv/Scripts/python.exe tests/check_local.py
+./.venv/Scripts/python.exe tests/check_references.py
+```

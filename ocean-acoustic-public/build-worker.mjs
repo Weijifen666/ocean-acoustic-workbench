@@ -1,8 +1,10 @@
-import fs from 'node:fs';import path from 'node:path';import {build} from 'vite';
+import fs from 'node:fs';import path from 'node:path';import {build} from 'vite';import {build as bundle} from 'esbuild';
 await build();
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon'};
 const files={};function walk(dir){for(const name of fs.readdirSync(dir)){const full=path.join(dir,name);if(fs.statSync(full).isDirectory())walk(full);else{files['/'+path.relative('dist',full).replaceAll('\\','/')]={type:mime[path.extname(full)]||'application/octet-stream',data:fs.readFileSync(full).toString('base64')}}}}walk('dist');
 const graph=JSON.parse(fs.readFileSync('data/graph.json','utf8')),models=JSON.parse(fs.readFileSync('data/models.json','utf8')),sources=JSON.parse(fs.readFileSync('data/sources.json','utf8'));
 fs.mkdirSync('dist/server',{recursive:true});
-fs.writeFileSync('dist/server/index.js',fs.readFileSync('worker.mjs','utf8').replace("import {FILES,GRAPH,MODELS,SOURCES} from './generated-assets.mjs';",`const FILES=${JSON.stringify(files)};const GRAPH=${JSON.stringify(graph)};const MODELS=${JSON.stringify(models)};const SOURCES=${JSON.stringify(sources)};`));
+const template=fs.readFileSync('data/public_template.m','utf8'),exercises=JSON.parse(fs.readFileSync('data/exercises.json','utf8'));
+const generated=`export const FILES=${JSON.stringify(files)};export const GRAPH=${JSON.stringify(graph)};export const MODELS=${JSON.stringify(models)};export const SOURCES=${JSON.stringify(sources)};export const TEMPLATE=${JSON.stringify(template)};export const EXERCISES=${JSON.stringify(exercises)};`;
+await bundle({entryPoints:['worker.mjs'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/server/index.js',plugins:[{name:'inline-public-assets',setup(builder){builder.onResolve({filter:/generated-assets\.mjs$/},()=>({path:'generated-assets',namespace:'course-assets'}));builder.onLoad({filter:/.*/,namespace:'course-assets'},()=>({contents:generated,loader:'js'}))}}]});
 console.log('Cloud worker built:',Object.keys(files).length,'assets,',fs.statSync('dist/server/index.js').size,'bytes');

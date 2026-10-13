@@ -22,7 +22,9 @@ async def protect(request,call_next):
  visitor=request.cookies.get('ocean_visitor','');fresh=False
  with connect() as db:
   row=db.execute('SELECT seen FROM visitors WHERE id=?',(visitor,)).fetchone()
-  if not row or time.time()-row['seen']>30*86400:visitor=secrets.token_urlsafe(32);fresh=True;db.execute('INSERT INTO visitors VALUES(?,?)',(visitor,time.time()))
+  if not row or time.time()-row['seen']>30*86400:
+   if not re.fullmatch(r'[A-Za-z0-9_-]{40,86}',visitor):visitor=secrets.token_urlsafe(32);fresh=True
+   db.execute('INSERT INTO visitors VALUES(?,?) ON CONFLICT(id) DO UPDATE SET seen=excluded.seen',(visitor,time.time()))
   else:db.execute('UPDATE visitors SET seen=? WHERE id=?',(time.time(),visitor))
  request.state.visitor=visitor
  ip=request.headers.get('x-ocean-client-ip','unknown');now=time.time();stamp=limits.setdefault(ip,[]);stamp[:]=[x for x in stamp if now-x<60]
@@ -99,7 +101,7 @@ async def chat(request:Request):
  if not cfg.get('api_key'):
   reply='未配置你的模型 API Key。以下为课程知识卡检索：\n\n'+'\n\n'.join(f"[{c['id']}] {c['label']}\n{c['text']}\n公式：{c['formula'] or '见知识详情'}\n来源：{c['source_id']} {c['locator']}" for c in evidence) if evidence else '当前课程知识卡没有匹配内容，请尝试更具体的声学术语。'
  else:
-  messages=[{'role':'system','content':'你是海洋声学课程助手。依据知识卡和图谱关系回答，引用编号，说明假设。课程层级与建议顺序不表示因果。当前不允许修改代码或宣称已经执行仿真。'+json.dumps(evidence,ensure_ascii=False)}]+[{'role':m['role'],'content':m['text']} for m in chat_history(request)[-10:]]+[{'role':'user','content':message}]
+  messages=[{'role':'system','content':'你是海洋声学课程助手。当前不允许修改代码或宣称执行仿真。'+knowledge.answer_context(evidence)}]+[{'role':m['role'],'content':m['text']} for m in chat_history(request)[-10:]]+[{'role':'user','content':message}]
   if body.get('mode')=='agent':messages[0]['content']+='\n课程公开模板：'+template_content('run_ocean_case.m')[:18000]
   models.validate_endpoint(cfg['provider'],cfg['base_url'])
   try:
@@ -109,10 +111,13 @@ async def chat(request:Request):
   except (KeyError,ValueError):raise HTTPException(502,'模型响应格式不兼容')
  with connect() as db:
   db.execute('INSERT INTO visitor_messages(visitor,role,text) VALUES(?,?,?)',(visitor,'user',message));db.execute('INSERT INTO visitor_messages(visitor,role,text) VALUES(?,?,?)',(visitor,'assistant',reply))
- return {'reply':reply,'model_used':bool(cfg.get('api_key')),'evidence_ids':[c['id'] for c in evidence]}
+ return {'reply':reply,'model_used':bool(cfg.get('api_key')),'evidence_ids':[c['id'] for c in evidence],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status()}
 @app.post('/api/jobs')
 async def submit(request:Request):
  visitor=request.state.visitor;body=await request.json()
+ async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)
+ if validation.status_code!=200:return Response(validation.content,status_code=validation.status_code,media_type='application/json')
+ body=validation.json()['plan']
  count=len(body.get('frequencies_hz',[50]))*len(body.get('source_depths_m',[1000]))
  if count>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
  async with submit_lock:
@@ -142,10 +147,13 @@ async def own_job(id:str,request:Request,rest:str=''):
  return await upstream(request)
 @app.api_route('/api/{path:path}',methods=['GET','POST','PUT'])
 async def readonly(path:str,request:Request):
- permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
+ permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search','knowledge/status','exercises'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
  if request.method=='GET' and re.fullmatch(r'source/S\d{2}',path):raise HTTPException(403,'公开版提供教材原页片段，完整资料请使用课程资料包')
  if request.method=='POST' and path=='plans/preview':
   body=await request.json()
+  async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)
+  if validation.status_code!=200:return Response(validation.content,status_code=validation.status_code,media_type='application/json')
+  body=validation.json()['plan']
   if len(body.get('frequencies_hz',[50]))*len(body.get('source_depths_m',[1000]))>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
   permitted=True
  if not permitted:raise HTTPException(403,'公开访客不能操作本地管理接口')

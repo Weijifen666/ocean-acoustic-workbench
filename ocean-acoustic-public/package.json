@@ -1,11 +1,12 @@
 {
   "name": "ocean-acoustic-public",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "node build-worker.mjs"
+    "build": "node build-worker.mjs",
+    "test": "node --test tests/cloud.test.mjs"
   },
   "dependencies": {
     "cytoscape": "^3.33.1",
@@ -16,6 +17,10 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
     "vite": "^7.1.0"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }

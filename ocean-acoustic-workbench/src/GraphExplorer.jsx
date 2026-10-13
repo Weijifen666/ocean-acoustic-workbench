@@ -733,6 +733,7 @@ export default function GraphExplorer({
                 status={knowledgeStatus}
                 cards={knowledge.length}
               />
+              <PublicOceanResources status={knowledgeStatus?.public_ocean} />
               <div className="map-heading">
                 <div>
                   <h2>学习资料与知识关联</h2>
@@ -1075,6 +1076,23 @@ function KnowledgeIndexStatus({ status, cards }) {
       </p>
     </div>
   );
+}
+function PublicOceanResources({ status }) {
+  const rows = Array.isArray(status?.web_sources) ? status.web_sources : [];
+  if (!rows.length) return null;
+  return <section className="public-ocean-resources" aria-label="公开海洋知识来源">
+    <h2>公开海洋知识</h2>
+    <p>{status.successful_web_documents || 0} 篇官方网页正文 · {status.reference_guides || 0} 条项目参考导读 · {status.chunks || 0} 个可检索片段。课程资料之外，也可直接查阅这些公开来源。</p>
+    <details>
+      <summary>查看 {rows.length} 个来源与更新时间</summary>
+      <div className="public-source-table"><table><thead><tr><th>资料与机构</th><th>接入方式</th><th>原页更新</th><th>抓取日期</th></tr></thead><tbody>{rows.map((source) => <tr key={source.id}>
+        <td><a href={source.url} target="_blank" rel="noreferrer">{source.title_zh || source.title}<ArrowUpRight size={12}/></a><small>{source.organization}</small><p>{source.guide_zh}</p></td>
+        <td>{source.content_policy === "metadata_only" ? "数据入口 · 尚未取数" : source.content_policy === "original_project_summary" ? "项目自写导读" : source.chunks ? "官方正文快照" : "正文未入库"}{source.stale && <small>快照待刷新</small>}<small title={source.license?.note}>{typeof source.license === "string" ? source.license : source.license?.name}</small></td>
+        <td>{source.source_updated_at || "原页未提供"}</td><td>{source.fetched_at ? source.fetched_at.slice(0, 10) : "尚未取得"}</td>
+      </tr>)}</tbody></table></div>
+    </details>
+    <p className="public-source-note">网页快照按清单定期检查并保留来源时间；访问日期不等于观测日期。动态数据入口尚未接通实时海况，不作为当前海温或海平面数值。中文标题与导读由本项目整理。</p>
+  </section>;
 }
 function ExternalLinkIcon() {
   return <ArrowUpRight size={12} />;

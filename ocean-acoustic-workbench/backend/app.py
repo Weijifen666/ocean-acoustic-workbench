@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Literal
 import httpx
-import knowledge, models, science, answer_policy
+import knowledge, models, science, answer_policy, context_budget, public_ocean
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=ROOT/'.local';LOCAL.mkdir(exist_ok=True)
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -121,6 +121,10 @@ def kill(id):
 threading.Thread(target=worker,daemon=True).start()
 app=FastAPI(title='海洋声学工作台',docs_url='/api/docs')
 
+@app.on_event('startup')
+def refresh_public_ocean_startup():
+    public_ocean.refresh_if_stale(ttl_hours=168,background=True)
+
 @app.middleware('http')
 async def local_guard(request:Request,call_next):
     host=request.headers.get('host','').split(':')[0]
@@ -132,7 +136,7 @@ async def local_guard(request:Request,call_next):
 @app.get('/api/health')
 def health():
     cfg=config();t=Path(cfg.get('toolbox_path','.'))
-    return {'version':'0.5.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
+    return {'version':'0.6.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
 @app.get('/api/config')
 def get_config():
     cfg=config();cfg['api_key_set']=bool(cfg.pop('api_key',''));cfg.update(public_mode=False,storage='local_private');return cfg
@@ -219,7 +223,11 @@ def knowledge_code(node:str,reference:int):
 @app.get('/api/knowledge/search')
 def search(q:str=''):return knowledge.retrieve(q)
 @app.get('/api/knowledge/status')
-def knowledge_status():return knowledge.retrieval_status()
+def knowledge_status():
+    public_ocean.refresh_if_stale(ttl_hours=168,background=True)
+    return knowledge.retrieval_status()
+@app.get('/api/knowledge/public-sources')
+def public_sources():return public_ocean.public_ocean_status()['web_sources']
 @app.get('/api/exercises')
 def exercises():return json.loads((ROOT/'backend/data/exercises.json').read_text(encoding='utf-8'))
 @app.post('/api/plans/preview')
@@ -287,6 +295,11 @@ class Chat(BaseModel):
     knowledge_mode:Literal['course','general']='course'
     provider:str|None=None
     model:str|None=Field(default=None,max_length=160)
+    context_budget:Literal['auto',4096,8192,16384,32768,65536,131072]='auto'
+    @field_validator('context_budget',mode='before')
+    @classmethod
+    def budget_choice(cls,value):
+        context_budget.resolve_budget(value);return value
 @app.get('/api/chat/history')
 def history(session:str='default'):
     with connect() as c:rows=c.execute('SELECT * FROM messages WHERE session=? ORDER BY id DESC LIMIT 40',(session,)).fetchall()
@@ -304,35 +317,42 @@ async def chat(body:Chat):
     if not entry:raise HTTPException(422,'未知供应商')
     saved=cfg if provider==cfg.get('provider') else models.profiles(config).get(provider,{})
     cfg={**cfg,**saved,'provider':provider,'base_url':saved.get('base_url') or entry['base_url'],'model':body.model or saved.get('model') or next(m['id'] for m in catalog['models'] if m['provider']==provider),'api_key':saved.get('api_key','')}
-    models.validate_endpoint(provider,cfg['base_url']);evidence=search(body.message);policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode);response_model=None
+    models.validate_endpoint(provider,cfg['base_url']);evidence=search(body.message);policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode);response_model=None;context_metadata=context_budget.inactive_context(body.context_budget)
+    previous_history=history(body.session)
     if not evidence and body.mode!='agent':answer_policy.note_gap(kbfile('knowledge-gaps.json'),body.message)
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
     if not cfg.get('api_key'):
-        reply=('尚未配置模型 API Key。以下为课程资料检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c.get('formula') else '')+f"\n适用条件：{c.get('conditions') or '原文片段需核查环境与单位。'}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语。'
+        reply=('尚未配置模型 API Key。以下为课程与公开资料检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c.get('formula') else '')+f"\n适用条件：{c.get('conditions') or '原文片段需核查环境与单位。'}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语。'
         if body.mode=='agent':reply='Agent 当前接入文件列表与读取工具。云端项目分析需要 API Key；自动修改代码尚未实现。项目面板和模板仿真可直接使用。\n\n'+reply
-        if body.knowledge_mode=='general':reply='模型一般知识需要先配置 API Key。当前仅提供课程资料检索。\n\n'+reply
+        if body.knowledge_mode=='general':reply='模型一般知识需要先配置 API Key。当前仅提供课程与公开资料检索。\n\n'+reply
         # Describe the answer actually produced, separately from the requested
         # knowledge mode. With no key neither pretrained generation nor agent
         # file analysis took place; only retrieved course evidence is shown.
-        policy={**policy,'knowledge_scope':'course','coverage_status':'course_evidence' if evidence else 'no_course_evidence','coverage_notice':'尚未配置模型 API Key；本次仅展示检索到的课程资料，未调用模型。' if evidence else '尚未配置模型 API Key，且未检索到课程依据；本次没有使用模型一般知识。'}
+        policy={**policy,'knowledge_scope':'course','coverage_status':'course_evidence' if evidence else 'no_course_evidence','coverage_notice':'尚未配置模型 API Key；本次仅展示检索到的资料，未调用模型。' if evidence else '尚未配置模型 API Key，且未检索到课程依据；本次没有使用模型一般知识。'}
         used=False
     elif not policy['can_generate']:
         reply=policy['coverage_notice']+'\n这条问题已加入你的待补资料记录。';used=False
     else:
         models.validate_endpoint(cfg['provider'],cfg['base_url'])
-        msgs=[{'role':'system','content':'你是海洋声学助手。明确假设与缺失条件，数字不得编造。当前仅允许检索知识与读取项目，不能宣称运行或修改过代码。'+policy['rule']+knowledge.answer_context(evidence)}]
-        for m in history(body.session)[-12:]:msgs.append({'role':m['role'],'content':m['text']})
         tools=[{'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},{'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}] if body.mode=='agent' else []
+        system='你是海洋声学助手。明确假设与缺失条件，数字不得编造。当前仅允许检索知识与读取项目，不能宣称运行或修改过代码。'+policy['rule']+knowledge.answer_context([])
+        try:packed=context_budget.build_context(question=body.message,system=system,evidence=evidence,history=previous_history,context_budget=body.context_budget,tools=tools)
+        except context_budget.ContextBudgetError as error:raise HTTPException(422,str(error)) from None
+        if body.knowledge_mode=='course' and body.mode!='agent' and not packed['evidence']:raise HTTPException(422,'检索到了课程资料，但所选预算无法保留必要依据，请调大上下文预算后重试；未调用模型。')
+        msgs=packed['messages'];evidence=packed['evidence'];context_metadata=packed['context']
+        policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode)
         provider_http_status=None
         try:
             async with httpx.AsyncClient(timeout=90) as client:
                 for turn in range(4):
+                    context_metadata['estimated_input_tokens']=context_budget.assert_messages_budget(msgs,body.context_budget,tools)
                     payload=models.chat_payload(cfg,msgs,tools)
+                    payload['max_tokens']=4096
                     r=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=payload)
                     if r.status_code!=200:
                         provider_http_status=r.status_code
                         raise RuntimeError('Model provider request rejected')
-                    payload_result=r.json();response_model=payload_result.get('model');result=payload_result['choices'][0]['message'];calls=result.get('tool_calls')
+                    payload_result=r.json();context_metadata=context_budget.with_provider_usage(context_metadata,payload_result.get('usage'));context_metadata.update(provider_calls=turn+1,usage_scope='last_provider_request');response_model=payload_result.get('model');result=payload_result['choices'][0]['message'];calls=result.get('tool_calls')
                     if not calls:reply=result.get('content') or '模型未返回文字内容';break
                     msgs.append(result)
                     for call in calls:
@@ -342,6 +362,8 @@ async def chat(body:Chat):
                         msgs.append({'role':'tool','tool_call_id':call['id'],'content':json.dumps(value,ensure_ascii=False)})
                 else:reply='已达到首版工具调用次数上限，请缩小问题范围。'
             used=True
+        except context_budget.ContextBudgetError as error:
+            raise HTTPException(422,str(error)) from None
         except httpx.TimeoutException:
             raise HTTPException(502,'连接模型供应商超时，请稍后重试；这不表示 API Key 无效。') from None
         except httpx.RequestError:
@@ -352,7 +374,7 @@ async def chat(body:Chat):
             reasons={401:'密钥无效或地域不匹配',402:'余额或额度不足',403:'账户没有该模型权限',404:'模型或接口不存在',429:'请求频率或额度受限'}
             detail=f"模型供应商返回 HTTP {provider_http_status}：{reasons.get(provider_http_status,'请求未成功，请核对官方参数')}。" if provider_http_status is not None else '模型请求未完成或返回格式不兼容，请检查供应商配置后重试。'
             raise HTTPException(502,detail) from None
-    metadata={'model_used':used,'model_provider':provider if used else None,'requested_model':cfg['model'] if used else None,'response_model':response_model,'requested_knowledge_mode':body.knowledge_mode,'knowledge_scope':policy['knowledge_scope'],'coverage_status':policy['coverage_status'],'coverage_notice':policy['coverage_notice'],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status()}
+    metadata={'model_used':used,'model_provider':provider if used else None,'requested_model':cfg['model'] if used else None,'response_model':response_model,'requested_knowledge_mode':body.knowledge_mode,'knowledge_scope':policy['knowledge_scope'],'coverage_status':policy['coverage_status'],'coverage_notice':policy['coverage_notice'],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status(),'context':context_metadata}
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',(body.session,'assistant',reply,stamp(),json.dumps(metadata,ensure_ascii=False)))
     return {'reply':reply,'evidence_ids':[e['id'] for e in evidence],**metadata}
 

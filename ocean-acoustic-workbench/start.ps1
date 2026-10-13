@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 $appRoot = $PSScriptRoot
 $url = 'http://127.0.0.1:8765'
 $running = $false
-try { $health = Invoke-RestMethod "$url/api/health" -TimeoutSec 2; $running = $health.version -in @('0.2.0','0.4.0','0.5.0') } catch {}
+try { $health = Invoke-RestMethod "$url/api/health" -TimeoutSec 2; $running = $health.version -in @('0.2.0','0.4.0','0.5.0','0.6.0') } catch {}
 if (-not $running) {
     $runtimeFile = Join-Path $appRoot '.local/runtime.json'
     $venvPython = Join-Path $appRoot '.venv/Scripts/python.exe'
@@ -20,7 +20,7 @@ if (-not $running) {
     $process.Id | Set-Content (Join-Path $appRoot '.local/server.pid')
     for ($attempt = 0; $attempt -lt 30; $attempt++) {
         Start-Sleep -Milliseconds 500
-        try { $health = Invoke-RestMethod "$url/api/health" -TimeoutSec 1; $running = $health.version -in @('0.2.0','0.4.0','0.5.0'); if ($running) { break } } catch {}
+        try { $health = Invoke-RestMethod "$url/api/health" -TimeoutSec 1; $running = $health.version -in @('0.2.0','0.4.0','0.5.0','0.6.0'); if ($running) { break } } catch {}
         if ($process.HasExited) { throw 'Server exited. Check .local/server.stderr.log.' }
     }
     if (-not $running) { throw 'Server startup timed out. Check .local/server.stderr.log.' }

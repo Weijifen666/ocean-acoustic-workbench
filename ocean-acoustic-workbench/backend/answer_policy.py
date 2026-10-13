@@ -11,10 +11,10 @@ def policy(evidence, scope='course', mode='chat'):
     template = mode == 'agent'
     status = 'course_evidence' if covered else 'course_template' if template else 'no_course_evidence'
     if covered:
-        notice = '本次使用检索到的课程资料；引用不表示已覆盖全部海洋知识。' if scope == 'course' else '课程依据与模型一般知识须分别说明；一般知识未经本项目原文核验。'
+        notice = '本次使用检索到的课程或公开资料；引用不表示已覆盖全部海洋知识。' if scope == 'course' else '资料依据与模型一般知识须分别说明；一般知识未经本项目原文核验。'
     else:
         notice = '本次分析授权项目；未检索到对应课程正文。' if template else '未检索到课程依据。可切换到模型一般知识或补充资料。' if scope == 'course' else '未检索到课程依据；本次使用模型一般知识，未经本项目原文核验。'
-    rule = '当前选择【课程依据】，结论只基于检索片段和实际读取的授权项目，依据不足时明确缺口。' if scope == 'course' else '当前选择【模型一般知识】，允许使用模型已有的一般知识回答资料未覆盖的问题；与课程依据分别标注。没有本次提供的资料不得生成课程引用，没有联网工具不得声称已经联网搜索。'
+    rule = '当前选择【仅依据资料】，结论只基于检索到的课程或公开片段和实际读取的授权项目，依据不足时明确缺口。' if scope == 'course' else '当前选择【资料 + 模型知识】，允许使用模型已有的一般知识回答资料未覆盖的问题；与资料依据分别标注。没有本次提供的资料不得生成引用。公开网页是带抓取时间的快照，区分原页更新时间、抓取时间和观测时间，不得声称本轮实时搜索或编造最新海洋观测数值。'
     return {'knowledge_scope': scope, 'coverage_status': status, 'coverage_notice': notice, 'can_generate': scope == 'general' or covered or template, 'rule': rule}
 
 def note_gap(path, question):

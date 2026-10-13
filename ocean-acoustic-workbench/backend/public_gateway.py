@@ -147,7 +147,7 @@ async def own_job(id:str,request:Request,rest:str=''):
  return await upstream(request)
 @app.api_route('/api/{path:path}',methods=['GET','POST','PUT'])
 async def readonly(path:str,request:Request):
- permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search','knowledge/status','exercises'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
+ permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search','knowledge/status','knowledge/public-sources','exercises'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
  if request.method=='GET' and re.fullmatch(r'source/S\d{2}',path):raise HTTPException(403,'公开版提供教材原页片段，完整资料请使用课程资料包')
  if request.method=='POST' and path=='plans/preview':
   body=await request.json()

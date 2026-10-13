@@ -1,15 +1,17 @@
-# 海洋声学工作台 · v0.5
+# 海洋声学工作台 · v0.6
 
 用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。React 网页、FastAPI 计算节点与云端 Worker 分工运行；实际仿真由获授权的 MATLAB R2024a 调用 AT KRAKEN / FIELD 完成。项目原创代码采用 MIT 许可证，外部教材、AT 与 MATLAB 保留各自权利和许可。
 
-公开网页：[海洋声学工作台](https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site/)。云端页面、课程图谱、课程卡检索与模型连接不依赖维护者电脑；MATLAB 仿真和私有原文索引需要计算节点在线。
+公开网页：[海洋声学工作台](https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site/)。云端页面、课程图谱、课程卡/公开海洋知识检索与模型连接不依赖维护者电脑；MATLAB 仿真和私有教材全文索引需要计算节点在线。
 
 ## 界面与使用
 
-界面参考 JupyterLab / VS Code 的紧凑科研工作区，使用课程目录、图谱画布、知识详情、参数表单和任务结果视图。v0.5 加入共享模型快切、明确知识范围、资料覆盖表与原创海洋助手“小航”。设计来源、直接复用代码及许可见[设计与复用说明](../docs/DESIGN_AND_REUSE.md)和[知识扩展记录](../docs/KNOWLEDGE_EXPANSION.md)。
+界面参考 JupyterLab / VS Code 的科研工作区；公共网页与本地管理前端共用课程目录、图谱画布、知识详情与共享聊天控件。v0.6 将模型、上下文、更多和发送放在输入框底部，聊天默认“资料 + 模型知识”；海洋主题 Banner 只在图谱页面保留。设计与许可见[设计说明](../docs/DESIGN_AND_REUSE.md)、[海洋主题](../docs/OCEAN_DESIGN.md)和[知识扩展](../docs/KNOWLEDGE_EXPANSION.md)。
 
 - **知识图谱**：6 个课程单元、46 个知识点，53 个节点和 126 条有类型的关系。直接点击查看概念、公式、适用条件、图片和引用，无需调用大模型。课程层级、建议阅读顺序与概念关联分别展示，关系连接不等于物理因果。收藏和已读标记只表示浏览器中的操作记录。
-- **知识库与对话**：课程卡、术语别名、有类型的一跳关联与来源引用共同提供上下文。节点在线时额外检索五份全文文本层索引。“课程依据”普通对话未命中时明确缺口，不以相关背景冒充直接证据；“模型一般知识”保留模型已有能力，补充知识标记为未经本项目原文核验。未配置 API Key 时只显示检索证据。
+- **知识库与对话**：课程卡、术语别名、一跳关联、私有原页及公开网页共同提供证据。默认“资料 + 模型知识”（`general`）保留模型已有能力并单列未经资料核验的补充；“更多”可切换“仅依据资料”（`course`），普通空检索时明确缺口。未配置 API Key 时只显示检索证据，图谱和公开来源可直接阅读。
+- **输入预算**：4K、8K、16K、32K、64K、128K，自动 32K；服务端实际裁剪历史与资料，并记录估算输入、裁剪情况和供应商实际用量。这个输入预算不改变模型原生窗口或 KV cache，未返回的实际缓存用量保持未知。
+- **公开海洋资料**：30 篇 NOAA 正文与 9 条项目自写导读，共 39 个可检索来源、67 个片段。42 项登记中 3 项仅为动态入口，尚未读取实时值。图谱“学习资源”显示来源、机构、更新时间、取得时间和许可；中文导读不是官方译文。
 - **模型快切与小航**：主问答与原创 SVG 海洋探索员“小航”共用当前访客的对话、模型选择和知识范围。可在聊天中切换已配置供应商的模型，复用该供应商的 Key；每条回答记录请求与响应模型。“小航”支持浮动聊天、拖动、隐藏、复位、来源核查和知识点跳转。
 - **资料缺口**：没有匹配资料的问题进入待补资料记录；公网记录绑定当前访客并加密存储，不公开给其他访客，也不自动进入正式课程图谱或训练模型。
 - **课程命题与仿真**：12 道命题包含 9 道可填参数预设和 3 道缺参、工具边界或数值解释题。先填入参数、预览组合，再确认运行；完成后查看声场图、接收曲线、实际网格、验证记录与文件哈希，并下载结果包。
@@ -20,9 +22,11 @@
 
 v0.5 已处理 S01、S07、S15、S17、S18 五份授权 PDF 的全部 1846 页，1789 页生成 4092 个私有片段；57 页提取文字为空或过短，等待原页复核。文本层入库页覆盖率约 96.9%，不代表知识正确率或其他课程来源已入库。46 个人工课程知识点保持为已整理的概念层，新增全文页无需全部挂入图谱。
 
-节点采用 BM25、双语别名、原文词项排序和概念优先权重；分块保留来源、PDF 实际页、字符位置和原文件 SHA-256。未绑定图谱节点的英文原页可通过已登记术语的中文查询命中。检索缓存复用全文分词与 BM25 统计，索引改动后刷新。云端独立检索公开课程卡，节点离线时明确回退到课程卡，不宣称访问了私有原文。
+节点采用 BM25、双语别名、原文词项排序和概念优先权重；分块保留来源、PDF 实际页、字符位置和原文件 SHA-256。未绑定图谱的英文原页可通过已登记术语的中文查询命中。缓存复用全文分词与 BM25 统计，索引改动后刷新。公开网页另用 BM25 与项目中文标题、主题别名和导读检索；节点离线时云端仍可检索课程卡和内置公开快照，不宣称访问私有教材全文。
 
-导入器支持 PDF、DOCX、UTF-8 TXT 和 Markdown。省略清单的 `pages` 字段即可逐页处理该来源，原文索引放在 `.local/kb/chunks.sqlite3`，不提交 GitHub。57 页的 `blank_or_short` 不等于已确认扫描页；本次没有执行 OCR，未部署向量模型、自动物理关系抽取、模型训练或自动联网搜索。详见[私有知识入库](../docs/KNOWLEDGE_IMPORT.md)和[扩展与方法借鉴](../docs/KNOWLEDGE_EXPANSION.md)。LightRAG、RAGFlow、LlamaIndex 与 Haystack 用于方法比较，未安装其完整框架；实际直接复用 BM25 评分器的原许可见 `backend/vendor/`。
+导入器支持 PDF、DOCX、UTF-8 TXT 和 Markdown。省略清单的 `pages` 字段即可逐页处理该来源，教材正文索引放在 `.local/kb/chunks.sqlite3`，不提交 GitHub。57 页 `blank_or_short` 不等于已确认扫描页；没有执行 OCR、向量检索、自动物理关系抽取或模型训练。官方白名单的网页刷新已实现，通用实时全网搜索和实时观测 API 尚未接入。详见[私有入库](../docs/KNOWLEDGE_IMPORT.md)、[公开来源与刷新](../docs/OPEN_OCEAN_KNOWLEDGE.md)和[方法借鉴](../docs/KNOWLEDGE_EXPANSION.md)。LightRAG 等完整框架未安装；直接复用 BM25 评分器的原许可保留在 `backend/vendor/`。
+
+节点启动与状态查询调用 `public_ocean.refresh_if_stale(ttl_hours=168, background=True)`，只在后台检查批准的官方 URL，并更新独立 `.local/kb/open-ocean/snapshot.json`。失败保留上次成功版本，不覆盖课程 SQLite。需要将公开快照导出到开源包时运行 `python backend/public_ocean.py --publish --ttl-hours 168`，随后重新构建发布；正常搜索不等待网络。
 
 ## 本地启动与环境
 
@@ -59,16 +63,18 @@ TL 使用 FIELD 归一化压力计算 `TL = -20 log10 |p|`，近零声压对应�
 
 公网模型请求由云端 Worker 直接发送至供应商。模型配置、API Key 与对话按访客加密保存于 D1，节点重启不会清除这些云端配置；提供清除全部模型密钥入口。匿名访客空间绑定浏览器 Cookie，清除 Cookie 或更换设备会建立新空间，当前没有账号登录和跨设备历史同步。
 
-图谱、模型目录与课程卡在云端提供；已提供的教材页图片可缓存至 R2。节点离线时 MATLAB 与私有原文索引不可用，云端图谱、课程卡与已配置模型问答仍可使用。
+图谱、模型目录、课程卡和公开海洋知识包在云端提供；已提供的教材页图片可缓存至 R2。节点离线时 MATLAB 与私有教材全文索引不可用，云端课程卡、公开网页检索与已配置模型问答仍可使用。网页快照不是实时海况，原页最近更新也不能证明其中历史数值已更新。
 
 本地管理员的模型密钥仍保存在 `.local/config.json` 与 `.local/model-profiles.json`，并不会自动变成公共访客的密钥。连接密钥在 `.local/public-runtime.json`，同时作为云端运行时 Secret；本地资料、密钥、数据库、原文索引和求解产物均不上传 Git。
 
 ## 验证
 
-v0.5 的实际检查范围与验收结果见 [VALIDATION_V0_5.md](../docs/VALIDATION_V0_5.md)。知识检查覆盖真实 PDF 读取、全文与部分页覆盖、未绑定节点的双语检索和大批片段缓存；云端检查覆盖访客隔离、模型快切、知识范围及来源说明。离线模拟响应与无效测试 Key 的认证层探测不能代替有效模型账户的权限、额度与生成质量验证。
+v0.6 的公开知识、聊天控件和实际输入预算检查见 [VALIDATION_V0_6.md](../docs/VALIDATION_V0_6.md)，此前教材全文验收见 [VALIDATION_V0_5.md](../docs/VALIDATION_V0_5.md)。离线响应和无效 Key 认证层探测不能代替有效账户的生成质量验证。
 
 ```powershell
 ./.venv/Scripts/python.exe tests/test_knowledge.py
+./.venv/Scripts/python.exe tests/test_public_ocean.py
+./.venv/Scripts/python.exe tests/test_context_budget.py
 ./.venv/Scripts/python.exe tests/test_science.py
 ./.venv/Scripts/python.exe tests/test_models.py
 ./.venv/Scripts/python.exe tests/test_plans.py
@@ -77,3 +83,5 @@ v0.5 的实际检查范围与验收结果见 [VALIDATION_V0_5.md](../docs/VALIDA
 ./.venv/Scripts/python.exe tests/check_local.py
 ./.venv/Scripts/python.exe tests/check_references.py
 ```
+
+模型选择与配置入口参考 [WorkBuddy 官方说明](https://www.codebuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)，未复制其产品或角色。供应商缓存以 [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)和[百炼](https://help.aliyun.com/zh/model-studio/context-cache)官方文档为准，本项目不控制该缓存或保证命中。

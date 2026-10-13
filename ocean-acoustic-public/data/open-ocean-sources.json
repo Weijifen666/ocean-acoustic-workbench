@@ -1,0 +1,2053 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-13T08:37:13Z",
+  "knowledge_note": "公开官方网页快照与项目自写导读；非全网搜索、非模型训练、非实时海况服务。",
+  "sources": [
+    {
+      "id": "O-NOAA-SOUND",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "水下声音如何传播",
+      "title": "How far does sound travel in the ocean?",
+      "url": "https://oceanservice.noaa.gov/facts/sound.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/sound.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "声学"
+      ],
+      "search_aliases": [
+        "声音传播",
+        "声速",
+        "低频声传播",
+        "温度",
+        "压力",
+        "水下声音",
+        "sound",
+        "underwater",
+        "sound",
+        "speed"
+      ],
+      "guide_zh": "温度和压力影响海水中的声速；声速较低的水层可影响声音远距离传播。典型声速不是所有海域通用的常数。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:15Z",
+      "checked_at": "2026-10-13T09:28:15Z",
+      "sha256": "5b0e2f12137bd2f50dd778a4ed5d58309e082a6357f181081ba7880534f79db0",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "bd8b97a9a7fbc122021b95d8643deb0ed46b268b192352e1ff3b449675971b39",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/sound.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-SONAR",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "主动声呐与被动声呐",
+      "title": "What is sonar?",
+      "url": "https://oceanservice.noaa.gov/facts/sonar.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/sonar.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "声学"
+      ],
+      "search_aliases": [
+        "声呐",
+        "主动声呐",
+        "被动声呐",
+        "回声",
+        "声纳",
+        "sonar",
+        "active",
+        "passive"
+      ],
+      "guide_zh": "主动声呐发射信号并接收回波；被动声呐监听声源。页面解释测深、定位等用途，不能据此证明具体探测性能。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:15Z",
+      "checked_at": "2026-10-13T09:28:15Z",
+      "sha256": "ee7e8b8c7e368d2b36fc70500e776fcb79b7628020fb393257941d4424040dc6",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "dc6bbf6c62590d3c24612e7a1c7a9a7a3272a202006d643b3925d0443b83d0a4",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/sonar.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-HYDROPHONE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "水听器与水下声学观测",
+      "title": "What is a hydrophone?",
+      "url": "https://oceanservice.noaa.gov/facts/hydrophone.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/hydrophone.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "水听器",
+        "水声监测",
+        "被动声学",
+        "hydrophone",
+        "passive",
+        "acoustics"
+      ],
+      "guide_zh": "水听器将水下压力波转为电信号，可用于声源和海洋生物监测；具体频响与方向性需核对设备参数。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:15Z",
+      "checked_at": "2026-10-13T09:28:15Z",
+      "sha256": "375d6be83aa314ea334c6925d2911010bab9dd7c183eda535307bed134577b07",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "f569bbd3f695863008bbcd201df30b3e7f1820ce1e1a1bec84bf57d72bea7164",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/hydrophone.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-BACKSCATTER",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海底声学后向散射",
+      "title": "How does backscatter help us understand the sea floor?",
+      "url": "https://oceanservice.noaa.gov/facts/backscatter.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/backscatter.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "声学"
+      ],
+      "search_aliases": [
+        "后向散射",
+        "海底散射",
+        "多波束",
+        "backscatter",
+        "seabed",
+        "multibeam"
+      ],
+      "guide_zh": "声学回波强度反映海底粗糙度、组成等特征，常与多波束测深结合；不能直接把强度等同于唯一底质。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:17Z",
+      "checked_at": "2026-10-13T09:28:17Z",
+      "sha256": "9958a4fe4ed962d8daf184f1cb6146c9464ca6216c6e61cf6c7fee8e997b61b3",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "4c05fd36b8d5ad8cd9ea77bef175b293f1eb00196fe7491e5a2c51feef747846",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/backscatter.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-SOFAR",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "SOFAR 深海声道",
+      "title": "What is SOFAR?",
+      "url": "https://oceanservice.noaa.gov/facts/sofar.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/sofar.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "声学"
+      ],
+      "search_aliases": [
+        "深海声道",
+        "SOFAR",
+        "声道",
+        "折射",
+        "长距离传播",
+        "sound",
+        "channel"
+      ],
+      "guide_zh": "海水温度和压力共同形成声速变化，声道可使低频声音在海盆尺度传播；页面是概念说明。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:17Z",
+      "checked_at": "2026-10-13T09:28:17Z",
+      "sha256": "0711a6295d56369a43a560b10666c0b57be8511ce02cc678b29660c0d502a91e",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "b4798eb86f859391be708ba0c6f3f1005a9f04cc56929d1db61842f36e076228",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/sofar.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-THERMOCLINE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "温跃层与海水分层",
+      "title": "What is a thermocline?",
+      "url": "https://oceanservice.noaa.gov/facts/thermocline.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/thermocline.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "温跃层",
+        "跃温层",
+        "分层",
+        "混合层",
+        "thermocline",
+        "stratification",
+        "mixed",
+        "layer"
+      ],
+      "guide_zh": "温跃层是温度随深度快速变化的区域，其深度和强度受季节、纬度等条件影响。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:18Z",
+      "checked_at": "2026-10-13T09:28:18Z",
+      "sha256": "d2f4d6e4491df6de521b3d4b9329ee12fe0f82ec3485cdbf8ebae15aec527f3a",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "d5c0639d1d12f8cef134e39ca45ee5f24046a2d2c12176586eab8c6ffcc38737",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/thermocline.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-COLDOCEAN",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "深海为何通常更冷",
+      "title": "Why does the ocean get colder at depth?",
+      "url": "https://oceanservice.noaa.gov/facts/coldocean.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/coldocean.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "深海温度",
+        "海水温度",
+        "深海冷水",
+        "deep",
+        "ocean",
+        "temperature"
+      ],
+      "guide_zh": "海表主要受太阳加热，深海水温与分层和大洋环流有关；不把概述温度当作指定位置的实时剖面。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:19Z",
+      "checked_at": "2026-10-13T09:28:19Z",
+      "sha256": "b4aa38dc82dbbde57390d6a32bb134bd77f47d4f2f49abbc4d265fc49f8ee887",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "4201ab5775bc195cfe59181a4724b1ab2745b89fca7f080bb0cd6cab295f52b5",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/coldocean.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-WHYSALTY",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海洋盐度的来源",
+      "title": "Why is the ocean salty?",
+      "url": "https://oceanservice.noaa.gov/facts/whysalty.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/whysalty.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "盐度",
+        "海水盐分",
+        "盐度来源",
+        "salinity",
+        "ocean",
+        "salt"
+      ],
+      "guide_zh": "陆地风化、河流输送以及海底热液过程等影响海盐来源；平均盐度不代表局地实测值。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:19Z",
+      "checked_at": "2026-10-13T09:28:19Z",
+      "sha256": "09f01c44e1ecfc33a717ca483bd083f7c4ac974790b6961fa623a2dc6bbdb9ea",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "b53a7fea6b6964cc560cb52c531befdc7d6782a4a49d774441fd77dcd68ef16e",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/whysalty.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-UPWELLING",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "上升流与营养盐",
+      "title": "What is upwelling?",
+      "url": "https://oceanservice.noaa.gov/facts/upwelling.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/upwelling.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "上升流",
+        "营养盐",
+        "风生上升流",
+        "upwelling",
+        "nutrients"
+      ],
+      "guide_zh": "表层水被风带离后，较冷的深层水可上升，输送营养盐并影响生态系统。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:20Z",
+      "checked_at": "2026-10-13T09:28:20Z",
+      "sha256": "c1c0343d7aee54d8963aa5db65e5484d7b8d0d73486afb9589905029a62b34a9",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "ccc0f928bbcdda6ba1bbda23b1ed0912b2a8a7fd3c3d768cc285eb97770b385d",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/upwelling.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CONVEYOR",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "大洋输送带与热盐环流",
+      "title": "What is the global ocean conveyor belt?",
+      "url": "https://oceanservice.noaa.gov/facts/conveyor.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/conveyor.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "热盐环流",
+        "大洋输送带",
+        "密度环流",
+        "thermohaline",
+        "conveyor",
+        "overturning"
+      ],
+      "guide_zh": "温盐造成的密度差与风力共同影响大洋环流；输送带是教学简化，不代表所有环流细节。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:21Z",
+      "checked_at": "2026-10-13T09:28:21Z",
+      "sha256": "7e3bc25304978889e861237e5540f62f0db62d21e0885dfe14b24715d39c7cfa",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "ece3d2152808bba2d631a06abdf5b2bc8d005766dd7b6c36a4da565164ae4017",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/conveyor.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-TIDES",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "潮汐的形成与变化",
+      "title": "What are tides?",
+      "url": "https://oceanservice.noaa.gov/facts/tides.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/tides.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "潮汐",
+        "引潮力",
+        "涨潮",
+        "落潮",
+        "tides",
+        "tidal"
+      ],
+      "guide_zh": "月球和太阳的引力影响潮汐；实际站点潮位还受海岸、海底地形和气象因素影响。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:21Z",
+      "checked_at": "2026-10-13T09:28:21Z",
+      "sha256": "276fa82d74dff8d524d33f37f84e46ccd9d1d7e744006ef4c124c0855963459c",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "589061e0fd5b867d3f95d3bbed54848a8127eb3b8616987af99fbf7d03456de7",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/tides.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-HYDROGRAPHY",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "水文测量与海洋制图",
+      "title": "What is hydrography?",
+      "url": "https://oceanservice.noaa.gov/facts/hydrography.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/hydrography.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "水文测量",
+        "水深测量",
+        "海图",
+        "hydrography",
+        "nautical",
+        "survey"
+      ],
+      "guide_zh": "水文测量为航行等用途记录海底、水深和相关物理特征，页面说明其与海图的关系。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:21Z",
+      "checked_at": "2026-10-13T09:28:21Z",
+      "sha256": "3f500712291d5986a91e2f1951f7ca044f5659d5cf8e3257b86212f433910265",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "9ceb3239034d0a9791d6f28cd661a5d21215efe8a651904899c042760b204b21",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/hydrography.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-ACIDIFICATION",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海洋酸化：碳酸盐与生态影响",
+      "title": "What is Ocean Acidification?",
+      "url": "https://oceanservice.noaa.gov/facts/acidification.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/acidification.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "海洋酸化",
+        "酸化",
+        "碳酸盐",
+        "二氧化碳",
+        "pH",
+        "ocean",
+        "acidification",
+        "carbonate"
+      ],
+      "guide_zh": "海洋吸收二氧化碳引发化学反应，增加氢离子并降低碳酸根可用量，影响贝壳和珊瑚等钙化生物。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:21Z",
+      "checked_at": "2026-10-13T09:28:21Z",
+      "sha256": "ccbdfd81d08e467d163d544ca77cffc4b79cbee5fb06efa6cb9b38ebe82c13fb",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "0f6af7148a127b7f30f277d9e229b671a30c7c95194f826d23dbe9ffe5a93e94",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/acidification.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-EUTROPHICATION",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "富营养化与藻类增殖",
+      "title": "What is eutrophication?",
+      "url": "https://oceanservice.noaa.gov/facts/eutrophication.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/eutrophication.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "富营养化",
+        "营养盐污染",
+        "藻华",
+        "eutrophication",
+        "nutrients",
+        "bloom"
+      ],
+      "guide_zh": "过量营养输入可促进藻类增长、改变生态系统并造成缺氧；页面中的经济或面积示例按原年份阅读。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:22Z",
+      "checked_at": "2026-10-13T09:28:22Z",
+      "sha256": "fb596487f7a4cdd8a31124c14a7eb89b4413a402a2526d285435e19059be0c39",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "acb8a887b91a1c62051e02e4a900d0cf862b4ffe3384b2e358dd108cf067843c",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/eutrophication.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-DEADZONE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海洋缺氧区与死区",
+      "title": "What is a dead zone?",
+      "url": "https://oceanservice.noaa.gov/facts/deadzone.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/deadzone.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "缺氧",
+        "死区",
+        "溶解氧",
+        "低氧",
+        "hypoxia",
+        "dead",
+        "zone",
+        "dissolved",
+        "oxygen"
+      ],
+      "guide_zh": "死区指氧含量过低、许多生物难以生存的水域。原页的年份和区域面积属于历史观测快照。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:23Z",
+      "checked_at": "2026-10-13T09:28:23Z",
+      "sha256": "9436197549bfa13c8f4f2dd3ec7e0d644488392567832b7639b9ca8f948521b6",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "cfe4542f899cf3ef92654b2bd34d8f098d8d5c3543eddd6fea3a8be1a0e019e2",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/deadzone.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-OCEAN-NOISE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海洋噪声与生物声学",
+      "title": "What is ocean noise?",
+      "url": "https://oceanservice.noaa.gov/facts/ocean-noise.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/ocean-noise.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "海洋噪声",
+        "水下噪声",
+        "船舶噪声",
+        "鲸类",
+        "噪声污染",
+        "ocean",
+        "noise"
+      ],
+      "guide_zh": "海洋动物依赖声音交流、觅食和导航；人类活动噪声可能干扰这些行为，影响取决于声学和生物条件。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:23Z",
+      "checked_at": "2026-10-13T09:28:23Z",
+      "sha256": "3741303684debf0f40f5d01e7db5b58f60b4fd85b3c7b3912e83b0abd867c09f",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "c8d80b4e0352b10d1d5a3f9f3b20ef544d1ae3bd1a4dbeabeaaf1f03f4fa5e31",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/ocean-noise.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CURRENT",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海流的主要驱动因素",
+      "title": "What is a current?",
+      "url": "https://oceanservice.noaa.gov/facts/current.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/current.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "海流",
+        "洋流",
+        "海洋环流",
+        "潮流",
+        "风生流",
+        "ocean",
+        "currents"
+      ],
+      "guide_zh": "潮汐、风以及温盐造成的密度差是海流的主要驱动因素，不同空间和时间尺度需要不同解释。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:24Z",
+      "checked_at": "2026-10-13T09:28:24Z",
+      "sha256": "4f25b6e54dd16b563e060b8971066409778f8a4cebf1f6a64ad2b536f4e94fe9",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "a060227b4eba28b9ed82861e4aaa5406863b6b1b86c5644b679d77231355208d",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/current.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CURRENTMON",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "如何观测海流：漂流浮标与 ADCP",
+      "title": "How do we monitor currents?",
+      "url": "https://oceanservice.noaa.gov/facts/currentmon.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/currentmon.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "海流观测",
+        "浮标",
+        "漂流浮标",
+        "ADCP",
+        "声学多普勒",
+        "流速",
+        "drifter",
+        "buoy",
+        "current",
+        "profiler"
+      ],
+      "guide_zh": "漂流物、流速仪、漂流浮标及声学多普勒流速剖面仪用于观测海流；浮标位置和测量深度需区分。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:24Z",
+      "checked_at": "2026-10-13T09:28:24Z",
+      "sha256": "0a7688cc4bd6507e43a51b1980133d14cdb1f0e59660fd72a005f639a8739cff",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "9665b20789765e393c05f1ae94be8abdb19a30de00c8b744adc1f9878b11a11e",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/currentmon.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CURRENTDATA",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海流观测数据的用途",
+      "title": "Why is data on currents important?",
+      "url": "https://oceanservice.noaa.gov/facts/currentdata.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/currentdata.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "海流数据",
+        "流速数据",
+        "海洋观测",
+        "航行",
+        "搜救",
+        "currents",
+        "observations"
+      ],
+      "guide_zh": "观测、预测和预报海流数据用于航行、搜救、污染物轨迹分析及海岸工程，三类产品不能混称实测。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:25Z",
+      "checked_at": "2026-10-13T09:28:25Z",
+      "sha256": "15ff06c31ba1ad27c5ab1830846200c154fc73ada30027e47e07cd8d2c128585",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "16bd253fb957e691dd5c445408997c9b9e62d296ab29234d2365e528e35a9c13",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/currentdata.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CORAL-BLEACH",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "珊瑚白化与环境胁迫",
+      "title": "What is coral bleaching?",
+      "url": "https://oceanservice.noaa.gov/facts/coral_bleach.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/coral_bleach.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "珊瑚",
+        "珊瑚白化",
+        "共生藻",
+        "热胁迫",
+        "coral",
+        "bleaching"
+      ],
+      "guide_zh": "珊瑚受温度等环境胁迫可失去共生藻而白化；白化不等于立即死亡，是否恢复取决于胁迫持续时间等。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:26Z",
+      "checked_at": "2026-10-13T09:28:26Z",
+      "sha256": "8b77e1c5d2e85f11775c139c7cd28ecd55414171c2c262516ef189153ffc1409",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "f0274d92a05c7da88581a500d4f86998a7565c61707a5238bf05eb9b5d908a8a",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/coral_bleach.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-CORALREEF-CLIMATE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "气候变化如何影响珊瑚礁",
+      "title": "How does climate change affect coral reefs?",
+      "url": "https://oceanservice.noaa.gov/facts/coralreef-climate.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/coralreef-climate.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "珊瑚礁",
+        "气候变化",
+        "热胁迫",
+        "酸化",
+        "coral",
+        "reef",
+        "climate"
+      ],
+      "guide_zh": "变暖、酸化、海平面、风暴和环流变化共同影响珊瑚礁生态功能；中文导读为项目自行整理。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:26Z",
+      "checked_at": "2026-10-13T09:28:26Z",
+      "sha256": "f7513d65ef7788747b7bd2305fed94c3c2a62abfcbeaec2cd82c237a30864167",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "417527d048cc4dae4711572f5310ac12dd830005ac66849728d8919e685d0a9c",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/coralreef-climate.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-SEALEVEL-GLOBAL-LOCAL",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "全球海平面与局地相对海平面",
+      "title": "What is the difference between local sea level and global sea level?",
+      "url": "https://oceanservice.noaa.gov/facts/sealevel-global-local.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/sealevel-global-local.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "海平面",
+        "相对海平面",
+        "全球海平面",
+        "地面沉降",
+        "sea",
+        "level",
+        "relative",
+        "global"
+      ],
+      "guide_zh": "全球平均海平面与相对陆地的局地海平面是不同量，地面升降和环流等使各地变化不一致。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:26Z",
+      "checked_at": "2026-10-13T09:28:26Z",
+      "sha256": "057d54a41726e33d0dcafb0abaefdace0570f05794d20be2a4ec10de00d6fcca",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "22d543cd8d31b8fc320f135e6551055597bc6dd9e551a9225672dafda042e1fe",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/sealevel-global-local.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-SEALEVEL",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海平面上升的观测与机制",
+      "title": "Is sea level rising?",
+      "url": "https://oceanservice.noaa.gov/facts/sealevel.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/sealevel.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "海平面上升",
+        "潮位计",
+        "卫星测高",
+        "热膨胀",
+        "sea",
+        "level",
+        "rise",
+        "altimeter"
+      ],
+      "guide_zh": "潮位站和卫星测高观测海平面；热膨胀和陆地冰融化是重要机制。页面含较早年份示例，不能代表当前上升速率。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:27Z",
+      "checked_at": "2026-10-13T09:28:27Z",
+      "sha256": "e79affacfaccc03124a78a92848671f9a47b8b2a2391e49e13f8157352ba397c",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "f07534c34e4e27e62dd9dd79c74c579ccc667fb2537389c71d9e36a004deb52f",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/sealevel.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-TSUNAMI",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海啸与水深相关的传播",
+      "title": "What is a tsunami?",
+      "url": "https://oceanservice.noaa.gov/facts/tsunami.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/tsunami.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "灾害"
+      ],
+      "search_aliases": [
+        "海啸",
+        "水下地震",
+        "海底火山",
+        "长波",
+        "tsunami",
+        "earthquake"
+      ],
+      "guide_zh": "海啸可由海底地震、火山等造成，传播速度受水深影响；海啸不是普通潮汐。页面不能提供实时预警。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:27Z",
+      "checked_at": "2026-10-13T09:28:27Z",
+      "sha256": "f86407f6026893ff60565120b7bd3ff0f309f5d87bf0b2d79c505ecdb2da6544",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "9398e428d5dd8f4f2a6d9ceb07d63eb81d360d350b8667f1de5c7de3edab40f0",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/tsunami.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-WAVESINOCEAN",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "风浪与海洋波动",
+      "title": "Why does the ocean have waves?",
+      "url": "https://oceanservice.noaa.gov/facts/wavesinocean.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/wavesinocean.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "海浪",
+        "风浪",
+        "表面波",
+        "波浪",
+        "波浪传播",
+        "waves",
+        "wind",
+        "surface"
+      ],
+      "guide_zh": "风向海表传递能量形成常见风浪；波动主要传播能量，局部水体运动与整体远距离输送需要区分。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:28Z",
+      "checked_at": "2026-10-13T09:28:28Z",
+      "sha256": "12974c4929bc5ab52a427e13f5de2cd617ce9aed6ec88893b2f8452a63c55848",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "4d3996e9875c8a072f72e0902969fe5cade43c91a0b1bd23e716a809688f7960",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/wavesinocean.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-TIDE-GAUGE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "潮位计、声学与雷达水位测量",
+      "title": "What is a tide gauge?",
+      "url": "https://oceanservice.noaa.gov/facts/tide-gauge.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/tide-gauge.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "潮位计",
+        "水位计",
+        "雷达水位",
+        "声学测距",
+        "tide",
+        "gauge",
+        "water",
+        "level",
+        "radar"
+      ],
+      "guide_zh": "潮位计相对于指定高程基准测量水位，技术包括浮子、声学和微波雷达；设备数量等历史统计不当作当前清单。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:28Z",
+      "checked_at": "2026-10-13T09:28:28Z",
+      "sha256": "79d48ee39482e45dbe085c8988d2e2b774089b653f523c475c70f0eebc15ad50",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "c1c81f57dd3b20d418829c0c5b72845dcef69a0ccb279347e3ceec2050ab60af",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/tide-gauge.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-BATHYMETRY",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海底地形与测深",
+      "title": "What is bathymetry?",
+      "url": "https://oceanservice.noaa.gov/facts/bathymetry.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/bathymetry.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "海底地形",
+        "测深",
+        "水深",
+        "等深线",
+        "bathymetry",
+        "seafloor",
+        "depth"
+      ],
+      "guide_zh": "测深与海底地形图描述水下地形，是水文测量的重要基础；页面不提供具体海域最新地形数据。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:30Z",
+      "checked_at": "2026-10-13T09:28:30Z",
+      "sha256": "85abed33752cebab62552e3f68eb4c550d6dd983fa113df0be7e92694598a7be",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "71e71a49bc80b191c61f8165069aede219c0c880eab1af8aabd28959d6825cbe",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/bathymetry.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-PRESSURE",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "静水压力如何随深度变化",
+      "title": "How does pressure change with ocean depth?",
+      "url": "https://oceanservice.noaa.gov/facts/pressure.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/pressure.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "物理"
+      ],
+      "search_aliases": [
+        "海水压力",
+        "静水压力",
+        "深度",
+        "压强",
+        "hydrostatic",
+        "pressure",
+        "depth"
+      ],
+      "guide_zh": "水深增加会增加上方水柱造成的压力；计算时区分绝对压力、表压、密度与单位。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:30Z",
+      "checked_at": "2026-10-13T09:28:30Z",
+      "sha256": "0d94f94bc23051ea2ab104d6edc6a57f79db4b293fdc3de80f5a012b6305bdde",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "242696ec10ae604af4c4d14f782b6298ab8946173a684d569420fd345f214c51",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "resolved_url": "https://oceanservice.noaa.gov/facts/pressure.html",
+      "http_last_modified": null,
+      "etag": null,
+      "last_fetch_error": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-MICROPLASTICS",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "微塑料与海洋污染",
+      "title": "What are microplastics?",
+      "url": "https://oceanservice.noaa.gov/facts/microplastics.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/microplastics.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "环境"
+      ],
+      "search_aliases": [
+        "微塑料",
+        "塑料污染",
+        "海洋垃圾",
+        "microplastics",
+        "pollution",
+        "debris"
+      ],
+      "guide_zh": "微塑料包括微小塑料碎片，涉及来源、迁移与生态影响；不同研究的尺寸定义和检测方法需核对。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:31Z",
+      "checked_at": "2026-10-13T09:28:31Z",
+      "sha256": "adc3212da9aa30727a6558f1c5d286de3c77cd3e6e158f2ecf3ab688c03704f0",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "f738c37b41600efc71754a21d21ea0cda8d2b117d7d1caf6fcf533f60d37799b",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/microplastics.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-NOAA-OFS",
+      "organization": "NOAA National Ocean Service",
+      "title_zh": "海洋业务预报、现报与观测的区别",
+      "title": "What is an Operational Forecast System?",
+      "url": "https://oceanservice.noaa.gov/facts/ofs.html",
+      "allowed_urls": [
+        "https://oceanservice.noaa.gov/facts/ofs.html"
+      ],
+      "allowed_hosts": [
+        "oceanservice.noaa.gov"
+      ],
+      "topics": [
+        "观测"
+      ],
+      "search_aliases": [
+        "海洋预报",
+        "现报",
+        "数值预报",
+        "模型",
+        "forecast",
+        "nowcast",
+        "operational"
+      ],
+      "guide_zh": "业务系统结合观测与模型提供现报和预报；模型输出不是实测数据，必须记录预报起报时间和有效时段。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "public_domain_text",
+      "license": {
+        "name": "US federal government public domain — NOAA text only",
+        "url": "https://oceanservice.noaa.gov/about/faq.html",
+        "note": "遵守 NOAA 署名要求；不包含徽标、图片、音视频、第三方署名材料；不表示 NOAA 认可本项目。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": "2026-09-23",
+      "source_updated_at_kind": "page_last_updated",
+      "fetched_at": "2026-10-13T09:28:32Z",
+      "checked_at": "2026-10-13T09:28:32Z",
+      "sha256": "e18c2303525cf92a90cce2d61afbd1be28025f7513a8c7831b40480200aedf90",
+      "hash_kind": "original_response_bytes_sha256",
+      "text_sha256": "0d3a6060f4c88cc99703a8053d04e880b9d936b5d1c00c4d5e7b36bb2cfd17f3",
+      "snapshot_status": "ingested",
+      "temporal_note": "知识网页快照，不是实时海况。原页更新日期不代表所有历史示例或典型数值已更新；最新数值须另查带观测时间与质控的数据产品。",
+      "last_fetch_error": null,
+      "resolved_url": "https://oceanservice.noaa.gov/facts/ofs.html",
+      "http_last_modified": null,
+      "etag": null,
+      "original_source_verified": true
+    },
+    {
+      "id": "O-ARGO-QC",
+      "organization": "Argo 国际计划",
+      "title_zh": "Argo 数据质控与延时模式",
+      "title": "Argo 数据质控与延时模式",
+      "url": "https://argo.ucsd.edu/data/data-faq/",
+      "allowed_urls": [
+        "https://argo.ucsd.edu/data/data-faq/"
+      ],
+      "allowed_hosts": [
+        "argo.ucsd.edu"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "质控",
+        "Argo",
+        "浮标",
+        "剖面",
+        "盐度",
+        "温度",
+        "BGC",
+        "延时模式",
+        "QC",
+        "adjusted"
+      ],
+      "guide_zh": "Argo 文件区分实时模式与延时模式；科研分析应理解质量标记、调整后变量及不确定度。盐度漂移和部分生物地球化学参数需要更严格的延时质控。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://argo.ucsd.edu/data/data-faq/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T09:27:41Z",
+      "checked_at": "2026-10-13T09:27:41Z",
+      "sha256": "c99f8ef3297cad681e9dec976cddc181789a7552ca379aa9e67d3bbcb09a02f0",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "c8ddbeaa617a8227fd6bb0fcf321d5071ed3add1fced5abc8adb89a7685babb8",
+      "text_sha256": "c8ddbeaa617a8227fd6bb0fcf321d5071ed3add1fced5abc8adb89a7685babb8",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-TEOS-10",
+      "organization": "IOC / SCOR / IAPSO",
+      "title_zh": "TEOS-10 海水热力学标准",
+      "title": "TEOS-10 海水热力学标准",
+      "url": "https://www.teos-10.org/",
+      "allowed_urls": [
+        "https://www.teos-10.org/"
+      ],
+      "allowed_hosts": [
+        "www.teos-10.org"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "TEOS-10",
+        "TEOS",
+        "绝对盐度",
+        "保守温度",
+        "密度",
+        "声速",
+        "热力学",
+        "gsw"
+      ],
+      "guide_zh": "TEOS-10 统一海水热力学量的计算框架，区分绝对盐度与实用盐度、保守温度与其他温度量。使用 GSW 函数前应核对输入变量、压力单位和工具箱版本；本项目没有自动执行该工具箱。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.teos-10.org/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:24Z",
+      "checked_at": "2026-10-13T08:38:24Z",
+      "sha256": "8bcb31452c2f375db8ac5c9809f0057bb033986e1f40bbb9d94fdda403d12312",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "20156aa2dc55f714eb45e5d91b87109a3ac40c2fe3074bf969ec62fd6d035930",
+      "text_sha256": "20156aa2dc55f714eb45e5d91b87109a3ac40c2fe3074bf969ec62fd6d035930",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": null,
+      "etag": null,
+      "resolved_url": "https://www.teos-10.org/",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-ONC-DATA",
+      "organization": "Ocean Networks Canada",
+      "title_zh": "ONC 海底观测数据与使用许可",
+      "title": "ONC 海底观测数据与使用许可",
+      "url": "https://www.oceannetworks.ca/data/data-policy/",
+      "allowed_urls": [
+        "https://www.oceannetworks.ca/data/data-policy/"
+      ],
+      "allowed_hosts": [
+        "www.oceannetworks.ca"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "ONC",
+        "海底观测",
+        "水听器",
+        "海洋观测",
+        "数据许可",
+        "CC-BY"
+      ],
+      "guide_zh": "ONC 自有数据通常按 CC BY 4.0 共享，合作机构数据可能附不同或更严格许可。复用具体水听器或传感器数据前，应查看该数据集许可、引用与时间覆盖。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.oceannetworks.ca/data/data-policy/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:14Z",
+      "checked_at": "2026-10-13T08:38:14Z",
+      "sha256": "111ab76b43013e5d5ddea1d82588056efc88cec6e229fc3961445caad702beec",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "28f792c94f782774cc2d4a1e68de73b784b770c9600b68c3d3d8979abb5c5e70",
+      "text_sha256": "28f792c94f782774cc2d4a1e68de73b784b770c9600b68c3d3d8979abb5c5e70",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Fri, 09 Oct 2026 22:54:28 GMT",
+      "etag": "W/\"673062e61837e64d51b70cf61832d1de\"",
+      "resolved_url": "https://www.oceannetworks.ca/data/data-policy/",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-QARTOD",
+      "organization": "NOAA IOOS",
+      "title_zh": "QARTOD 海洋实时观测质控框架",
+      "title": "QARTOD 海洋实时观测质控框架",
+      "url": "https://ioos.noaa.gov/project/qartod/",
+      "allowed_urls": [
+        "https://ioos.noaa.gov/project/qartod/"
+      ],
+      "allowed_hosts": [
+        "ioos.noaa.gov"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "质控",
+        "QARTOD",
+        "QC",
+        "温盐",
+        "流速",
+        "波浪",
+        "被动声学",
+        "质量标记"
+      ],
+      "guide_zh": "QARTOD 发布分变量、仪器类型的实时观测质控手册。数据质量标记、阈值和测试应与传感器、区域和用途匹配，不能用一个固定阈值替代所有环境的质量判断。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://ioos.noaa.gov/project/qartod/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:23Z",
+      "checked_at": "2026-10-13T08:38:23Z",
+      "sha256": "b3778a4cb9c70ca33468481969033a9deeb77fc20b2444b19ba6a9b05aa9fd3c",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "6a5248c963279c16198ed2f8ea0bd9410bd285aed9250936bdf5dd2646f241bf",
+      "text_sha256": "6a5248c963279c16198ed2f8ea0bd9410bd285aed9250936bdf5dd2646f241bf",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Thu, 08 Oct 2026 20:39:04 GMT",
+      "etag": null,
+      "resolved_url": "https://ioos.noaa.gov/project/qartod/",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-WOA",
+      "organization": "NOAA NCEI",
+      "title_zh": "World Ocean Atlas 气候态剖面",
+      "title": "World Ocean Atlas 气候态剖面",
+      "url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+      "allowed_urls": [
+        "https://www.ncei.noaa.gov/products/world-ocean-atlas"
+      ],
+      "allowed_hosts": [
+        "www.ncei.noaa.gov"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "WOA",
+        "世界海洋图集",
+        "气候态",
+        "温度",
+        "盐度",
+        "溶解氧",
+        "营养盐",
+        "剖面"
+      ],
+      "guide_zh": "World Ocean Atlas 提供经统计处理的海洋气候态场，可用于典型环境背景。气候态平均场不是今天、某站点的实时温盐剖面。使用时应保留产品版本、月份、深度和统计参数。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:25Z",
+      "checked_at": "2026-10-13T08:38:25Z",
+      "sha256": "d4bafb1a55f3d7815a3218dfa891ec278e8955ebd0f5ffce74b06f53726d11dd",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "3ed23f3cf4bacb4f00df3ae550ee55e46e335f400dacf6ba042dc3f8e978da2f",
+      "text_sha256": "3ed23f3cf4bacb4f00df3ae550ee55e46e335f400dacf6ba042dc3f8e978da2f",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Mon, 12 Oct 2026 20:04:16 GMT",
+      "etag": "\"1791835456-gzip-gunzip-gzip\"",
+      "resolved_url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-WOD",
+      "organization": "NOAA NCEI",
+      "title_zh": "World Ocean Database 历史海洋观测",
+      "title": "World Ocean Database 历史海洋观测",
+      "url": "https://www.ncei.noaa.gov/products/world-ocean-database",
+      "allowed_urls": [
+        "https://www.ncei.noaa.gov/products/world-ocean-database"
+      ],
+      "allowed_hosts": [
+        "www.ncei.noaa.gov"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "WOD",
+        "世界海洋数据库",
+        "历史观测",
+        "温度",
+        "盐度",
+        "剖面",
+        "质控"
+      ],
+      "guide_zh": "World Ocean Database 汇集海洋剖面观测并提供质量标记与检索。提取资料时应记录航次、站点、观测时间、仪器、深度和质控筛选，不能把历史记录视作当前状态。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ncei.noaa.gov/products/world-ocean-database",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:25Z",
+      "checked_at": "2026-10-13T08:38:25Z",
+      "sha256": "078bf7ec45f27c11f73f847ea330dc750da3d0ec96b9bae907422b8a39a2470d",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "0f27435704468906f62682f11c40e98f5661d1f6d01b7efd7db9463556185d1a",
+      "text_sha256": "0f27435704468906f62682f11c40e98f5661d1f6d01b7efd7db9463556185d1a",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Mon, 12 Oct 2026 20:02:51 GMT",
+      "etag": "\"1791835371-gzip-gunzip-gzip\"",
+      "resolved_url": "https://www.ncei.noaa.gov/products/world-ocean-database",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-OHC",
+      "organization": "NOAA NCEI",
+      "title_zh": "海洋热含量、盐度与海平面产品",
+      "title": "海洋热含量、盐度与海平面产品",
+      "url": "https://www.ncei.noaa.gov/products/ocean-heat-salt-sea-level",
+      "allowed_urls": [
+        "https://www.ncei.noaa.gov/products/ocean-heat-salt-sea-level"
+      ],
+      "allowed_hosts": [
+        "www.ncei.noaa.gov"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "海洋热含量",
+        "OHC",
+        "盐度",
+        "海平面",
+        "热膨胀",
+        "ocean",
+        "heat",
+        "content"
+      ],
+      "guide_zh": "NCEI 提供海洋热含量、盐度及海平面相关分析产品。它们具有明确的时间窗口与产品处理流程；当前项目登记官方入口，没有自动下载最新观测数值。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ncei.noaa.gov/products/ocean-heat-salt-sea-level",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:27Z",
+      "checked_at": "2026-10-13T08:38:27Z",
+      "sha256": "65a39c96828880bcc07930a7d2eccf5183bf6804bb66fba184fca1e7727c016b",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "3b6c6627fc0054c5ed158bd0af14b691a166e6501cfdf554dc21f8cbf98784ec",
+      "text_sha256": "3b6c6627fc0054c5ed158bd0af14b691a166e6501cfdf554dc21f8cbf98784ec",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Mon, 12 Oct 2026 20:01:49 GMT",
+      "etag": "\"1791835309-gzip-gunzip-gzip\"",
+      "resolved_url": "https://www.ncei.noaa.gov/products/ocean-heat-salt-sea-level",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-IOC-REPORT",
+      "organization": "UNESCO-IOC",
+      "title_zh": "2026 全球海洋科学报告发布信息",
+      "title": "2026 全球海洋科学报告发布信息",
+      "url": "https://www.ioc.unesco.org/en/articles/global-ocean-science-report-worlds-most-complete-picture-ocean-science-released",
+      "allowed_urls": [
+        "https://www.ioc.unesco.org/en/articles/global-ocean-science-report-worlds-most-complete-picture-ocean-science-released"
+      ],
+      "allowed_hosts": [
+        "www.ioc.unesco.org"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "全球海洋科学报告",
+        "海洋科研",
+        "观测能力",
+        "UNESCO",
+        "IOC",
+        "GOSR",
+        "2026"
+      ],
+      "guide_zh": "UNESCO-IOC 于 2026 年发布全球海洋科学报告相关信息，用于了解各国海洋科研与观测能力。本文仅提供项目自写导读和官方链接，未复制报告全文，报告许可应按具体出版物核对。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ioc.unesco.org/en/articles/global-ocean-science-report-worlds-most-complete-picture-ocean-science-released",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:33Z",
+      "checked_at": "2026-10-13T08:38:33Z",
+      "sha256": "bda9275fa69fdb3332cf8143f2c09394ba13d2f591f245087226d56b83fcd068",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "da6c8a1e8fe5e728fd9c36351d56aae606c15b5451a628604bdce5b6d135702c",
+      "text_sha256": "da6c8a1e8fe5e728fd9c36351d56aae606c15b5451a628604bdce5b6d135702c",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Tue, 13 Oct 2026 04:12:11 GMT",
+      "etag": "W/\"1791864731\"",
+      "resolved_url": "https://www.ioc.unesco.org/en/articles/global-ocean-science-report-worlds-most-complete-picture-ocean-science-released",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-NOAA-COOPS",
+      "organization": "NOAA CO-OPS",
+      "title_zh": "潮位、海流实时与历史数据入口",
+      "title": "潮位、海流实时与历史数据入口",
+      "url": "https://tidesandcurrents.noaa.gov/",
+      "allowed_urls": [
+        "https://tidesandcurrents.noaa.gov/"
+      ],
+      "allowed_hosts": [
+        "tidesandcurrents.noaa.gov"
+      ],
+      "topics": [
+        "动态数据入口"
+      ],
+      "search_aliases": [
+        "潮位",
+        "海流",
+        "实时",
+        "海况",
+        "水位",
+        "站点",
+        "CO-OPS"
+      ],
+      "guide_zh": "官方入口提供水位、潮流等观测和预测产品。当前只登记入口；回答最新数值需要另接 API 并带站点、观测时间、时区、单位、高程基准与质控。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "metadata_only",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://tidesandcurrents.noaa.gov/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:30Z",
+      "checked_at": "2026-10-13T08:38:30Z",
+      "sha256": "f374da933435305ba4bc6523b4203e3e2bf483d1833cde343fbedbe56144f075",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "12944c60ce1c637e6d92308c7c9adba97a44e7d3e2b6b38b4b70888dd0b84302",
+      "text_sha256": null,
+      "snapshot_status": "data_service_not_connected",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": null,
+      "etag": null,
+      "resolved_url": "https://tidesandcurrents.noaa.gov/",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-NOAA-NDBC",
+      "organization": "NOAA National Data Buoy Center",
+      "title_zh": "海洋气象浮标观测入口",
+      "title": "海洋气象浮标观测入口",
+      "url": "https://www.ndbc.noaa.gov/",
+      "allowed_urls": [
+        "https://www.ndbc.noaa.gov/"
+      ],
+      "allowed_hosts": [
+        "www.ndbc.noaa.gov"
+      ],
+      "topics": [
+        "动态数据入口"
+      ],
+      "search_aliases": [
+        "浮标",
+        "NDBC",
+        "海温",
+        "风速",
+        "波高",
+        "波周期",
+        "实时",
+        "海况"
+      ],
+      "guide_zh": "NDBC 发布浮标与站点海洋气象观测。当前没有连通数值查询；必须区分实时、历史、缺测及质量控制记录，按站点和观测时刻解释产品。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "metadata_only",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ndbc.noaa.gov/",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:36Z",
+      "checked_at": "2026-10-13T08:38:36Z",
+      "sha256": "97fb3a18a7e707312ea0134dcf7c0ffd46113de44ecaba5030c37b6fe902af11",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "1271e7d94320cb32657519da09a3744524685844a19b98c405fd4c98910e18db",
+      "text_sha256": null,
+      "snapshot_status": "data_service_not_connected",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": null,
+      "etag": null,
+      "resolved_url": "https://www.ndbc.noaa.gov/",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-NOAA-OHC-LIVE",
+      "organization": "NOAA NCEI",
+      "title_zh": "全球海洋热含量更新入口",
+      "title": "全球海洋热含量更新入口",
+      "url": "https://www.ncei.noaa.gov/access/global-ocean-heat-content/index.html",
+      "allowed_urls": [
+        "https://www.ncei.noaa.gov/access/global-ocean-heat-content/index.html"
+      ],
+      "allowed_hosts": [
+        "www.ncei.noaa.gov"
+      ],
+      "topics": [
+        "动态数据入口"
+      ],
+      "search_aliases": [
+        "海洋热含量",
+        "最新",
+        "季度",
+        "更新",
+        "OHC"
+      ],
+      "guide_zh": "官方产品按其自身发布周期更新。当前项目只保留官方入口，不把网页知识快照当作最新季度海洋热含量数据。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "metadata_only",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ncei.noaa.gov/access/global-ocean-heat-content/index.html",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:33Z",
+      "checked_at": "2026-10-13T08:38:33Z",
+      "sha256": "a72b5b3d69d23d2dabcdcc107a427aed156b1679c6e9eabc3efe5a21ce943d85",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "8964b6f308c93d1a85b7dde06806ecff871a2abe4986e915b41a5276a635a5d0",
+      "text_sha256": null,
+      "snapshot_status": "data_service_not_connected",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Wed, 08 Jul 2026 14:37:16 GMT",
+      "etag": "\"6e00-6561a71a45f00-gzip\"",
+      "resolved_url": "https://www.ncei.noaa.gov/access/global-ocean-heat-content/index.html",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    },
+    {
+      "id": "O-NOAA-OISST",
+      "organization": "NOAA NCEI",
+      "title_zh": "OISST 海表温度产品说明与下载入口",
+      "title": "OISST 海表温度产品说明与下载入口",
+      "url": "https://www.ncei.noaa.gov/products/optimum-interpolation-sst",
+      "allowed_urls": [
+        "https://www.ncei.noaa.gov/products/optimum-interpolation-sst"
+      ],
+      "allowed_hosts": [
+        "www.ncei.noaa.gov"
+      ],
+      "topics": [
+        "观测与标准"
+      ],
+      "search_aliases": [
+        "OISST",
+        "海表温度",
+        "SST",
+        "最优插值",
+        "卫星",
+        "遥感",
+        "实时"
+      ],
+      "guide_zh": "OISST 将多来源海表温度观测处理为规则网格分析产品；空间分辨率、版本和时间窗口应按产品说明核对。项目当前没有自动获取最新网格数值。",
+      "guide_kind": "project_written_chinese_guide_not_official_translation",
+      "content_policy": "original_project_summary",
+      "license": {
+        "name": "Project-written guide: MIT; linked original: provider-specific terms",
+        "url": "https://www.ncei.noaa.gov/products/optimum-interpolation-sst",
+        "note": "仅发布自行撰写的短导读与链接，不转授原站全文或数据许可；具体复用须核对原出版物/数据集条款。"
+      },
+      "ttl_hours": 168,
+      "source_updated_at": null,
+      "source_updated_at_kind": "not_provided",
+      "fetched_at": "2026-10-13T08:38:35Z",
+      "checked_at": "2026-10-13T08:38:35Z",
+      "sha256": "390fbdf2aa0a893e3fce1e35c00a8f9983a10a4f885844164f36b0e3291233ac",
+      "hash_kind": "original_response_bytes_sha256",
+      "guide_sha256": "a105afd15af44642f48c0c32a9770e451e391e7acdd14b8c212ac96e7965843a",
+      "text_sha256": "a105afd15af44642f48c0c32a9770e451e391e7acdd14b8c212ac96e7965843a",
+      "snapshot_status": "reference_only",
+      "guide_created_at": "2026-10-13T08:37:13Z",
+      "temporal_note": "项目自写导读与官方入口，非官方译文；未自动获取实时海洋观测值。",
+      "http_last_modified": "Mon, 12 Oct 2026 20:05:01 GMT",
+      "etag": "\"1791835501-gzip-gunzip-gzip\"",
+      "resolved_url": "https://www.ncei.noaa.gov/products/optimum-interpolation-sst",
+      "original_source_verified": true,
+      "last_fetch_error": null
+    }
+  ],
+  "refreshed_at": "2026-10-13T09:28:33Z"
+}

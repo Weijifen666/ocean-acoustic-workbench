@@ -814,3 +814,200 @@
 .workbench-app .course-explorer.dark .overview-knowledge-links button {
   color: #9ccbdc;
 }
+
+/* Input-first conversation: light course identity, one column, one footer. */
+.workbench-app[data-page="chat"] .header-status {
+  display: none;
+}
+.workbench-app[data-page="chat"] main {
+  padding: 14px 25px 0;
+}
+.workbench-app[data-page="chat"] .chat-layout.agent-chat {
+  display: block;
+  height: calc(100dvh - 111px);
+  min-height: 300px;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.workbench-app[data-page="chat"] .agent-chat-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+.agent-chat-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 11px 11px 15px;
+  color: #6c8b9e;
+  font-size: 13px;
+}
+.agent-chat-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.agent-chat-heading small {
+  color: #9eb3c1;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+.workbench-app[data-page="chat"] .chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 25px 22px;
+  scrollbar-width: thin;
+  scrollbar-color: #ccdae4 transparent;
+}
+.workbench-app[data-page="chat"] .chat-welcome {
+  margin: 12vh auto 30px;
+  text-align: center;
+  max-width: 650px;
+}
+.workbench-app[data-page="chat"] .chat-welcome h2 {
+  font-size: 26px;
+  font-weight: 500;
+  color: #335d77;
+  margin-bottom: 15px;
+  letter-spacing: 0.3px;
+}
+.workbench-app[data-page="chat"] .chat-welcome p {
+  font-size: 13px;
+  color: #91a7b7;
+}
+.workbench-app[data-page="chat"] .prompt-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 25px;
+}
+.workbench-app[data-page="chat"] .prompt-grid button {
+  border: 1px solid #dce8ee;
+  border-radius: 5px;
+  padding: 9px 12px;
+  background: #fbfdfe;
+  color: #7898ad;
+  font-size: 11px;
+}
+.workbench-app[data-page="chat"] .prompt-grid button:hover {
+  color: #547f99;
+  border-color: #bed5e2;
+}
+.workbench-app[data-page="chat"] .message {
+  margin-bottom: 31px;
+  gap: 12px;
+}
+.workbench-app[data-page="chat"] .avatar {
+  background: #e4eff5;
+  color: #5f8ca6;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  font-size: 10px;
+}
+.workbench-app[data-page="chat"] .user .avatar {
+  color: #8b9fb1;
+  background: #eaf0f5;
+}
+.workbench-app[data-page="chat"] .message-content {
+  min-width: 0;
+  flex: 1;
+}
+.workbench-app[data-page="chat"] .message-text {
+  font-size: 14px;
+  color: #3a6179;
+  line-height: 1.95;
+}
+.workbench-app[data-page="chat"] .message.failed .message-text {
+  color: #a26655;
+}
+.workbench-app[data-page="chat"] .agent-composer {
+  flex-shrink: 0;
+  margin: 15px 8px 12px;
+  padding: 16px 17px 11px;
+  background: #fff;
+  border: 1px solid #d1e1eb;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px #25465b04;
+}
+.workbench-app[data-page="chat"] .agent-composer:focus-within {
+  border-color: #9ebfd2;
+}
+.workbench-app[data-page="chat"] .agent-composer textarea {
+  display: block;
+  height: 78px;
+  font-size: 14px;
+  line-height: 1.8;
+  border: 0;
+  background: transparent;
+  box-shadow: none !important;
+}
+.workbench-app[data-page="chat"] .agent-composer .composer-controls {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .workbench-app[data-page="chat"] main {
+    padding: 10px 10px 0;
+  }
+  .workbench-app[data-page="chat"] .chat-layout.agent-chat {
+    height: calc(100dvh - 101px);
+    min-height: 280px;
+  }
+  .agent-chat-heading {
+    padding: 11px 8px 10px;
+    font-size: 12px;
+  }
+  .agent-chat-heading small {
+    font-size: 9px;
+  }
+  .workbench-app[data-page="chat"] .chat-scroll {
+    padding: 24px 13px;
+  }
+  .workbench-app[data-page="chat"] .chat-welcome {
+    margin-top: 10vh;
+  }
+  .workbench-app[data-page="chat"] .chat-welcome h2 {
+    font-size: 23px;
+  }
+  .workbench-app[data-page="chat"] .chat-welcome p {
+    font-size: 12px;
+  }
+  .workbench-app[data-page="chat"] .prompt-grid button {
+    font-size: 10px;
+  }
+  .workbench-app[data-page="chat"] .message-text {
+    font-size: 13px;
+  }
+  .workbench-app[data-page="chat"] .message {
+    gap: 9px;
+  }
+  .workbench-app[data-page="chat"] .agent-composer {
+    margin: 10px 0 9px;
+    padding: 13px 12px 9px;
+  }
+  .workbench-app[data-page="chat"] .agent-composer textarea {
+    height: 70px;
+    font-size: 13px;
+  }
+}
+@media (max-height: 500px) {
+  .workbench-app[data-page="chat"] .chat-layout.agent-chat {
+    min-height: 0;
+  }
+  .workbench-app[data-page="chat"] .agent-composer textarea {
+    height: 42px;
+  }
+  .workbench-app[data-page="chat"] .chat-welcome {
+    margin-top: 15px;
+  }
+}

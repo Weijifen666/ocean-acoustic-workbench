@@ -522,3 +522,63 @@
     transition: none;
   }
 }
+
+/* Shared compact composer below the floating draft. */
+.mascot-chat-composer {
+  padding: 12px 13px 10px;
+}
+.mascot-chat-composer textarea {
+  height: 67px;
+  margin-bottom: 8px;
+}
+.mascot-chat-composer .composer-controls-row {
+  display: flex;
+}
+.mascot-chat-composer .composer-send {
+  width: 30px;
+  height: 30px;
+  background: #2d7092;
+}
+.mascot-chat-composer .composer-more {
+  width: 27px;
+  height: 30px;
+  padding: 0;
+  color: #7995a7;
+  background: transparent;
+}
+.mascot-message-trace {
+  margin-top: 9px;
+  color: #8ba1ae;
+  font-size: 10px;
+}
+.mascot-message-trace > summary {
+  cursor: pointer;
+  color: #8ba1ae;
+  font-size: 10px;
+}
+.mascot-message-trace > p {
+  color: #7e98aa;
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 9px 0;
+  overflow-wrap: anywhere;
+}
+.mascot-message-trace .mascot-answer-sources {
+  margin-top: 8px;
+}
+.mascot-chat-empty h3 {
+  font-size: 15px;
+  font-weight: 500;
+}
+.mascot-chat-empty p {
+  font-size: 11px;
+}
+.mascot-chat-empty button {
+  font-size: 11px;
+  padding: 9px 0;
+}
+@media (max-height: 500px) {
+  .mascot-chat-composer textarea {
+    height: 38px;
+  }
+}

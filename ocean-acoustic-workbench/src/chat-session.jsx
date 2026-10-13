@@ -7,11 +7,17 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { BookOpen, Globe2, Loader2, Settings2 } from "lucide-react";
 import "./chat-controls.css";
 
 const ChatContext = createContext(null);
 const EMPTY_CATALOG = { providers: [], models: [] };
+const CONTEXT_BUDGETS = [4096, 8192, 16384, 32768, 65536, 131072];
+function savedContextBudget() {
+  try {
+    const value = window.localStorage.getItem("ocean-context-budget");
+    return CONTEXT_BUDGETS.includes(Number(value)) ? Number(value) : "auto";
+  } catch { return "auto"; }
+}
 
 async function request(path, options = {}) {
   let response;
@@ -80,6 +86,7 @@ function historyRows(raw) {
     evidence: Array.isArray(row.evidence) ? row.evidence : [],
     citations: Array.isArray(row.citations) ? row.citations : [],
     retrieval: row.retrieval,
+    context: row.context && typeof row.context === "object" ? row.context : null,
   }));
 }
 
@@ -88,7 +95,8 @@ export function ChatProvider({ notify, children }) {
   const [messagesState, setMessagesState] = useState([]);
   const [busy, setBusy] = useState(false);
   const [modeState, setModeState] = useState("chat");
-  const [knowledgeModeState, setKnowledgeModeState] = useState("course");
+  const [knowledgeModeState, setKnowledgeModeState] = useState("general");
+  const [contextBudgetState, setContextBudgetState] = useState(savedContextBudget);
   const [config, setConfig] = useState(null);
   const [catalog, setCatalog] = useState(EMPTY_CATALOG);
   const [profiles, setProfiles] = useState({});
@@ -103,7 +111,8 @@ export function ChatProvider({ notify, children }) {
   const textRef = useRef("");
   const messagesRef = useRef([]);
   const modeRef = useRef("chat");
-  const knowledgeModeRef = useRef("course");
+  const knowledgeModeRef = useRef("general");
+  const contextBudgetRef = useRef(contextBudgetState);
   const configRef = useRef(null);
   const catalogRef = useRef(EMPTY_CATALOG);
   const profilesRef = useRef({});
@@ -142,6 +151,13 @@ export function ChatProvider({ notify, children }) {
     if (!["course", "general"].includes(value)) return;
     knowledgeModeRef.current = value;
     if (aliveRef.current) setKnowledgeModeState(value);
+  }, []);
+  const setContextBudget = useCallback((next) => {
+    const value = next === "auto" ? "auto" : Number(next);
+    if (busyRef.current || (value !== "auto" && !CONTEXT_BUDGETS.includes(value))) return;
+    contextBudgetRef.current = value;
+    if (aliveRef.current) setContextBudgetState(value);
+    try { window.localStorage.setItem("ocean-context-budget", String(value)); } catch { /* Preference is optional. */ }
   }, []);
 
   const acceptConfig = useCallback((raw) => {
@@ -290,6 +306,7 @@ export function ChatProvider({ notify, children }) {
     if (aliveRef.current) setBusy(true);
     const requestMode = modeRef.current;
     const requestKnowledge = knowledgeModeRef.current;
+    const requestContext = contextBudgetRef.current;
     let userId;
     let snapshot;
     try {
@@ -297,7 +314,7 @@ export function ChatProvider({ notify, children }) {
       if (selection && !await selection) throw new Error("模型切换未保存，请确认当前模型后重新发送。");
       if (reloadPromiseRef.current) await reloadPromiseRef.current;
       if (!readyRef.current || !configRef.current) throw new Error("当前模型配置尚未载入，请先重新加载配置。");
-      snapshot = { ...configRef.current, mode: requestMode, knowledge_mode: requestKnowledge };
+      snapshot = { ...configRef.current, mode: requestMode, knowledge_mode: requestKnowledge, context_budget: requestContext };
       userId = `question-${Date.now().toString(36)}-${++messageCounterRef.current}`;
       if (textRef.current === draft) setText("");
       setMsgs((rows) => [...rows, {
@@ -308,7 +325,7 @@ export function ChatProvider({ notify, children }) {
       const data = await request("/chat", {
         method: "POST",
         body: JSON.stringify({ message, mode: snapshot.mode, knowledge_mode: snapshot.knowledge_mode,
-                               provider: snapshot.provider, model: snapshot.model }),
+                               provider: snapshot.provider, model: snapshot.model, context_budget: snapshot.context_budget }),
       });
       if (typeof data.reply !== "string") throw new Error("服务没有返回文字消息，不能把这次请求标记为完成。");
       if (aliveRef.current) setLoadError("");
@@ -325,6 +342,7 @@ export function ChatProvider({ notify, children }) {
         evidence: Array.isArray(data.evidence) ? data.evidence : [],
         citations: Array.isArray(data.citations) ? data.citations : [],
         retrieval: data.retrieval,
+        context: data.context && typeof data.context === "object" ? data.context : null,
       }]);
       // These are read-only metadata calls, never a provider connectivity test.
       void refreshGaps();
@@ -356,9 +374,11 @@ export function ChatProvider({ notify, children }) {
     mode: modeState, setMode, knowledgeMode: knowledgeModeState, setKnowledgeMode,
     send, config, catalog, profiles, selectionBusy, selectModel, reloadConfig,
     ready, loadError, knowledgeStatus, refreshKnowledgeStatus, gaps, refreshGaps,
+    contextBudget: contextBudgetState, setContextBudget,
+    lastContext: [...messagesState].reverse().find((row) => row.context)?.context || null,
   }), [textState, setText, messagesState, setMsgs, busy, modeState, setMode, knowledgeModeState,
        setKnowledgeMode, send, config, catalog, profiles, selectionBusy, selectModel, reloadConfig,
-       ready, loadError, knowledgeStatus, refreshKnowledgeStatus, gaps, refreshGaps]);
+       ready, loadError, knowledgeStatus, refreshKnowledgeStatus, gaps, refreshGaps, contextBudgetState, setContextBudget]);
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
 
@@ -366,79 +386,4 @@ export function useChatSession() {
   const session = useContext(ChatContext);
   if (!session) throw new Error("useChatSession 必须在 ChatProvider 内使用。");
   return session;
-}
-
-export function ChatModelSwitcher({ compact = false, onOpenSettings }) {
-  const { config, catalog, profiles, ready, busy, selectionBusy, selectModel,
-          knowledgeMode, setKnowledgeMode, loadError, reloadConfig } = useChatSession();
-  const blocked = !ready || busy || selectionBusy;
-  const providers = catalog?.providers || [];
-  const provider = providers.find((row) => row.id === config?.provider);
-  const rows = (catalog?.models || []).filter((row) => row.provider === config?.provider);
-  const custom = config?.model && !rows.some((row) => row.id === config.model);
-  const chosen = rows.find((row) => row.id === config?.model);
-  const configured = config?.api_key_set === true;
-  function openSettings() {
-    if (onOpenSettings) onOpenSettings();
-    else window.dispatchEvent(new CustomEvent("ocean-open-settings"));
-  }
-  function changeProvider(event) {
-    const id = event.target.value;
-    const saved = id === config?.provider ? config : profiles[id];
-    if (saved?.model) void selectModel(id, saved.model);
-  }
-  return (
-    <section className={"chat-model-controls" + (compact ? " compact" : "")} aria-label="模型与知识范围">
-      <div className="chat-model-row">
-        <label className="chat-select-field">
-          <span>供应商</span>
-          <select aria-label="对话模型供应商" value={config?.provider || ""} disabled={blocked}
-                  onChange={changeProvider}>
-            {!providers.length && <option value="">正在载入…</option>}
-            {providers.map((item) => {
-              const available = item.id === config?.provider ? configured : profiles[item.id]?.api_key_set;
-              return <option key={item.id} value={item.id} disabled={!available && item.id !== config?.provider}>
-                {item.name}{available ? " · 已配密钥" : " · 未配置"}
-              </option>;
-            })}
-          </select>
-        </label>
-        <label className="chat-select-field chat-model-field">
-          <span>模型</span>
-          <select aria-label="本次问答使用的模型" value={config?.model || ""}
-                  disabled={blocked || !configured}
-                  onChange={(event) => void selectModel(config.provider, event.target.value)}>
-            {!config?.model && <option value="">正在载入…</option>}
-            {rows.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            {custom && <option value={config.model}>已保存自定义 · {config.model}</option>}
-          </select>
-        </label>
-        <button type="button" className="chat-settings-button" onClick={openSettings}
-                disabled={busy || selectionBusy} title="配置供应商、密钥或自定义模型">
-          <Settings2 size={14} /><span>{compact ? "设置" : "模型设置"}</span>
-        </button>
-      </div>
-      {chosen?.compatibility_note && <p className="chat-knowledge-notice">{chosen.compatibility_note} · 请求入口与实际返回模型会分别记录。</p>}
-      <div className="chat-model-status" aria-live="polite">
-        {selectionBusy ? <><Loader2 size={12} className="spin" />正在保存模型选择…</>
-          : ready ? <>{configured ? `${provider?.name || config.provider} · ${config.model}` : "未配模型密钥，可直接查课程依据"}
-              {configured && <span>已配置密钥，权限与额度以账户为准</span>}</>
-          : <>配置尚未载入 <button type="button" onClick={() => void reloadConfig()}>重新加载</button></>}
-      </div>
-      <div className="chat-knowledge-switch" role="group" aria-label="问答知识范围">
-        <button type="button" aria-pressed={knowledgeMode === "course"}
-                className={knowledgeMode === "course" ? "active" : ""} disabled={busy || selectionBusy}
-                onClick={() => setKnowledgeMode("course")}><BookOpen size={13} />课程依据</button>
-        <button type="button" aria-pressed={knowledgeMode === "general"}
-                className={knowledgeMode === "general" ? "active" : ""} disabled={busy || selectionBusy}
-                onClick={() => setKnowledgeMode("general")}><Globe2 size={13} />通用模型知识</button>
-      </div>
-      <p className={"chat-knowledge-notice" + (knowledgeMode === "general" ? " general" : "")}>
-        {knowledgeMode === "course"
-          ? "依据课程来源回答；没有命中时明确说明缺口，不编造引用。"
-          : "调用模型已有知识；超出课程资料的内容不代表已核实，也不代表联网搜索。"}
-      </p>
-      {loadError && <div className="chat-controls-error" role="status">{loadError}</div>}
-    </section>
-  );
 }

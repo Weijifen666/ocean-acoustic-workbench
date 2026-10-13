@@ -1,7 +1,8 @@
 // Public cloud UI; encrypted outbound-only bridge to the owner's MATLAB node.
-import {FILES,GRAPH,MODELS,SOURCES,TEMPLATE,EXERCISES} from './generated-assets.mjs';
+import {FILES,GRAPH,MODELS,SOURCES,TEMPLATE,EXERCISES,OCEAN_SOURCES,OCEAN_CHUNKS} from './generated-assets.mjs';
 import {createCourseRetriever} from './server/course-retrieval.mjs';
 import {createCloudModels} from './server/cloud-models.mjs';
+import {createPublicOceanKnowledge} from './server/open-ocean-retrieval.mjs';
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers}});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const encoder=new TextEncoder();
@@ -11,7 +12,7 @@ async function key(secret){return crypto.subtle.importKey('raw',await crypto.sub
 async function encrypt(data,secret){const iv=crypto.getRandomValues(new Uint8Array(12));const out=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(secret),encoder.encode(JSON.stringify(data))));return base64(new Uint8Array([...iv,...out]))}
 async function decrypt(data,secret){const b=bytes64(data);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},await key(secret),b.slice(12))))}
 const db=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run(),all:async(sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results});
-const offline=()=>({version:'0.5.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
+const offline=()=>({version:'0.6.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
 const coursePages=new Set(GRAPH.nodes.flatMap(n=>(n.images||[]).map(i=>i.url)).filter(u=>/^\/api\/source\/S\d{2}\/page\/\d+$/.test(u)));
 function graphPath(source,target){
  const ids=new Set(GRAPH.nodes.map(n=>n.id));if(!ids.has(source)||!ids.has(target))return null;
@@ -60,7 +61,7 @@ async function dynamic(request,env,ctx,url){
  }finally{ctx.waitUntil(Promise.all([store.run('DELETE FROM bridge_requests WHERE id=?',id),env.BUCKET.delete('rpc/'+id)]))}
 }
 async function nodeOnline(env){try{const heart=await db(env).one("SELECT seen FROM bridge_state WHERE id='matlab'");return !!heart&&Date.now()-heart.seen<15000}catch{return false}}
-const cloudApi=createCloudModels({catalog:MODELS,retrieve:createCourseRetriever(GRAPH),encrypt,decrypt,heartbeat:nodeOnline,template:TEMPLATE,proxy:(request,env,ctx)=>dynamic(request,env,ctx,new URL(request.url))});
+const cloudApi=createCloudModels({catalog:MODELS,retrieve:createCourseRetriever(GRAPH),publicKnowledge:createPublicOceanKnowledge({sources:OCEAN_SOURCES,chunks:OCEAN_CHUNKS}),encrypt,decrypt,heartbeat:nodeOnline,template:TEMPLATE,proxy:(request,env,ctx)=>dynamic(request,env,ctx,new URL(request.url))});
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
  try{

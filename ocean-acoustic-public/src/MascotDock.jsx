@@ -1,16 +1,15 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
-  ArrowUp,
   BookOpen,
   ExternalLink,
-  Maximize2,
   Minus,
   Network,
   RotateCcw,
   Settings2,
   X,
 } from "lucide-react";
-import { useChatSession, ChatModelSwitcher } from "./chat-session";
+import { useChatSession } from "./chat-session";
+import ChatComposerControls from "./ChatComposerControls";
 import MascotFigure from "./MascotFigure";
 import "./mascot.css";
 
@@ -18,6 +17,9 @@ const POSITION_KEY = "ocean:assistant-position:v1";
 const AVATAR_WIDTH = 92;
 const AVATAR_HEIGHT = 126;
 const MARGIN = 12;
+const PARKING_GAP = 12;
+const PARKING_CONTROLS =
+  ".button.primary, .drawer-footer button, .composer, .composer-controls, .composer-send, .composer textarea, .composer select, .apply-model, .exercise-actions button";
 
 function screenSize() {
   return { width: window.innerWidth, height: window.innerHeight };
@@ -32,48 +34,81 @@ function clampPosition(position, screen = screenSize()) {
 }
 function defaultPosition() {
   const screen = screenSize();
-  return clampPosition(
-    {
-      x: screen.width - AVATAR_WIDTH - 23,
-      y: screen.height - AVATAR_HEIGHT - 46,
-    },
-    screen,
+  return clearParking(
+    clampPosition(
+      {
+        x: screen.width - AVATAR_WIDTH - 23,
+        y: screen.height - AVATAR_HEIGHT - 46,
+      },
+      screen,
+    ),
   );
 }
 function clearParking(position) {
   const screen = screenSize();
-  const controls = [
-    ...document.querySelectorAll(
-      ".button.primary, .drawer-footer button, .composer button, .apply-model, .exercise-actions button",
-    ),
-  ]
+  const parked = clampPosition(position, screen);
+  const controls = [...document.querySelectorAll(PARKING_CONTROLS)]
+    // The floating chat intentionally overlays the page; only protect the workspace.
+    .filter((element) => !element.closest(".mascot-chat-panel, .mascot-dock"))
     .map((element) => element.getBoundingClientRect())
-    .filter((rect) => rect.width && rect.height);
+    .filter(
+      (rect) =>
+        rect.width &&
+        rect.height &&
+        rect.right > 0 &&
+        rect.bottom > 0 &&
+        rect.left < screen.width &&
+        rect.top < screen.height,
+    );
   const clear = (candidate) =>
     !controls.some(
       (rect) =>
-        candidate.x < rect.right + 5 &&
-        candidate.x + AVATAR_WIDTH > rect.left - 5 &&
-        candidate.y < rect.bottom + 5 &&
-        candidate.y + AVATAR_HEIGHT > rect.top - 5,
+        candidate.x < rect.right + PARKING_GAP &&
+        candidate.x + AVATAR_WIDTH > rect.left - PARKING_GAP &&
+        candidate.y < rect.bottom + PARKING_GAP &&
+        candidate.y + AVATAR_HEIGHT > rect.top - PARKING_GAP,
     );
-  if (clear(position)) return position;
-  return (
-    [
-      { x: screen.width - AVATAR_WIDTH - 20, y: 118 },
-      { x: screen.width - AVATAR_WIDTH - 20, y: screen.height * 0.38 },
-      { x: 20, y: screen.height - AVATAR_HEIGHT - 45 },
-      { x: 20, y: 118 },
-    ]
-      .map((candidate) => clampPosition(candidate, screen))
-      .find(clear) || position
-  );
+  if (clear(parked)) return parked;
+  const candidates = controls.flatMap((rect) => [
+    { x: parked.x, y: rect.top - AVATAR_HEIGHT - PARKING_GAP },
+    { x: parked.x, y: rect.bottom + PARKING_GAP },
+    { x: rect.left - AVATAR_WIDTH - PARKING_GAP, y: parked.y },
+    { x: rect.right + PARKING_GAP, y: parked.y },
+  ]);
+  // Keep a manually chosen location if safe; otherwise prefer the nearest clear edge.
+  for (let y = 62; y < screen.height - 40; y += AVATAR_HEIGHT + PARKING_GAP) {
+    candidates.push(
+      { x: MARGIN, y },
+      { x: screen.width - AVATAR_WIDTH - MARGIN, y },
+    );
+  }
+  const safe = candidates
+    .map((candidate) => clampPosition(candidate, screen))
+    .filter(clear)
+    .sort(
+      (a, b) =>
+        Math.hypot(a.x - parked.x, a.y - parked.y) -
+        Math.hypot(b.x - parked.x, b.y - parked.y),
+    );
+  return safe[0] || parked;
 }
 function readPosition() {
   try {
     const stored = JSON.parse(localStorage.getItem(POSITION_KEY));
-    if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y))
-      return clampPosition(stored);
+    if (stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)) {
+      const screen = screenSize();
+      const priorWidth = Number(stored.viewport_width);
+      const priorHeight = Number(stored.viewport_height);
+      const position =
+        priorWidth > 0 && priorHeight > 0
+          ? {
+              x: stored.x * (screen.width / priorWidth),
+              y: stored.y * (screen.height / priorHeight),
+            }
+          : stored;
+      // Legacy x/y-only records are clamped now and checked against mounted controls below.
+      return clampPosition(position, screen);
+    }
   } catch {
     /* Position storage is optional. */
   }
@@ -81,9 +116,15 @@ function readPosition() {
 }
 function storePosition(position) {
   try {
+    const screen = screenSize();
     localStorage.setItem(
       POSITION_KEY,
-      JSON.stringify({ x: position.x, y: position.y }),
+      JSON.stringify({
+        x: position.x,
+        y: position.y,
+        viewport_width: screen.width,
+        viewport_height: screen.height,
+      }),
     );
   } catch {
     /* Keep functioning in private browsing. */
@@ -98,7 +139,7 @@ function safeSourceUrl(value) {
 function modelIdentity(message) {
   if (message.request_failed || message.status === "failed")
     return "请求未完成";
-  if (message.model_used === false) return "课程资料检索（未调用模型）";
+  if (message.model_used === false) return "资料检索（未调用模型）";
   if (message.model_used === true) {
     if (message.response_model)
       return [message.model_provider, message.response_model]
@@ -119,17 +160,8 @@ export default function MascotDock({
   onOpenSettings,
   onKnowledge,
 }) {
-  const {
-    text,
-    setText,
-    msgs,
-    busy,
-    send,
-    ready,
-    loadError,
-    selectionBusy,
-    config,
-  } = useChatSession();
+  const { text, setText, msgs, busy, send, ready, selectionBusy } =
+    useChatSession();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [preferences, setPreferences] = useState(false);
@@ -155,14 +187,68 @@ export default function MascotDock({
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
-  useEffect(() => {
-    if (open || dragging) return;
-    const next = clearParking(positionRef.current);
-    if (next.x !== positionRef.current.x || next.y !== positionRef.current.y) {
-      positionRef.current = next;
-      setPosition(next);
-    }
-  }, [ready, open, onOpenChat, onKnowledge, onOpenSettings]);
+  useLayoutEffect(() => {
+    if (open || dragging || hidden) return;
+    let frame;
+    const check = () => {
+      const next = clearParking(positionRef.current);
+      if (
+        next.x !== positionRef.current.x ||
+        next.y !== positionRef.current.y
+      ) {
+        positionRef.current = next;
+        setPosition(next);
+        storePosition(next);
+      }
+    };
+    const schedule = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        observeComposers();
+        check();
+      });
+    };
+    const workspace = document.querySelector("#workspace-content");
+    const app = document.querySelector(".workbench-app");
+    const observed = new Set();
+    const resizeObserver = new ResizeObserver(schedule);
+    const observeComposers = () => {
+      for (const element of document.querySelectorAll(
+        "#workspace-content, #workspace-content .composer, #workspace-content .composer-controls",
+      )) {
+        if (!observed.has(element)) {
+          observed.add(element);
+          resizeObserver.observe(element);
+        }
+      }
+      for (const element of observed) {
+        if (!element.isConnected) {
+          resizeObserver.unobserve(element);
+          observed.delete(element);
+        }
+      }
+    };
+    const mutations = new MutationObserver(schedule);
+    if (workspace)
+      mutations.observe(workspace, { childList: true, subtree: true });
+    if (app)
+      mutations.observe(app, {
+        attributes: true,
+        attributeFilter: ["data-page"],
+      });
+    observeComposers();
+    check();
+    window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, true);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      mutations.disconnect();
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+    };
+  }, [ready, open, dragging, hidden, screen.width, screen.height]);
   useEffect(() => {
     const resize = () => {
       const nextScreen = screenSize();
@@ -264,9 +350,12 @@ export default function MascotDock({
       animation.current = null;
     }
     if (moved.current && pendingPosition.current) {
-      positionRef.current = pendingPosition.current;
-      setPosition(pendingPosition.current);
-      storePosition(pendingPosition.current);
+      const next = open
+        ? pendingPosition.current
+        : clearParking(pendingPosition.current);
+      positionRef.current = next;
+      setPosition(next);
+      storePosition(next);
     }
     gesture.current = null;
     setDragging(false);
@@ -289,10 +378,11 @@ export default function MascotDock({
     }[event.key];
     if (!direction) return;
     event.preventDefault();
-    const next = clampPosition({
+    const requested = clampPosition({
       x: positionRef.current.x + direction[0],
       y: positionRef.current.y + direction[1],
     });
+    const next = open ? requested : clearParking(requested);
     positionRef.current = next;
     setPosition(next);
     storePosition(next);
@@ -365,8 +455,11 @@ export default function MascotDock({
       <button
         className="mascot-restore"
         onClick={() => {
+          const next = defaultPosition();
           setHidden(false);
-          setPosition(defaultPosition());
+          positionRef.current = next;
+          setPosition(next);
+          storePosition(next);
         }}
         aria-label="重新显示海洋声学课程助手"
       >
@@ -474,13 +567,6 @@ export default function MascotDock({
             </div>
             <div>
               <button
-                aria-label="进入完整知识问答"
-                title="进入完整知识问答"
-                onClick={openFullChat}
-              >
-                <Maximize2 size={15} />
-              </button>
-              <button
                 aria-label="收起快捷问答"
                 title="收起快捷问答"
                 onClick={() => {
@@ -492,7 +578,6 @@ export default function MascotDock({
               </button>
             </div>
           </div>
-          <ChatModelSwitcher compact onOpenSettings={openSettings} />
           <div
             className="mascot-chat-messages"
             ref={scrollArea}
@@ -500,16 +585,9 @@ export default function MascotDock({
             aria-live="polite"
             aria-relevant="additions"
           >
-            {loadError && (
-              <p className="mascot-load-error">
-                {typeof loadError === "string"
-                  ? loadError
-                  : "暂时无法读取对话配置，请稍后重试。"}
-              </p>
-            )}
             {!msgs.length && (
               <div className="mascot-chat-empty">
-                <h3>把海洋声学问题带到这里</h3>
+                <h3>想探索哪片海洋知识？</h3>
                 <p>
                   查看原理与出处，或分析课程代码。页面和快捷窗口使用同一份对话。
                 </p>
@@ -517,11 +595,9 @@ export default function MascotDock({
                   声源深度如何影响模态激发？
                 </button>
                 <button
-                  onClick={() =>
-                    setText("解释传播损失 TL，并给出课程资料依据。")
-                  }
+                  onClick={() => setText("海洋酸化为什么会影响珊瑚生长？")}
                 >
-                  解释传播损失 TL 与参考量
+                  海洋酸化为什么会影响珊瑚生长？
                 </button>
               </div>
             )}
@@ -531,22 +607,34 @@ export default function MascotDock({
                 className={`mascot-message ${message.role}${message.request_failed ? " request-failed" : ""}`}
               >
                 <div className="mascot-message-label">
-                  <span>{message.role === "user" ? "你" : "课程助手"}</span>
-                  {message.role === "assistant" && (
-                    <span>{modelIdentity(message)}</span>
-                  )}
+                  <span>
+                    {message.role === "user"
+                      ? "你"
+                      : message.request_failed
+                        ? "请求未完成"
+                        : "课程助手"}
+                  </span>
                 </div>
                 <p>{message.text}</p>
-                {message.coverage_notice && (
-                  <small className="mascot-coverage-note">
-                    {message.coverage_notice}
-                  </small>
-                )}
                 {message.role === "assistant" && (
-                  <CompactSources
-                    message={message}
-                    onKnowledge={showKnowledge}
-                  />
+                  <details className="mascot-message-trace">
+                    <summary>
+                      回答详情
+                      {message.citations?.length
+                        ? ` · ${message.citations.length} 条依据`
+                        : ""}
+                    </summary>
+                    <p>{modelIdentity(message)}</p>
+                    {message.coverage_notice && (
+                      <small className="mascot-coverage-note">
+                        {message.coverage_notice}
+                      </small>
+                    )}
+                    <CompactSources
+                      message={message}
+                      onKnowledge={showKnowledge}
+                    />
+                  </details>
                 )}
               </div>
             ))}
@@ -585,20 +673,13 @@ export default function MascotDock({
                 }
               }}
             />
-            <div>
-              <small>
-                {config?.api_key_set
-                  ? "使用你的模型连接"
-                  : "未配置密钥 · 课程资料检索"}
-              </small>
-              <button
-                type="submit"
-                aria-label="发送快捷问答"
-                disabled={!canSend}
-              >
-                <ArrowUp size={18} />
-              </button>
-            </div>
+            <ChatComposerControls
+              compact
+              onOpenSettings={openSettings}
+              onOpenChat={openFullChat}
+              onKnowledge={showKnowledge}
+              onSend={send}
+            />
           </form>
         </section>
       )}
@@ -612,11 +693,7 @@ function CompactSources({ message, onKnowledge }) {
     : message.evidence || [];
   if (!citations.length) return null;
   return (
-    <details className="mascot-answer-sources">
-      <summary>
-        <BookOpen size={12} />
-        查看依据（{citations.length}）
-      </summary>
+    <div className="mascot-answer-sources">
       {citations.slice(0, 4).map((citation, index) => {
         const evidenceId =
           citation.evidence_id || citation.id || citation.citation_id;
@@ -671,6 +748,6 @@ function CompactSources({ message, onKnowledge }) {
         );
       })}
       {citations.length > 4 && <small>完整依据可进入知识问答查看。</small>}
-    </details>
+    </div>
   );
 }

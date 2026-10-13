@@ -20,11 +20,11 @@ from unittest.mock import patch
 
 import httpx
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
-import answer_policy
+import answer_policy, context_budget
 
 TEST_KEY = "TEST-ONLY-NOT-A-REAL-API-KEY"
 EVIDENCE = [{"id": "TEST-CARD", "text": "测试课程依据", "source_id": "TEST",
@@ -50,12 +50,12 @@ class LocalChatSafety(unittest.IsolatedAsyncioTestCase):
                 definitions.append(item)
         self.assertEqual(len(definitions), 2)
         self.namespace = {
-            "__name__": "isolated_chat_endpoint", "BaseModel": BaseModel, "Field": Field,
+            "__name__": "isolated_chat_endpoint", "BaseModel": BaseModel, "Field": Field, "field_validator": field_validator,
             "Literal": Literal, "HTTPException": HTTPException, "httpx": httpx,
             "json": json, "config": lambda: dict(self.connection_config),
             "connect": self.connect_database, "stamp": lambda: "test-time",
             "search": lambda message: copy.deepcopy(self.evidence), "history": lambda session: [],
-            "kbfile": lambda name: self.root / name, "answer_policy": answer_policy,
+            "kbfile": lambda name: self.root / name, "answer_policy": answer_policy, "context_budget": context_budget,
             "knowledge": SimpleNamespace(answer_context=lambda evidence: "test evidence only",
                                          citations_for=lambda evidence: [{"id": e["id"]} for e in evidence],
                                          retrieval_status=lambda: {"scope": "test-fixtures"}),

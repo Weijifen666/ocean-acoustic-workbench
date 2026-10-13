@@ -1,6 +1,7 @@
 // Anonymous visitor state stays server-side, encrypted at rest. No owner's key.
-import {courseCitation,COURSE_SYSTEM,noModelAnswer} from './course-retrieval.mjs';
+import {courseCitation,COURSE_SYSTEM,noModelAnswer,normalize} from './course-retrieval.mjs';
 import {answerPolicy,noteKnowledgeGap} from './knowledge-policy.mjs';
+import {buildContext,inactiveContext,resolveBudget,withProviderUsage} from './context-budget.mjs';
 export function defaults(catalog){const provider=catalog.providers.find(p=>p.id==='Qwen')||catalog.providers[0],model=catalog.models.find(m=>m.provider===provider.id&&m.id==='qwen3.7-plus')||catalog.models.find(m=>m.provider===provider.id);return {provider:provider.id,base_url:provider.base_url,model:model.id,api_key:''}}
 export const publicConfig=cfg=>({provider:cfg.provider,base_url:cfg.base_url,model:cfg.model,api_key_set:!!cfg.api_key,public_mode:true,storage:'cloud_encrypted'});
 export function validateConnection(cfg,catalog){
@@ -47,7 +48,19 @@ async function remote(cfg,catalog,body,fetcher){
   if(!r.ok)throw new Error(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
   if(!data.choices?.[0]?.message)throw new Error('供应商响应缺少文字消息');return data;
 }
-export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartbeat,template='',fetcher=fetch}){
+export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartbeat,template='',fetcher=fetch,publicKnowledge=null}){
+ const publicStatus=()=>publicKnowledge?.publicOceanStatus?.()||{registered_sources:0,indexed_sources:0,chunks:0,web_sources:[],live_web_search:false};
+ const publicRetrieve=q=>publicKnowledge?.retrievePublicOcean?.(q,4)||[];
+ function mergeEvidence(course,extra,q){
+  const focused=course.some(c=>c.retrieval?.role==='question_focus'||c.retrieval?.focus===true);
+  if(extra.length&&!focused){
+   const generic=new Set(['海洋','海水','水下','ocean','marine','sea','water','underwater','sound']);
+   const anchors=[...new Set(extra.flatMap(c=>c.search_aliases||[]).map(normalize).filter(term=>term.length>=2&&!generic.has(term)&&normalize(q).includes(term)))];
+   if(anchors.length)course=course.filter(c=>anchors.some(term=>normalize([c.label,c.text,c.formula].join(' ')).includes(term)));
+  }
+  const rows=focused?[...course.slice(0,6),...extra,...course.slice(6)]:[...extra,...course];
+  const seen=new Set();return rows.filter(c=>{if(seen.has(c.id))return false;seen.add(c.id);return true}).slice(0,8);
+ }
  const json=(d,status=200)=>new Response(JSON.stringify(d),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}}),store=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run()});
  async function load(request,env){
   if(!env.GATEWAY_SECRET)throw Error('连接配置尚未完成');let id=(request.headers.get('cookie')||'').match(/(?:^|;\s*)ocean_visitor=([A-Za-z0-9_-]{40,86})(?:;|$)/)?.[1];let fresh=false;
@@ -69,15 +82,15 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
  function ownRequest(request,id,path){const headers=new Headers(request.headers);headers.set('cookie','ocean_visitor='+id);return new Request(new URL(path,request.url),{method:'GET',headers})}
  async function evidenceFor(q,request,env,ctx,id){
   if(await heartbeat(env)){
-   try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return rows.slice(0,8)}}catch{}
+   try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return rows.some(c=>/public|web/.test(c.evidence_type||''))?rows.slice(0,8):mergeEvidence(rows,publicRetrieve(q),q)}}catch{}
   }
-  return retrieve(q);
+  return mergeEvidence(retrieve(q),publicRetrieve(q),q);
  }
  return async(request,env,ctx,url)=>{
-  const path=url.pathname,known=['/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path))return null;
+  const path=url.pathname,known=['/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/public-sources','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path))return null;
   if(!['GET','POST','PUT'].includes(request.method))return json({detail:'此操作不支持该请求方法'},405);
   if(request.method!=='GET'&&request.headers.get('origin')!==url.origin)return json({detail:'请从当前网站提交请求'},403);
-  const methods={'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/knowledge/gaps':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
+  const methods={'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/knowledge/public-sources':['GET'],'/api/knowledge/gaps':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
   let session;try{session=await load(request,env)}catch{return json({detail:'访客配置服务暂不可用，请稍后重试'},503)}
   const finish=r=>{const headers=new Headers(r.headers);if(session.fresh)headers.set('Set-Cookie',`ocean_visitor=${session.id}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers})};
   try{
@@ -94,14 +107,15 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    if(path==='/api/chat/history')return finish(json(session.data.history));
    if(path==='/api/knowledge/gaps')return finish(json(session.data.gaps||[]));
    if(path==='/api/knowledge/search')return finish(json(await evidenceFor(url.searchParams.get('q')||'',request,env,ctx,session.id)));
-   if(path==='/api/knowledge/status'){
-    if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,path),env,ctx);if(r.ok)return finish(r)}catch{}}
-    return finish(json({mode:'course_graph_rag',cards:46,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,source_coverage:[],coverage:null,methods:['BM25','typed_graph_context','RRF'],training_required:false,node_online:false,scope:'计算节点离线，当前检索云端课程知识卡；教材全文索引未连接。'}));
+   if(path==='/api/knowledge/status'||path==='/api/knowledge/public-sources'){
+    if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/knowledge/status'),env,ctx);if(r.ok){const data=await r.json(),ocean=data.public_ocean||publicStatus();return finish(json(path.endsWith('public-sources')?(data.web_sources||ocean.web_sources):{...data,public_ocean:ocean,web_sources:data.web_sources||ocean.web_sources}))}}catch{}}
+    const ocean=publicStatus();
+    return finish(json(path.endsWith('public-sources')?ocean.web_sources:{mode:'ocean_document_rag',cards:46,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,source_coverage:[],coverage:null,public_ocean:ocean,web_sources:ocean.web_sources,methods:['BM25','typed_graph_context','public_document_bm25'],training_required:false,node_online:false,scope:'计算节点离线，当前仍可检索云端课程知识卡与公开海洋网页快照；私有教材全文索引未连接。'}));
    }
    if(path==='/api/health'||path==='/api/environment/check'){
-    let data={version:'0.5.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
+    let data={version:'0.6.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
     if(path==='/api/environment/check')return finish(json({checks:[{name:'MATLAB 计算节点',ok:data.matlab_available,detail:data.matlab_available?'计算节点已连接':'仅仿真依赖计算节点，云端知识卡和模型问答仍可用'},{name:'KRAKEN / FIELD',ok:data.solver_available,detail:'固定 Munk 模板，结果按输入和坐标验证'},{name:'你的模型 API Key',ok:!!cfg.api_key,detail:cfg.api_key?'云端加密保存，未代表已通过调用测试':'填写供应商 Key 后可调用模型'}]}));
-    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.5.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
+    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.6.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
    }
    const raw=await request.text();if(raw.length>65536)return finish(json({detail:'请求内容过长'},413));const body=JSON.parse(raw);
    if(path.startsWith('/api/models/')){
@@ -120,19 +134,28 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    const entry=catalog.providers.find(p=>p.id===provider),saved=provider===cfg.provider?cfg:session.data.profiles[provider]||{provider,base_url:entry.base_url,model:catalog.models.find(m=>m.provider===provider).id,api_key:''};
    const selected=validateConnection({...saved,provider,model:body.model||saved.model},catalog);
    const knowledgeScope=body.knowledge_mode||'course';if(!['course','general'].includes(knowledgeScope))throw Error('请选择课程依据或模型一般知识');
+   const requestedBudget=body.context_budget===undefined?'auto':body.context_budget;resolveBudget(requestedBudget);
    await mutate(session.id,env,state=>{state.calls=(state.calls||[]).filter(t=>Date.now()-t<60000);if(state.calls.length>=12)throw Error('对话过于频繁，请稍后再试');state.calls.push(Date.now())});
-   const evidence=await evidenceFor(message,request,env,ctx,session.id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null})),policy=answerPolicy(evidence,knowledgeScope,body.mode);let reply,used=false,responseModel=null;
+   let evidence=await evidenceFor(message,request,env,ctx,session.id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));const policy=answerPolicy(evidence,knowledgeScope,body.mode);let reply,used=false,responseModel=null,contextMetadata=inactiveContext(requestedBudget);
    if(!evidence.length&&body.mode!=='agent')await mutate(session.id,env,state=>noteKnowledgeGap(state,message));
    if(!selected.api_key){
-    reply=(knowledgeScope==='general'?'模型一般知识需要先配置你的 API Key。当前仅提供课程资料检索。\n\n':'')+noModelAnswer(evidence);
+    reply=(knowledgeScope==='general'?'模型一般知识需要先配置你的 API Key。当前仅提供课程与公开资料检索。\n\n':'')+noModelAnswer(evidence);
     // Actual answer provenance is course retrieval. Keep the user's requested
     // mode separately; no pretrained generation or template analysis ran.
-    Object.assign(policy,{knowledge_scope:'course',coverage_status:evidence.length?'course_evidence':'no_course_evidence',coverage_notice:evidence.length?'尚未配置模型 API Key；本次仅展示检索到的课程资料，未调用模型。':'尚未配置模型 API Key，且未检索到课程依据；本次没有使用模型一般知识。'});
+    Object.assign(policy,{knowledge_scope:'course',coverage_status:evidence.length?'course_evidence':'no_course_evidence',coverage_notice:evidence.length?'尚未配置模型 API Key；本次仅展示检索到的资料，未调用模型。':'尚未配置模型 API Key，且未检索到课程依据；本次没有使用模型一般知识。'});
    }
    else if(!policy.can_generate)reply=policy.coverage_notice+'\n这条问题已加入你的待补资料记录，不会把无关知识点当作答案。';
-   else{const context={evidence,graph_context_note:'课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。'};const messages=[{role:'system',content:policy.system+'\n'+JSON.stringify(context)+(body.mode==='agent'?'\n课程公开 MATLAB 模板（只读）：\n'+template:'')},...session.data.history.slice(-10).map(m=>({role:m.role,content:m.text})),{role:'user',content:message}];const data=await remote(selected,catalog,{messages,max_tokens:4096},fetcher);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;}
-   const retrieval={methods:evidence.some(c=>c.retrieval?.method==='bm25+curated-graph')?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:['BM25','typed_graph_context','RRF'],evidence_count:evidence.length,source_excerpts:evidence.filter(c=>c.evidence_type==='source_excerpt').length,scope:evidence.some(c=>c.evidence_type==='source_excerpt')?'课程知识卡与教材原文片段':'课程知识卡'};
-   const metadata={model_used:used,model_provider:used?selected.provider:null,requested_model:used?selected.model:null,response_model:responseModel,requested_knowledge_mode:knowledgeScope,knowledge_scope:policy.knowledge_scope,coverage_status:policy.coverage_status,coverage_notice:policy.coverage_notice};
+   else{
+    const packed=buildContext({question:message,system:policy.system+'\n课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。',evidence,history:session.data.history,template:body.mode==='agent'?template:'',context_budget:requestedBudget});
+    if(knowledgeScope==='course'&&body.mode!=='agent'&&!packed.evidence.length)throw Object.assign(new Error('检索到了课程资料，但所选预算无法保留必要依据，请调大上下文预算后重试；未调用模型。'),{status:422,code:'CONTEXT_BUDGET_EXCEEDED'});
+    evidence=packed.evidence;citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));
+    const actualPolicy=answerPolicy(evidence,knowledgeScope,body.mode);Object.assign(policy,{knowledge_scope:actualPolicy.knowledge_scope,coverage_status:actualPolicy.coverage_status,coverage_notice:actualPolicy.coverage_notice});
+    const data=await remote(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;contextMetadata=withProviderUsage(packed.context,data.usage);
+   }
+   const methods=[...new Set(evidence.flatMap(c=>Array.isArray(c.retrieval?.methods)?c.retrieval.methods:c.retrieval?.method==='bm25+curated-graph'?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:c.retrieval?.method==='bm25+editorial-bilingual-aliases'?['BM25','editorial_bilingual_topic_aliases']:c.retrieval?.method?[c.retrieval.method]:[]))];
+   const scope=[...new Set(evidence.map(c=>c.evidence_type==='public_web_excerpt'?'公开网页快照':c.evidence_type==='public_reference_guide'?'项目参考导读':c.evidence_type==='source_excerpt'?'教材原文片段':'课程知识卡'))].join('、')||'未提供资料片段';
+   const retrieval={methods,evidence_count:evidence.length,source_excerpts:evidence.filter(c=>c.evidence_type==='source_excerpt').length,public_web_excerpts:evidence.filter(c=>c.evidence_type==='public_web_excerpt').length,public_reference_guides:evidence.filter(c=>c.evidence_type==='public_reference_guide').length,scope};
+   const metadata={model_used:used,model_provider:used?selected.provider:null,requested_model:used?selected.model:null,response_model:responseModel,requested_knowledge_mode:knowledgeScope,knowledge_scope:policy.knowledge_scope,coverage_status:policy.coverage_status,coverage_notice:policy.coverage_notice,context:contextMetadata};
    await mutate(session.id,env,state=>{state.history.push({role:'user',text:message},{role:'assistant',text:reply,evidence,citations,retrieval,...metadata});state.history=state.history.slice(-40)});
    return finish(json({reply,...metadata,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval}));
   }catch(e){const msg=String(e.message||'').slice(0,220);const status=e.status===502||msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}

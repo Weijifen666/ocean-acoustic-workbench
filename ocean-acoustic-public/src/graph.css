@@ -1360,3 +1360,15 @@
 .graph-fullscreen .knowledge-drawer {
   top: 187px;
 }
+.public-ocean-resources { margin: 16px 0 24px; padding: 18px 20px; border: 1px solid #d9e6ec; border-radius: 6px; background: #fff; }
+.public-ocean-resources h2 { margin: 0 0 8px; font-size: 17px; color: #31576e; }
+.public-ocean-resources > p { font-size: 12px; line-height: 1.8; color: #617b8c; }
+.public-ocean-resources summary { color: #326980; font-size: 12px; cursor: pointer; padding: 8px 0; }
+.public-source-table { overflow: auto; margin: 8px 0; }
+.public-source-table table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 11px; }
+.public-source-table th,.public-source-table td { text-align: left; vertical-align: top; padding: 10px; border-bottom: 1px solid #e4edf1; }
+.public-source-table td:first-child { width: 48%; min-width: 250px; }
+.public-source-table a { display: inline-flex; gap: 4px; align-items: center; color: #276883; }
+.public-source-table small { display: block; margin-top: 5px; color: #8295a1; }
+.public-source-table p { margin: 6px 0 0; line-height: 1.7; color: #69828f; }
+.public-ocean-resources .public-source-note { margin-bottom: 0; font-size: 11px; color: #8c805f; }

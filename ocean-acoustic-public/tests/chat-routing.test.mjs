@@ -41,7 +41,7 @@ test('general mode permits pretrained knowledge with empty sources and explicit 
  let body;const s=setup(async(url,options)=>{body=JSON.parse(options.body);return response('actual-model')});const a=await s.call('/api/config');await s.call('/api/config','PUT',deepseek,a.cookie);
  const r=await s.call('/api/chat','POST',{message:'世界杯足球冠军是哪国',knowledge_mode:'general'},a.cookie);
  assert.equal(r.data.model_used,true);assert.equal(r.data.knowledge_scope,'general');assert.equal(r.data.coverage_status,'no_course_evidence');assert.deepEqual(r.data.citations,[]);
- assert.match(body.messages[0].content,/允许使用模型已有的一般知识/);assert.match(body.messages[0].content,/不生成课程引用/);assert.match(r.data.coverage_notice,/未经/);s.sqlite.close();
+ assert.match(body.messages[0].content,/允许使用模型已有的一般知识/);assert.match(body.messages[0].content,/不生成资料引用/);assert.match(r.data.coverage_notice,/未经/);s.sqlite.close();
 });
 
 test('unknown scopes/providers and malformed model IDs are rejected before generation',async()=>{

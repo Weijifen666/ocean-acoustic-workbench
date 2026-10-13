@@ -18,7 +18,7 @@ test('general requested without a key and with evidence records actual course re
   assert.equal(result.data.knowledge_scope,'course');
   assert.equal(result.data.coverage_status,'course_evidence');
   assert(result.data.evidence.length&&result.data.citations.length);
-  assert.match(result.data.coverage_notice,/尚未配置.*仅展示.*课程资料.*未调用模型/);
+  assert.match(result.data.coverage_notice,/尚未配置.*仅展示.*资料.*未调用模型/);
   const saved=(await s.call('/api/chat/history','GET',undefined,a.cookie)).data.at(-1);
   assert.equal(saved.knowledge_scope,'course');
   assert.equal(saved.requested_knowledge_mode,'general');

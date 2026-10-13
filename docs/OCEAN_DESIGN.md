@@ -1,4 +1,4 @@
-# 海洋与西工大课程主题设计
+# 海洋与西工大课程主题设计 · v0.6
 
 本项目是四人小组课程作业，无任何商业用途。界面中的校名、校训和三航文字说明课程背景；项目不是学校官方平台，原创探测员“小航”也不是官方吉祥物“航小天”。
 
@@ -11,7 +11,7 @@
 
 ## 视觉系统
 
-深海藏蓝侧栏与浅色科研纸面并列，湖蓝用于操作选中态，砂金仅用于小尺度装饰。页面保留课程目录、知识关系、参数表、引用和数值结果的主要空间。页眉高度约 100 px；原创海面、海底层次与三航线稿只表达课程主题，不作为仿真数据或已经执行的声场结果。
+深海藏蓝侧栏与浅色科研纸面并列，湖蓝用于操作选中态，砂金仅用于小尺度装饰。课程主题 Banner 只在知识图谱页面显示；聊天保留消息、输入框与必要控件的空间。原创海面、海底层次与三航线稿只表达课程主题，不作为仿真数据或已经执行的声场结果。
 
 `ocean-theme.css` 在既有样式后导入，统一配色与信息层次，正文与表单使用约 14 px。知识图谱仍可切换浅／深色；选中状态、公式、图文来源和关系语义保留。手机收起侧栏，减少装饰图的对比度，知识详情采用可关闭的覆盖面板。
 
@@ -24,12 +24,16 @@
 - 方向键可移动，Enter／Space 打开或收起，Escape 关闭快捷问答；显示菜单可恢复默认位置或收起人物。位置偏好只保存坐标，不保存 API Key、对话或访客凭据。
 - 挂载或切换工作区域时若默认人物位置遮住仿真确认、发送等主要按钮，会尝试避让；用户也可拖动或收起人物。
 - 快捷面板与完整“知识问答”页面都从 `ChatProvider/useChatSession` 读取同一份消息、草稿、供应商、具体模型、知识范围和 busy 状态。浮窗没有第二个历史请求循环或独立聊天 API。
-- 快捷窗口可选择具体模型、切换课程依据／通用知识、查看真实回复及来源、打开知识节点，并进入完整问答。来源链接只允许课程 API 相对地址或 HTTPS。
+- 快捷窗口与主问答共用 `ChatComposerControls`：输入框底部为模型、上下文、更多、发送；“更多”收纳知识范围、Agent、来源/缺口与连接设置，避免占用消息空间。默认“资料 + 模型知识”，可改为“仅依据资料”。来源链接只允许课程 API 相对地址或 HTTPS。
+- 上下文为 4K–128K 的实际发送输入预算，自动 32K，后端裁剪并记录用量；不是模型原生窗口或 KV cache 的大小。供应商未返回缓存用量时显示“未提供”，不凭选择档位宣称缓存已命中。
+- 知识图谱“学习资源”增加公开海洋来源区，展示中文标题、自写导读、机构、URL、许可与时间。30 篇 NOAA 正文和 9 条导读可直接查看，无需 Key；3 个动态入口不被描写成已接通实时数据。
 - 手机面板宽度留出视口边距，高度不超过 70dvh；较矮视口减少非交互说明，保留模型选择、知识范围和发送动作。
 - `prefers-reduced-motion` 下停止人物动作，避免让必要操作依赖动画。
 
 ## 集成
 
-App 根部已用 `ChatProvider` 包裹；课程图谱与知识问答内容前已放置 `<OceanBanner/>`，主题在基础样式后导入。`<MascotDock onOpenChat={...} onOpenSettings={...} onKnowledge={...}/>` 已放在主页面结构之外、Provider 之内。三个回调分别进入完整知识问答、模型设置、指定知识节点，浮窗内部不读取或控制访问设备本地 MATLAB。
+App 根部使用 `ChatProvider`；`<OceanBanner/>` 仅在 `page === "graph"` 时显示，聊天没有课程 Banner。公共网页与本地管理前端共用这一布局。`<MascotDock onOpenChat={...} onOpenSettings={...} onKnowledge={...}/>` 位于主页面结构之外、Provider 之内，回调进入完整问答、模型设置和指定节点，浮窗不读取或控制访问设备本机 MATLAB。
 
-本轮新增文件：`OceanBanner.jsx`、`MascotFigure.jsx`、`MascotDock.jsx`、`mascot.css`、`ocean-theme.css`。没有加入新的生产依赖。SVG 中的路径、轮廓、眼镜、波纹胸牌与页眉三航线稿均为本项目编写，未使用官方图像文件。独立 JSX 与 CSS 语法检查已通过；整合后的共享会话、移动端、拖动与公网请求以主任务的端到端验证记录为准。
+主题与人物由 `OceanBanner.jsx`、`MascotFigure.jsx`、`MascotDock.jsx`、`mascot.css`、`ocean-theme.css` 提供，v0.6 的共同输入控件为 `ChatComposerControls.jsx` 与 `chat-controls.css`。SVG 路径、轮廓、眼镜、波纹胸牌和三航线稿均为项目原创，未使用官方图像文件。共享会话、移动端、拖动与公网请求以 [VALIDATION_V0_6.md](VALIDATION_V0_6.md) 为准。
+
+聊天中的模型选择与配置入口参考 [WorkBuddy 官方模型配置](https://www.codebuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)和[任务上下文说明](https://www.codebuddy.cn/docs/workbuddy/Create-Task)，没有复制其品牌资产或完整 Agent。上下文预算与供应商缓存的区别依据 [DeepSeek 官方说明](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)及[百炼官方说明](https://help.aliyun.com/zh/model-studio/context-cache)，技术实现见 [KNOWLEDGE_EXPANSION.md](KNOWLEDGE_EXPANSION.md)。

@@ -64,6 +64,8 @@ cd ocean-acoustic-workbench
 
 云端访客配置、加密隔离和离线检索检查：在 `ocean-acoustic-public` 运行 `npm.cmd ci` 与 `npm.cmd test`。本轮检查记录见[版本验证记录](docs/VALIDATION_V0_4.md)。
 
+2026-10-13 修复了云端模型连接的 workerd 重定向参数兼容问题，云端检查增加至 15 项。原因、实际公网认证层验证与使用步骤见[模型连接记录](docs/MODEL_CONNECTION.md)。
+
 知识图谱中的概念关联不等同于因果推导；Munk 示例不代表某一真实海域。完整教材图片由部署者自行提供，仓库只保留原理示意图和引用信息。当前未实现账号登录、跨设备历史同步、任意 MATLAB 代码执行或自动修改项目。
 
 ![课程目录与科研工作区](docs/assets/course-workbench.png)

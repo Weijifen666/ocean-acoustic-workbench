@@ -6,16 +6,45 @@ export function validateConnection(cfg,catalog){
  if(!catalog.providers.some(p=>p.id===cfg.provider))throw new Error('未知供应商');let url;try{url=new URL(cfg.base_url)}catch{throw new Error('模型地址不是有效 HTTPS 地址')}
  const host=url.hostname,allowed={DeepSeek:host==='api.deepseek.com',Kimi:['api.moonshot.cn','api.moonshot.ai'].includes(host),GLM:host==='open.bigmodel.cn',Qwen:['dashscope.aliyuncs.com','dashscope-us.aliyuncs.com','dashscope-intl.aliyuncs.com'].includes(host)||host.endsWith('.maas.aliyuncs.com')};
  if(url.protocol!=='https:'||url.username||url.password||(url.port&&url.port!=='443')||url.search||url.hash||!allowed[cfg.provider])throw new Error('请使用与供应商匹配的官方 HTTPS API 地址');
- if(!cfg.model||cfg.model.length>160||String(cfg.api_key||'').length>4096)throw new Error('模型标识或密钥长度不合法');return {...cfg,base_url:cfg.base_url.replace(/\/+$/,'')};
+ const api_key=String(cfg.api_key||'').trim();
+ if(!cfg.model||cfg.model.length>160||api_key.length>4096)throw new Error('模型标识或密钥长度不合法');
+ if(/^Bearer\s/i.test(api_key))throw new Error('API Key 只填写密钥本身，不要添加 Bearer 前缀');
+ if(/[^\x21-\x7e]/.test(api_key))throw new Error('API Key 含空格、换行或非英文字符，请重新复制完整密钥');
+ return {...cfg,api_key,base_url:cfg.base_url.trim().replace(/\/+$/,'')};
 }
 const providerError=status=>({401:'密钥无效或地域不匹配',402:'余额或额度不足',403:'账户没有该模型权限',404:'模型或接口不存在',429:'请求频率或额度受限'})[status]||'请求未成功，请核对官方参数';
+function transportError(message,code){const error=new Error(message);error.code=code;error.status=502;return error}
+function safeNetworkMessage(error){
+ // Return fixed diagnoses, never raw runtime messages, headers, URLs or secrets.
+ const message=String(error?.message||'').toLowerCase();
+ if(/redirect/.test(message))return '云端请求运行时的重定向配置不兼容。';
+ if(/certificate|tls|ssl/.test(message))return '与供应商建立 HTTPS 连接失败。';
+ if(/dns|resolve|enotfound/.test(message))return '供应商域名解析失败。';
+ if(/header|invalid character/.test(message))return '请求头格式不兼容，请核对密钥格式。';
+ return '网络连接未建立，请稍后重试；这不表示 API Key 无效。';
+}
+export async function providerFetch(cfg,path,options={},fetcher=fetch){
+ const {timeoutMs=70000,...init}=options,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{
+  const headers=new Headers(init.headers);headers.set('Authorization','Bearer '+cfg.api_key);headers.set('Accept','application/json');
+  // workerd supports manual/follow; redirect:error throws before sending a request.
+  // Reject redirects explicitly so credentials are never forwarded to another host.
+  const response=await fetcher(cfg.base_url+path,{...init,headers,signal:controller.signal,redirect:'manual'});
+  if(response.status>=300&&response.status<400)throw transportError(`供应商接口返回 HTTP ${response.status} 重定向，已停止请求；请核对官方 API 地址。`,'PROVIDER_REDIRECT');
+  return response;
+ }catch(error){
+  if(error.status===502)throw error;
+  if(controller.signal.aborted||['AbortError','TimeoutError'].includes(error.name))throw transportError('连接供应商超时，请稍后重试；这不表示 API Key 无效。','PROVIDER_TIMEOUT');
+  const name=/^[A-Za-z]{1,40}$/.test(error.name||'')?error.name:'Error';
+  throw transportError(`云端连接供应商失败（${name}）：${safeNetworkMessage(error,cfg)}`,'PROVIDER_NETWORK');
+ }finally{clearTimeout(timer)}
+}
 async function remote(cfg,catalog,body,fetcher){
+ cfg=validateConnection(cfg,catalog);
  const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),70000);try{
-  const r=await fetcher(cfg.base_url+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+cfg.api_key},body:JSON.stringify({...body,model:cfg.model,...options}),signal:controller.signal,redirect:'error'});
+  const r=await providerFetch(cfg,'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options})},fetcher);
   if(!r.ok)throw new Error(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
   if(!data.choices?.[0]?.message)throw new Error('供应商响应缺少文字消息');return data;
- }catch(e){if(e.message.startsWith('供应商'))throw e;throw new Error('模型服务连接未完成，请检查网络、地址与配置')}finally{clearTimeout(timer)}
 }
 export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartbeat,template='',fetcher=fetch}){
  const json=(d,status=200)=>new Response(JSON.stringify(d),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}}),store=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run()});
@@ -57,7 +86,7 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    if(path==='/api/config'){
     const raw=await request.text();if(raw.length>16384)return finish(json({detail:'配置内容过长'},413));const body=JSON.parse(raw);const provider=body.provider||cfg.provider;if(!catalog.providers.some(p=>p.id===provider))throw Error('未知供应商');
     const entry=catalog.providers.find(p=>p.id===provider),base=provider===cfg.provider?cfg:session.data.profiles[provider]||{provider,base_url:entry.base_url,model:catalog.models.find(m=>m.provider===provider).id,api_key:''};
-    const next={...base,provider};for(const key of ['base_url','model'])if(key in body)next[key]=String(body[key]);if(body.api_key)next.api_key=String(body.api_key);if(body.clear_api_key)next.api_key='';validateConnection(next,catalog);
+    let next={...base,provider};for(const key of ['base_url','model'])if(key in body)next[key]=String(body[key]);if(body.api_key)next.api_key=String(body.api_key);if(body.clear_api_key)next.api_key='';next=validateConnection(next,catalog);
     const saved=await mutate(session.id,env,state=>{state.profiles[state.selected.provider]=state.selected;state.selected=next;state.profiles[provider]=next});return finish(json(publicConfig(saved.selected)));
    }
    if(path==='/api/models/profiles')return finish(json(Object.fromEntries(Object.entries({...session.data.profiles,[cfg.provider]:cfg}).map(([p,c])=>[p,publicConfig(c)]))));
@@ -77,10 +106,11 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     const provider=body.provider||cfg.provider,saved=provider===cfg.provider?cfg:session.data.profiles[provider]||{},selected=validateConnection({...saved,...body,provider,api_key:body.api_key||saved.api_key||''},catalog);
     if(!selected.api_key)throw Error('请填写你自己的供应商 API Key');
     if(path.endsWith('/list')){
-     let r;try{r=await fetcher(selected.base_url+'/models',{headers:{Authorization:'Bearer '+selected.api_key},redirect:'error',signal:AbortSignal.timeout(25000)})}catch{throw Error('无法连接供应商模型目录')}
+     const r=await providerFetch(selected,'/models',{timeoutMs:25000},fetcher);
      if(!r.ok)return finish(json({detail:`供应商返回 HTTP ${r.status}：${providerError(r.status)}`},502));const payload=await r.json();if(!Array.isArray(payload.data))throw Error('模型目录格式不兼容');const ids=payload.data.slice(0,500).map(x=>String(x.id));return finish(json({ids,selected_listed:ids.includes(selected.model),note:'目录表示账户接口返回，实际调用仍需额度和权限。'}));
     }
-    const data=await remote(selected,catalog,{messages:[{role:'user',content:'Reply with OK.'}],max_tokens:256},fetcher);return finish(json({ok:true,provider,requested_model:selected.model,response_model:data.model||selected.model,reply:(data.choices[0].message.content||'').slice(0,200),usage:data.usage||{},note:'短请求已通过，不表示 Agent 工具已接通。'}));
+    const testBody={messages:[{role:'user',content:'Reply with OK.'}],max_tokens:256,stream:false};if(provider==='DeepSeek')Object.assign(testBody,{max_tokens:64,thinking:{type:'disabled'},reasoning_effort:'none'});
+    const data=await remote(selected,catalog,testBody,fetcher);return finish(json({ok:true,provider,requested_model:selected.model,response_model:data.model||selected.model,reply:(data.choices[0].message.content||'').slice(0,200),usage:data.usage||{},note:'短请求已通过。请点击“保存并应用配置”后在知识问答中使用。'}));
    }
    const message=String(body.message||'');if(message.length<1||message.length>12000)throw Error('问题长度须为 1–12000 字符');if(!['chat','agent',undefined].includes(body.mode))throw Error('未知对话模式');
    await mutate(session.id,env,state=>{state.calls=(state.calls||[]).filter(t=>Date.now()-t<60000);if(state.calls.length>=12)throw Error('对话过于频繁，请稍后再试');state.calls.push(Date.now())});
@@ -90,6 +120,6 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    const retrieval={methods:evidence.some(c=>c.retrieval?.method==='bm25+curated-graph')?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:['BM25','typed_graph_context','RRF'],evidence_count:evidence.length,source_excerpts:evidence.filter(c=>c.evidence_type==='source_excerpt').length,scope:evidence.some(c=>c.evidence_type==='source_excerpt')?'课程知识卡与教材原文片段':'课程知识卡'};
    await mutate(session.id,env,state=>{state.history.push({role:'user',text:message},{role:'assistant',text:reply,evidence,citations,retrieval,model_used:!!cfg.api_key});state.history=state.history.slice(-40)});
    return finish(json({reply,model_used:!!cfg.api_key,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval}));
-  }catch(e){const msg=String(e.message||'').slice(0,220);const status=msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成'},status))}
+  }catch(e){const msg=String(e.message||'').slice(0,220);const status=e.status===502||msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}
  };
 }

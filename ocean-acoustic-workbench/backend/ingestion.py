@@ -20,11 +20,21 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / ".local/kb/chunks.sqlite3"
+INGESTION_VERSION = 2
+TEXT_POLICY = 'unicode_display_preserved_search_nfkc_v2'
 
 
 def clean_text(text):
-    text = unicodedata.normalize("NFKC", text).replace("\r\n", "\n").replace("\x00", "")
+    # Compatibility normalization destroys superscripts/subscripts (p² -> p2,
+    # c₀ -> c0). Preserve text-layer Unicode for quotations and formula display.
+    # PDF layout itself is not verified by this whitespace-only cleanup.
+    text = str(text).replace("\r\n", "\n").replace("\r", "\n").replace("\x00", "")
     return "\n".join(re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines()).strip()
+
+
+def search_normalize(text):
+    """Lossy compatibility normalization is exclusively a retrieval field."""
+    return unicodedata.normalize('NFKC', str(text)).lower().strip()
 
 
 def chunk_text(text, size=1100, overlap=160):
@@ -41,7 +51,8 @@ def chunk_text(text, size=1100, overlap=160):
                 end = boundary + 1
         piece = text[start:end].strip()
         if piece:
-            yield {"text": piece, "char_start": start, "char_end": end}
+            left = start + len(text[start:end]) - len(text[start:end].lstrip())
+            yield {"text": piece, "char_start": left, "char_end": left + len(piece)}
         if end == len(text):
             break
         start = max(end - overlap, start + 1)
@@ -132,7 +143,7 @@ def ingest_source(source, base_directory, size=1100, overlap=160, report=None):
             digest = hashlib.sha256((revision + str(page_number) + str(piece["char_start"]) + piece["text"]).encode()).hexdigest()[:14]
             locator = f"PDF 第 {page_number} 页" if page_number else f"段落片段 {number}，字符 {piece['char_start']}–{piece['char_end']}"
             node_ids = list(dict.fromkeys(source.get("page_nodes", {}).get(str(page_number), source.get("node_ids", []))))
-            result.append({"id": f"D-{source_id}-{digest}", "label": source.get("title") or path.name, "text": piece["text"], "source_id": source_id, "pdf_page": page_number, "printed_page": page_number - int(source["printed_page_offset"]) if page_number and "printed_page_offset" in source else None, "locator": locator, "node_id": node_ids[0] if node_ids else None, "node_ids": node_ids, "formula": "", "conditions": source.get("conditions") or "以下为原文片段；适用条件、单位及公式需结合原页和人工核查，不能据此补造结论。", "evidence_type": "source_excerpt", "verification_status": "source_text_unreviewed", "source_revision": revision, "char_start": piece["char_start"], "char_end": piece["char_end"], "offset_basis": "normalized_page_text", "all_references": [{"source_id": source_id, "pdf_page": page_number, "locator": locator}]})
+            result.append({"id": f"D-{source_id}-{digest}", "label": source.get("title") or path.name, "text": piece["text"], "search_text": search_normalize(piece['text']), "ingestion_version": INGESTION_VERSION, "text_policy": TEXT_POLICY, "math_layout_verified": False, "source_id": source_id, "pdf_page": page_number, "printed_page": page_number - int(source["printed_page_offset"]) if page_number and "printed_page_offset" in source else None, "locator": locator, "node_id": node_ids[0] if node_ids else None, "node_ids": node_ids, "formula": "", "conditions": source.get("conditions") or "以下为原文片段；适用条件、单位及公式需结合原页和人工核查，不能据此补造结论。", "evidence_type": "source_excerpt", "verification_status": "source_text_unreviewed", "source_revision": revision, "char_start": piece["char_start"], "char_end": piece["char_end"], "offset_basis": "display_page_text_v2", "all_references": [{"source_id": source_id, "pdf_page": page_number, "locator": locator}]})
     if report is not None:
         total, selected = metadata.get('total_pages'), metadata.get('selected_pages')
         report.update({'source_id':source_id,'title':source.get('title') or path.name,'type':path.suffix.lower(),'source_revision':revision,'total_pages':total,'selected_pages':selected,'processed_pages':len(processed_pages),'indexed_pages':len(indexed_pages),'chunks':len(result),'processed_units':processed_units,'indexed_units':indexed_units,'failed_or_needs_ocr_pages':len(warnings),'blank_or_short_pages':sum(w.get('category')=='blank_or_short' for w in warnings),'unreadable_pages':sum(w.get('category') in {'unreadable_text','parse_error'} for w in warnings),'coverage_ratio':round(len(indexed_pages)/total,6) if total else None,'selected_success_ratio':round(len(indexed_pages)/selected,6) if selected else None,'full_document_selected':source.get('pages') is None})
@@ -158,7 +169,7 @@ def build_index(manifest, output=DEFAULT_OUTPUT, size=1100, overlap=160):
     counts={field:sum(source.get(field) or 0 for source in source_reports) for field in ['total_pages','selected_pages','processed_pages','indexed_pages','failed_or_needs_ocr_pages','blank_or_short_pages','unreadable_pages','processed_units','indexed_units']}
     counts['coverage_ratio']=round(counts['indexed_pages']/counts['total_pages'],6) if counts['total_pages'] else None
     counts['selected_success_ratio']=round(counts['indexed_pages']/counts['selected_pages'],6) if counts['selected_pages'] else None
-    report = {"sources": len(seen), "chunks": len(chunks), "warnings": warnings, "needs_ocr_pages": len(warnings), "source_coverage":source_reports,'coverage':counts, "source_revisions": sorted({chunk["source_revision"] for chunk in chunks}), "retrieval": "BM25 + 人工核实的课程图谱；未训练、未调用付费模型。"}
+    report = {"ingestion_version": INGESTION_VERSION, "text_policy": TEXT_POLICY, "math_layout_verified": False, "sources": len(seen), "chunks": len(chunks), "warnings": warnings, "needs_ocr_pages": len(warnings), "source_coverage":source_reports,'coverage':counts, "source_revisions": sorted({chunk["source_revision"] for chunk in chunks}), "retrieval": "BM25 + 人工核实的课程图谱；未训练、未调用付费模型。"}
     with tempfile.NamedTemporaryFile(dir=output.parent, delete=False) as handle:
         temporary = Path(handle.name)
     try:

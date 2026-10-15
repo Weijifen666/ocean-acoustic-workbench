@@ -15,6 +15,20 @@
       "when": 1791861290584,
       "tag": "0001_reflective_morgan_stark",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792051313999,
+      "tag": "0002_tidal_conversations",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792052693543,
+      "tag": "0003_shared_workspaces",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field, field_validator
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 import answer_policy, context_budget
+import knowledge as course_knowledge
 
 TEST_KEY = "TEST-ONLY-NOT-A-REAL-API-KEY"
 EVIDENCE = [{"id": "TEST-CARD", "text": "测试课程依据", "source_id": "TEST",
@@ -57,6 +58,7 @@ class LocalChatSafety(unittest.IsolatedAsyncioTestCase):
             "search": lambda message: copy.deepcopy(self.evidence), "history": lambda session: [],
             "kbfile": lambda name: self.root / name, "answer_policy": answer_policy, "context_budget": context_budget,
             "knowledge": SimpleNamespace(answer_context=lambda evidence: "test evidence only",
+                                         format_no_model_answer=course_knowledge.format_no_model_answer,
                                          citations_for=lambda evidence: [{"id": e["id"]} for e in evidence],
                                          retrieval_status=lambda: {"scope": "test-fixtures"}),
             "models": SimpleNamespace(catalog=lambda: {"providers": [{"id": "Qwen", "base_url": self.connection_config["base_url"]}],
@@ -108,6 +110,27 @@ class LocalChatSafety(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(result["model_used"])
         self.assertEqual(result["evidence"], [])
         self.assertEqual(result["citations"], [])
+
+    async def test_observation_question_is_blocked_before_paid_call_even_in_general_agent(self):
+        self.connection_config['api_key']=TEST_KEY
+        with patch.object(httpx,'AsyncClient',side_effect=AssertionError('No provider call without matching observations')):
+            result=await self.namespace['chat'](self.namespace['Chat'](message='今天东海1000m深处声速是多少？',knowledge_mode='general',mode='agent'))
+        self.assertFalse(result['model_used']);self.assertEqual(result['coverage_status'],'missing_observation_data')
+        self.assertEqual(result['requested_knowledge_mode'],'general');self.assertEqual(result['knowledge_scope'],'course')
+        self.assertFalse(result['evidence_assessment']['can_answer_requested_numeric']);self.assertFalse(result['evidence_assessment']['claim_support_verified'])
+
+    async def test_trimmed_evidence_is_reassessed_before_provider_transport(self):
+        from datetime import datetime,timezone
+        self.connection_config['api_key']=TEST_KEY
+        self.evidence=[{'id':'TEST-OBSERVATION','source_id':'TEST','text':'Synthetic observation fixture only','url':'https://example.org/test-only','evidence_type':'structured_observation','verification_status':'trusted_observation_adapter','observation':{'variable':'sound_speed','value':1500,'units':'m/s','location':'东海','depth_m':1000,'quality_control':'accepted','observed_at':datetime.now(timezone.utc).isoformat()}}]
+        original=context_budget.build_context
+        def trim_observation(**values):
+            packed=original(**values)
+            packed['evidence']=[{key:value for key,value in row.items() if key!='observation'} for row in packed['evidence']]
+            return packed
+        with patch.object(context_budget,'build_context',side_effect=trim_observation),patch.object(httpx,'AsyncClient',side_effect=AssertionError('Trimming must not bypass evidence assessment')):
+            result=await self.namespace['chat'](self.namespace['Chat'](message='今天东海1000m深处声速是多少？',knowledge_mode='general'))
+        self.assertFalse(result['model_used']);self.assertEqual(result['coverage_status'],'missing_observation_data')
 
     async def provider_failure(self, *, error=None, response=None):
         self.connection_config["api_key"] = TEST_KEY

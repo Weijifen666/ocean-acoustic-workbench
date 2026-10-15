@@ -1,17 +1,20 @@
 import {COURSE_SYSTEM} from './course-retrieval.mjs';
+import {assessEvidence} from './evidence-policy.mjs';
 
-export function answerPolicy(evidence,scope='course',mode='chat') {
+export function answerPolicy(evidence,scope='course',mode='chat',question='') {
  if(!['course','general'].includes(scope))throw new Error('请选择课程依据或模型一般知识');
  const hasEvidence=evidence.length>0,template=mode==='agent',hasPublic=evidence.some(c=>/public|web/.test(c.evidence_type||''));
- const coverage_status=hasEvidence?'course_evidence':template?'course_template':'no_course_evidence';
- const coverage_notice=hasEvidence
+ let coverage_status=hasEvidence?'course_evidence':template?'course_template':'no_course_evidence';
+ let coverage_notice=hasEvidence
   ? scope==='course'?`本次使用检索到的${hasPublic?'课程或公开':'课程'}资料；引用不表示知识库覆盖了全部海洋知识。`:'资料依据与模型一般知识须分别说明；一般知识尚未经本项目原文核验。'
   : template?'本次分析课程共享模板；未检索到对应课程正文。'
   : scope==='course'?'未检索到课程依据。可切换到模型一般知识，或补充对应资料。':'未检索到课程依据；本次使用模型一般知识，尚未经本项目资料核验。';
  const rule=scope==='course'
   ? '当前选择【仅依据资料】。结论只基于本次课程或公开资料片段和允许读取的模板；资料不足时明确缺口，不用一般知识伪装成引用。'
   : '当前选择【资料 + 模型知识】。允许使用模型已有的一般知识回答资料未覆盖的问题。将【检索资料依据】与【模型一般知识，未经本项目原文核验】明确区分；只引用本次真正提供的片段，没有片段时不生成资料引用。公开资料是带抓取时间的快照，不声称已经实时搜索互联网或读过未提供的文献。';
- return {knowledge_scope:scope,coverage_status,coverage_notice,system:COURSE_SYSTEM+'\n'+rule,can_generate:scope==='general'||hasEvidence||template};
+ const assessment=assessEvidence(question,evidence);
+ if(assessment.status==='missing_observation_data'){coverage_status='missing_observation_data';coverage_notice='无法依据现有资料给出该时空位置的实测数值。请提供带观测时间、站位/坐标、深度、变量、单位和质量标记的数据；当前教材和公开网页仅能解释原理。'}
+ return {knowledge_scope:scope,coverage_status,coverage_notice,system:COURSE_SYSTEM+'\n'+rule+' 检索到的引用是候选资料，不表示命题已经得到支持；时间地点相关数值必须来自匹配的实测数据。',can_generate:assessment.can_answer_requested_numeric&&(scope==='general'||hasEvidence||template),evidence_assessment:assessment};
 }
 
 export function noteKnowledgeGap(state,question,now=Date.now()) {

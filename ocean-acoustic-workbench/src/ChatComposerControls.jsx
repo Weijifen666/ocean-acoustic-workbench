@@ -13,6 +13,7 @@ import {
   Maximize2,
   MoreHorizontal,
   Settings2,
+  Square,
   X,
 } from "lucide-react";
 import { useChatSession } from "./chat-session";
@@ -63,6 +64,8 @@ export default function ChatComposerControls({
     profiles,
     ready,
     busy,
+    stop,
+    conversationBusy,
     selectionBusy,
     selectModel,
     text,
@@ -91,7 +94,7 @@ export default function ChatComposerControls({
   const moreButton = useRef(null);
   const menu = useRef(null);
   const menuId = useId();
-  const blocked = !ready || busy || selectionBusy;
+  const blocked = !ready || busy || selectionBusy || conversationBusy;
   const providers = catalog?.providers || [];
   const models = catalog?.models || [];
   const current = models.find(
@@ -261,15 +264,20 @@ export default function ChatComposerControls({
         <button
           type="button"
           className="composer-send"
-          aria-label={compact ? "发送快捷问答" : "发送问题"}
-          disabled={!canSend}
+          aria-label={busy ? "停止生成" : compact ? "发送快捷问答" : "发送问题"}
+          disabled={!busy && !canSend}
           onClick={() => {
-            if (canSend) void (onSend || send)();
+            if (busy) stop();
+            else if (canSend) void (onSend || send)();
           }}
-          title="Enter 发送，Shift + Enter 换行"
+          title={
+            busy
+              ? "停止当前请求，保留已收到的内容"
+              : "Enter 发送，Shift + Enter 换行"
+          }
         >
           {busy ? (
-            <Loader2 size={17} className="spin" />
+            <Square size={13} fill="currentColor" />
           ) : (
             <ArrowUp size={18} />
           )}
@@ -482,7 +490,7 @@ export default function ChatComposerControls({
                   </button>
                 ))
               ) : (
-                <p>当前访客暂无待补来源记录。</p>
+                <p>当前空间暂无待补来源记录。</p>
               )}
               <small>问题记录不直接作为已核实知识入库。</small>
             </details>

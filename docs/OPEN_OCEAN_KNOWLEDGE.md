@@ -64,6 +64,8 @@ public_ocean.refresh_if_stale(ttl_hours=168, background=True)
 
 Python `knowledge.retrieve()` 整合私有课程和公开索引，并为明确的课程概念保持原有优先级。`knowledge.citations_for()` 对公开证据输出实际 URL 和时间，不把图谱关系当作原文来源。`knowledge.retrieval_status()` 的原 `indexed_pages`、`source_chunks` 等字段仍只统计课程 PDF，另外返回 `public_ocean` 和 `web_sources`。
 
+应用检索增加人工语境规则和有界多查询 RRF，使“海水变酸后贝壳难长大”“漂在海上的仪器怎么测水流”等口语能找到对应来源。该过程只改变候选召回，不新增模型训练或实时数据接口。公开片段仍是 `candidate_only`；抓取日期不能证明今天海况，缺少匹配实测记录的时间/地点数值请求会明确拒绝给出观测值。实现与60题无Key回归见 [KNOWLEDGE_QUALITY.md](KNOWLEDGE_QUALITY.md)。
+
 云端模块通过依赖注入接收构建时 JSON，不需要 Node 文件系统：
 
 ```javascript

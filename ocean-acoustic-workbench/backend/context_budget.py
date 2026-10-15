@@ -55,7 +55,13 @@ def _history_units(history):
 def build_context(*,question,system,evidence=None,history=None,template='',context_budget='auto',tools=None):
     budget=resolve_budget(context_budget);limit=budget-CONTEXT_RESERVE;tools=tools or []
     if not isinstance(question,str) or not isinstance(system,str):raise ContextBudgetError('问题与系统说明必须为文本。')
-    all_evidence=[{key:_clean(row[key]) for key in EVIDENCE_FIELDS if key in row} for row in evidence or []]
+    all_evidence=[]
+    for row in evidence or []:
+        item={key:_clean(row[key]) for key in EVIDENCE_FIELDS if key in row}
+        item.pop('all_references',None)
+        if isinstance(item.get('retrieval'),dict):item['retrieval']={key:item['retrieval'][key] for key in ('method','methods','role','focus') if key in item['retrieval']}
+        if isinstance(item.get('related_triples'),list):item['related_triples']=item['related_triples'][:3]
+        all_evidence.append(item)
     units=_history_units(history);original_history=sum(map(len,units))
     kept_evidence=list(all_evidence);kept_units=list(units);kept_template=str(template or '');template_truncated=False
     def assemble():
@@ -87,7 +93,18 @@ def build_context(*,question,system,evidence=None,history=None,template='',conte
                 else:hi=mid-1
             row['text']=original[:lo]
             if not row['text'].strip():kept_evidence=[]
-        else:kept_evidence=[]
+        else:
+            for key in ('related_triples','retrieval','all_references'):row.pop(key,None)
+            row['context_metadata_reduced']=True
+            if fits():
+                lo=0;hi=len(original)
+                while lo<hi:
+                    mid=(lo+hi+1)//2;row['text']=original[:mid]
+                    if fits():lo=mid
+                    else:hi=mid-1
+                row['text']=original[:lo]
+                if not row['text'].strip():kept_evidence=[]
+            else:kept_evidence=[]
     while not fits() and kept_units:kept_units.pop(0)
     if not fits():kept_evidence=[];kept_template='';template_truncated=bool(template)
     messages=assemble();estimated=assert_messages_budget(messages,context_budget,tools)

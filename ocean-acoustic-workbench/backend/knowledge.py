@@ -2,6 +2,8 @@ import json,re,collections
 from pathlib import Path
 import retrieval
 import public_ocean
+from query_planning import plan_query, reciprocal_rank_fusion
+from evidence_policy import annotate_candidates, assess_evidence
 DATA=Path(__file__).resolve().parent/'data/course_graph.json'
 CHUNKS=Path(__file__).resolve().parents[1]/'.local/kb/chunks.sqlite3'
 def graph_data():
@@ -22,25 +24,57 @@ def knowledge_cards():
     return cards
 def retrieve(q,limit=8):
     cap=max(0,min(int(limit),20))
+    plan=plan_query(q)
     course=retrieval.retrieve(graph_data(),knowledge_cards(),q,cap,retrieval.load_chunks(CHUNKS))
-    public=public_ocean.retrieve_public_ocean(q,cap)
+    if plan['rule_ids']:
+        public=[];counts={}
+        for row,score in reciprocal_rank_fusion([public_ocean.retrieve_public_ocean(query,max(cap,12)) for query in plan['queries']],20):
+            if counts.get(row['source_id'],0)>=2:continue
+            counts[row['source_id']]=counts.get(row['source_id'],0)+1
+            row['retrieval'].update(methods=['BM25','editorial_bilingual_aliases','maintained_query_rules','RRF'],rrf_score=score,query_rule_ids=plan['rule_ids'],query_variants=len(plan['queries']))
+            public.append(row)
+            if len(public)>=cap:break
+    else:public=public_ocean.retrieve_public_ocean(q,cap)
+    if retrieval.cox_munk_only(q):
+        public=[row for row in public if re.search(retrieval.COX_MUNK,retrieval.normalize(row.get('text','')),re.I)]
     focus=[row for row in course if row.get('retrieval',{}).get('role')=='question_focus']
-    if focus:
-        # An exact course concept such as Munk must not be diluted by a broad
-        # "profile" page. Still allow an explicitly asked second public topic.
-        labels=retrieval.normalize(' '.join(row.get('label','') for row in focus))
-        query=retrieval.normalize(q)
-        public=[row for row in public if any(retrieval.contains_term(query,term) and not retrieval.contains_term(labels,term) for term in row.get('search_aliases',[]))]
+    # Exact-topic/public-source selection is centralized in focused_evidence;
+    # an earlier alias-only filter would lose full names such as WOA's title.
     if public and not focus:
         generic={'海洋','海水','水下','ocean','marine','sea','water','underwater','sound'}
-        query=retrieval.normalize(q)
+        query=retrieval.normalize(' '.join(plan['queries']))
         anchors={retrieval.normalize(term) for row in public for term in row.get('search_aliases',[]) if len(term)>=2 and retrieval.normalize(term) not in generic and retrieval.contains_term(query,term)}
         if anchors:course=[row for row in course if any(retrieval.contains_term(retrieval.normalize(' '.join(str(row.get(key) or '') for key in ['label','text','formula'])),term) for term in anchors)]
         # New public topics go first when no exact course concept was identified.
         # This also lets a small answer budget retain acidification/coral evidence
         # instead of a generic marine textbook paragraph that only says "ocean".
-        return (public[:min(4,cap)]+course+public[min(4,cap):])[:cap]
-    return (course+public)[:cap]
+        return annotate_candidates(retrieval.focused_evidence(q,public[:min(4,cap)]+course+public[min(4,cap):],cap),q)
+    return annotate_candidates(retrieval.focused_evidence(q,course+public,cap),q)
+
+
+def format_no_model_answer(evidence):
+    """Readable, deterministic card/guide excerpts; raw PDF text stays in UI."""
+    if not evidence:return '没有检索到足够依据。请补充具体术语、环境或参数；当前未调用大模型。'
+    short=lambda value,cap: str(value or '')[:cap]+('…' if len(str(value or ''))>cap else '')
+    cards=[row for row in evidence if row.get('evidence_type') in {'reviewed_course_card','knowledge_card'}]
+    focused=[row for row in cards if row.get('retrieval',{}).get('role')=='question_focus' or row.get('retrieval',{}).get('focus') is True]
+    if cards:
+        rows=focused or cards[:3]
+        parts=[]
+        for row in rows[:3]:
+            text=short(row.get('text','').split('。')[0],220)
+            parts.append(f"[{row['id']}] {row.get('label') or row['source_id']}\n{text}"+(f"\n公式：{short(row['formula'],320)}" if row.get('formula') else '')+f"\n适用条件：{short(row.get('conditions'),240)}\n来源：{row['source_id']} "+(f"PDF 第 {row['pdf_page']} 页" if row.get('pdf_page') else short(row.get('locator'),120)))
+        return '以下为课程卡片摘要，未调用大模型：\n\n'+'\n\n'.join(parts)+'\n\n原文片段及更多来源请在本条回答的资料抽屉中查看；自动提取的公式与排版需对照原页核查。'
+    guides=[row for row in evidence if row.get('guide_zh')]
+    if guides:
+        seen=set();parts=[]
+        for row in guides:
+            if row['source_id'] in seen:continue
+            seen.add(row['source_id']);parts.append(f"[{row['id']}] {row.get('title_zh') or row.get('label') or row['source_id']}\n项目中文导读（非官方译文）：{short(row['guide_zh'],240)}\n来源：{row.get('url') or row['source_id']}")
+            if len(parts)>=2:break
+        return '以下为公开资料导读，未调用大模型：\n\n'+'\n\n'.join(parts)+'\n\n官方正文、抓取时间及许可请在资料抽屉查看。'
+    locators=[f"[{row['id']}] {row['source_id']} "+(f"PDF 第 {row['pdf_page']} 页" if row.get('pdf_page') else short(row.get('locator'),120)) for row in evidence[:3]]
+    return '已找到相关原文片段，尚未调用大模型；自动提取内容未经逐项核验。\n\n'+'\n'.join(locators)+'\n\n请在本条资料抽屉打开原文；当前不会把整段 PDF 提取文字当作已整理答案。'
 def source_coverage(chunks,report):
     grouped={}
     for chunk in chunks:grouped.setdefault(chunk['source_id'],[]).append(chunk)
@@ -63,7 +97,9 @@ def retrieval_status():
         chunks=retrieval.load_chunks(CHUNKS)
         report=retrieval.load_index_report(CHUNKS)
         status.update({'source_chunks':len(chunks),'source_documents':len({c['source_id'] for c in chunks}),'needs_ocr_pages':report.get('needs_ocr_pages',len(report.get('warnings',[]))),'index_ready':bool(chunks),'index_revision':report.get('index_revision',''),'warnings':report.get('warnings',[]),'scope':'原页片段 + 有适用条件的课程卡 + 一跳课程关联。扫描页未做 OCR；空白/异常提取页须人工处理。'})
-    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors'],'ranking_note':'BM25 词项排行的倒数分数 + 明确概念及一跳关联的固定优先权重；相关原文优先于宽泛图谱背景。未实现多个召回排行的 RRF，未接入向量检索。'})
+    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors','maintained_query_rules','RRF'],'ranking_note':'明确术语保留概念优先；命中人工上下文改写规则时，最多四路 BM25/图谱候选排行以 RRF 融合。候选相关不代表回答命题已核验；未接入向量检索或神经重排。'})
+    legacy=sum(c.get('ingestion_version',1)<2 for c in chunks)
+    status['text_integrity']={'required_ingestion_version':2,'index_ingestion_version':report.get('ingestion_version'),'legacy_chunks':legacy,'requires_rebuild':bool(legacy),'display_policy':'保留文本层 Unicode；NFKC 仅用于检索字段。','math_layout_verified':False,'note':'旧索引中的上/下标损失无法反推，须从授权原文重新入库；文本提取并不等于公式、表格或 OCR 已核验。'}
     rows=source_coverage(chunks,report)
     coverage={field:sum(row.get(field) or 0 for row in rows) for field in ['total_pages','selected_pages','processed_pages','indexed_pages','failed_or_needs_ocr_pages','blank_or_short_pages','unreadable_pages']}
     if not any(row.get('total_pages') is not None for row in rows):coverage['total_pages']=None
@@ -84,7 +120,9 @@ def citations_for(evidence):
             key=(card['id'],reference['source_id'],reference.get('pdf_page'),reference.get('locator',''))
             if key in seen:continue
             seen.add(key)
-            citation={'evidence_id':card['id'],'source_id':reference['source_id'],'pdf_page':reference.get('pdf_page'),'locator':reference.get('locator',''),'evidence_type':card.get('evidence_type','reviewed_course_card'),'verification_status':card.get('verification_status','reviewed_course_summary')}
+            citation={'evidence_id':card['id'],'source_id':reference['source_id'],'pdf_page':reference.get('pdf_page'),'locator':reference.get('locator',''),'evidence_type':card.get('evidence_type','reviewed_course_card'),'verification_status':card.get('verification_status','reviewed_course_summary'),'citation_role':'retrieval_candidate','claim_support_verified':False}
+            if card.get('source_revision'):citation['source_revision']=card['source_revision']
+            if card.get('char_start') is not None:citation.update(char_start=card['char_start'],char_end=card.get('char_end'),offset_basis=card.get('offset_basis'))
             if reference.get('url'):
                 citation.update({'url':reference['url'],'organization':card.get('organization'),'title':card.get('title'),'fetched_at':card.get('fetched_at'),'source_updated_at':card.get('source_updated_at'),'sha256':card.get('sha256'),'text_sha256':card.get('text_sha256'),'license':card.get('license'),'snapshot_not_realtime':True})
             elif reference.get('pdf_page'):citation['url']=f"/api/source/{reference['source_id']}/page/{reference['pdf_page']}"

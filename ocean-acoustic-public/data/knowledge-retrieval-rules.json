@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "note": "人工维护的有上下文约束的查询改写；用于召回候选，不构成答案或语义支持证明。",
+  "rules": [
+    {"id":"source_near_axis","all":["声源|发射|源深","声道轴|声道.*附近|轴.*附近"],"queries":["声源深度 模态激励","深海声道"],"node_ids":["source_depth","mode_excitation","deep_sound_channel"]},
+    {"id":"receiver_fade","all":["接收|水听器|听不到","平移|移动|挪|突然|一点|几乎"],"queries":["模态叠加 相干","接收深度 近零声压"],"node_ids":["modal_sum","coherent_modal_sum","receiver_depth","near_zero_pressure"]},
+    {"id":"salinity_sound","all":["盐多|盐度|咸一点|更咸","声音|声速|跑得|传播"],"queries":["温度、盐度与压力"],"node_ids":["temperature_salinity"]},
+    {"id":"sound_bending","all":["声音|声线|声波","拐弯|弯曲|折弯|折射"],"queries":["Snell定律 射线方法"],"node_ids":["snell","ray_method"]},
+    {"id":"thermocline_colloquial","any":["温度跃变|温度.*突变.*层|上热下冷.*层|温跃层"],"queries":["温跃层 thermocline 声速剖面"],"node_ids":["sound_speed_profile"]},
+    {"id":"acid_shell","all":["变酸|酸化|二氧化碳|co2","贝壳|珊瑚|碳酸|长大|钙化|酸化"],"queries":["海洋酸化 碳酸盐 ocean acidification"],"node_ids":[]},
+    {"id":"coral_bleaching","all":["珊瑚","变白|白化|太热|高温|藻"],"queries":["珊瑚白化 coral bleaching"],"node_ids":[]},
+    {"id":"ocean_drifter","all":["漂|浮标|浮在|漂在","海上|水流|海流|仪器|观测|测"],"queries":["漂流浮标 海流观测 drifter"],"node_ids":[]},
+    {"id":"tide_height","all":["潮水|潮汐|涨潮|退潮","高|低|变化|原因|为什么|怎么"],"queries":["潮汐 tides 引潮力"],"node_ids":[]},
+    {"id":"ocean_hypoxia","all":["氧气|溶解氧|缺氧","不够|缺|低|海底|海水|死区"],"queries":["海洋缺氧 dead zone hypoxia"],"node_ids":[]},
+    {"id":"sea_level_rise","all":["海面|海平面","升高|上升|越来越高|变高"],"queries":["海平面上升 sea level rise"],"node_ids":[]},
+    {"id":"tsunami_colloquial","all":["海底|地震","大浪|海啸|波浪"],"queries":["海啸 tsunami"],"node_ids":[]},
+    {"id":"sound_level_reference","all":["分贝|db","参考|水里|空气|水下|微帕"],"queries":["分贝与参考量 声阻抗"],"node_ids":["decibel","acoustic_impedance"]},
+    {"id":"pressure_intensity","all":["声压|压力","声强|能流|平方|强度"],"queries":["声强与能流 声阻抗"],"node_ids":["acoustic_intensity","acoustic_impedance"]},
+    {"id":"distance_tenfold","all":["距离|远了|远十倍","十倍|10倍|翻倍|分贝|损失"],"queries":["球面扩展 柱面扩展"],"node_ids":["spherical_spreading","cylindrical_spreading"]},
+    {"id":"complex_pressure_sum","all":["声压|模态","相加|直接加|叠加|取绝对值|相位"],"queries":["模态叠加 相干与非相干求和"],"node_ids":["modal_sum","coherent_modal_sum"]},
+    {"id":"grid_receiver","all":["接收|水听器","1005|最近|网格|采样点|深度.*对应"],"queries":["接收深度与采样 距离—深度网格"],"node_ids":["receiver_depth","range_depth_grid"]},
+    {"id":"noisy_colour_quality","all":["颜色|彩色|图好看|跑通|运行成功|彩图","准确|验证|可靠|正确|误差"],"queries":["示例与实验验证 控制变量比较"],"node_ids":["validation","comparison"]},
+    {"id":"caustic_infinity","all":["射线|声线|焦散|阴影","无穷|无限|没有声|听不到|发散|阴影"],"queries":["焦散与阴影区 高斯波束"],"node_ids":["caustic_shadow","gaussian_beams"]},
+    {"id":"environment_to_ssp","all":["温盐|ctd|温度.*盐度","转|输入|声速|剖面|深度"],"unless":["teos"],"queries":["温盐观测到声速输入 CTD"],"node_ids":["temperature_salinity_profiles","ctd"]},
+    {"id":"range_dependent_modes","all":["简正波|normal modes?","距离相关|距离无关|变化环境"],"queries":["耦合模态与绝热近似 简正波方法"],"node_ids":["normal_mode_field","coupled_modes"]},
+    {"id":"kraken_field_pipeline","all":["kraken","field"],"queries":["KRAKEN FIELD 与模态文件"],"node_ids":["matlab_kraken_wrapper","field_executable"]}
+  ]
+}

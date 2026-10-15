@@ -52,3 +52,17 @@ npm.cmd run build
 ## v0.4 知识与验证
 
 [私有知识入库](KNOWLEDGE_IMPORT.md)说明PDF/DOCX/TXT/Markdown的导入与引用边界。新增D1迁移创建cloud_visitors表，不改已应用迁移。模型配置与对话由云端直接处理；MATLAB仿真和原文索引由节点提供。每个新结果生成validation、analysis和manifest.json文件哈希，未报告的外部求解器版本保留null。
+
+## 2026-10-15 节点数据库升级与恢复
+
+本地 SQLite schema version 2 是追加式迁移，保留既有 jobs/messages 行及原始运行目录。启动服务 lifespan 时运行迁移；升级前通过 SQLite backup API 在 `.local/backups/` 保存 `workbench.pre-queue-v2.<时间>.<随机值>.sqlite3`，备份包含数据库及当时有效 WAL 数据。迁移事务失败会回滚；未知的更高 schema 版本会拒绝启动，不自动降级。该备份含私有消息，继续保留在 `.local`，不能上传 GitHub。
+
+执行器以数据库事务持久领取 `QUEUED`，持有节点操作系统文件锁，状态事件可在任务详情的 `events` 查看。服务仍按单 MATLAB 执行器部署；文件锁防止误启动第二执行器，不代表所有 PDF/缓存模块已支持多进程部署。旧的排队任务跨重启保留，不再在模块导入时批量判失败。
+
+若发现上次遗留 `RUNNING`，服务将其标为 `INTERRUPTED` 并暂停队列。管理员先检查并结束残留的本项目 MATLAB/求解器进程，再通过本地队列管理恢复；公网访客没有暂停/恢复整个节点的权限。该策略不会猜测某个残留文件就是完整成功结果，也不会自动重跑已经可能产生副作用的任务。正常停止服务会终止它管理的活动进程，并保留真实中断状态。
+
+回滚前停止本地后台、网关、桥接程序以及访问同一数据库的其他服务。使用 `backend/persistence.py` 的 `restore_database(database, backup)`，由 SQLite backup API 将指定备份恢复到数据库；不要在运行中只覆盖主 `.sqlite3` 而忽略 WAL。恢复旧版本备份后使用对应旧版本程序启动；新程序再次启动会重新迁移。运行目录中的原始产物应另外保留，不要为回滚删除它们。本轮开发仅在临时数据库验证升级与回滚，实际节点迁移由部署步骤执行。
+
+新接口：`POST /api/plans/draft` 只生成可审阅草案；`POST /api/jobs/compare` 只读取并验证已有成功结果；`GET /api/queue/status` 为本地管理员提供持久队列与执行器状态。公网代理需逐一检查比较任务的访客所有权，提交时转发访客命名空间和 `Idempotency-Key`，并在活跃任务限额检查前处理相同键的重放。个人模型密钥不属于仿真计划、幂等标识或对比结果。
+
+隔离测试可通过 `OCEAN_RUNTIME_DIR` 选择临时运行目录，并设 `OCEAN_DISABLE_WORKER=1`、`OCEAN_DISABLE_PUBLIC_REFRESH=1`；这些设置仅供明确的测试环境使用，正式计算节点应启用执行器。参数解析、事务、比较和 mock 测试通过不能代替真实 MATLAB 集成或真实模型回答质量验收。

@@ -29,6 +29,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import "./graph.css";
+import OceanBanner from "./OceanBanner";
 const groups = {
   hierarchy: "父子关系",
   prerequisite: "建议先学",
@@ -213,20 +214,14 @@ export default function GraphExplorer({
         (!directoryVisible ? " hidden-directory" : "")
       }
     >
-      <div className="course-banner">
-        <div>
-          <h1>课程知识图谱</h1>
-          <p>直接查阅知识点、公式与教材图片，沿关系探索相关概念。</p>
-        </div>
-        <div className="course-stats">
-          <span>{graph.chapters.length} 个单元</span>
-          <span>{knowledge.length} 个知识点</span>
-          <span>
-            {read.filter((id) => knowledge.some((n) => n.id === id)).length}{" "}
-            已读
-          </span>
-        </div>
-      </div>
+      <OceanBanner
+        chapters={graph.chapters.length}
+        nodes={knowledge.length}
+        relations={graph.edge_count ?? graph.edges?.length ?? null}
+        read={
+          read.filter((id) => knowledge.some((node) => node.id === id)).length
+        }
+      />
       <div className="course-tabs">
         <div>
           {[
@@ -749,7 +744,10 @@ export default function GraphExplorer({
                     const linked = knowledge.filter((n) =>
                       n.references.some((r) => r.source_id === s.id),
                     );
-                    const sourceCoverage = knowledgeStatus?.source_coverage?.find((row) => row.source_id === s.id);
+                    const sourceCoverage =
+                      knowledgeStatus?.source_coverage?.find(
+                        (row) => row.source_id === s.id,
+                      );
                     return (
                       <div className="course-resource-card" key={s.id}>
                         <div className="resource-cover">
@@ -770,7 +768,22 @@ export default function GraphExplorer({
                               ? `已关联 ${linked.length} 个知识点`
                               : "资料已登记，知识内容待进一步整理"}
                           </p>
-                          {sourceCoverage && <p className="resource-indexed">已处理 {sourceCoverage.processed_pages} 页 · 已索引 {sourceCoverage.indexed_pages} 页 · {sourceCoverage.chunks} 个片段{sourceCoverage.failed_or_needs_ocr_pages > 0 && <> · {sourceCoverage.failed_or_needs_ocr_pages} 页待核查</>}</p>}
+                          {sourceCoverage && (
+                            <p className="resource-indexed">
+                              已处理 {sourceCoverage.processed_pages} 页 ·
+                              已索引 {sourceCoverage.indexed_pages} 页 ·{" "}
+                              {sourceCoverage.chunks} 个片段
+                              {sourceCoverage.failed_or_needs_ocr_pages > 0 && (
+                                <>
+                                  {" "}
+                                  · {
+                                    sourceCoverage.failed_or_needs_ocr_pages
+                                  }{" "}
+                                  页待核查
+                                </>
+                              )}
+                            </p>
+                          )}
                           <div className="resource-node-links">
                             {linked.slice(0, 3).map((n) => (
                               <button key={n.id} onClick={() => choose(n.id)}>
@@ -793,9 +806,9 @@ export default function GraphExplorer({
                                 ? "AT 已导入计算节点"
                                 : sourceCoverage?.indexed_pages > 0
                                   ? "正文已进入私有检索索引 · 回答可引用原页"
-                                : s.type === ".pdf" && linked.length > 0
-                                  ? "提供知识点对应原页片段"
-                                  : "元数据已登记 · 内容未入库"}
+                                  : s.type === ".pdf" && linked.length > 0
+                                    ? "提供知识点对应原页片段"
+                                    : "元数据已登记 · 内容未入库"}
                             </span>
                           )}
                         </div>
@@ -1015,7 +1028,10 @@ export default function GraphExplorer({
                 就此知识提问
               </button>
               {node.simulation && (
-                <button className="start-simulation" onClick={onSimulation}>
+                <button
+                  className="start-simulation"
+                  onClick={() => onSimulation(node)}
+                >
                   <Play size={14} />
                   配置关联仿真
                 </button>
@@ -1061,8 +1077,38 @@ function KnowledgeIndexStatus({ status, cards }) {
       <p>
         使用关键词检索（BM25）、中英术语别名与课程关系补充，回答附原页引用。无需训练大模型。
       </p>
-      {!!status.source_coverage?.length && <div className="source-coverage-table"><table><thead><tr><th>来源</th><th>资料总页</th><th>已索引页</th><th>片段</th><th>待核查</th></tr></thead><tbody>{status.source_coverage.map((row) => <tr key={row.source_id}><td title={row.title}>{row.source_id} · {row.title}</td><td>{row.total_pages ?? "—"}</td><td>{row.indexed_pages}</td><td>{row.chunks}</td><td>{row.failed_or_needs_ocr_pages}</td></tr>)}</tbody></table></div>}
-      <p>资料覆盖逐步扩充。空文本不一定是真正空白页；公式、图表和新提取片段仍需核查。当前没有训练模型、自动抽取物理关系或执行 OCR。</p>
+      {!!status.source_coverage?.length && (
+        <div className="source-coverage-table">
+          <table>
+            <thead>
+              <tr>
+                <th>来源</th>
+                <th>资料总页</th>
+                <th>已索引页</th>
+                <th>片段</th>
+                <th>待核查</th>
+              </tr>
+            </thead>
+            <tbody>
+              {status.source_coverage.map((row) => (
+                <tr key={row.source_id}>
+                  <td title={row.title}>
+                    {row.source_id} · {row.title}
+                  </td>
+                  <td>{row.total_pages ?? "—"}</td>
+                  <td>{row.indexed_pages}</td>
+                  <td>{row.chunks}</td>
+                  <td>{row.failed_or_needs_ocr_pages}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p>
+        资料覆盖逐步扩充。空文本不一定是真正空白页；公式、图表和新提取片段仍需核查。当前没有训练模型、自动抽取物理关系或执行
+        OCR。
+      </p>
       <p>
         课程资料由维护者通过导入命令建立索引，扫描 PDF 需先完成 OCR。
         <a
@@ -1080,19 +1126,69 @@ function KnowledgeIndexStatus({ status, cards }) {
 function PublicOceanResources({ status }) {
   const rows = Array.isArray(status?.web_sources) ? status.web_sources : [];
   if (!rows.length) return null;
-  return <section className="public-ocean-resources" aria-label="公开海洋知识来源">
-    <h2>公开海洋知识</h2>
-    <p>{status.successful_web_documents || 0} 篇官方网页正文 · {status.reference_guides || 0} 条项目参考导读 · {status.chunks || 0} 个可检索片段。课程资料之外，也可直接查阅这些公开来源。</p>
-    <details>
-      <summary>查看 {rows.length} 个来源与更新时间</summary>
-      <div className="public-source-table"><table><thead><tr><th>资料与机构</th><th>接入方式</th><th>原页更新</th><th>抓取日期</th></tr></thead><tbody>{rows.map((source) => <tr key={source.id}>
-        <td><a href={source.url} target="_blank" rel="noreferrer">{source.title_zh || source.title}<ArrowUpRight size={12}/></a><small>{source.organization}</small><p>{source.guide_zh}</p></td>
-        <td>{source.content_policy === "metadata_only" ? "数据入口 · 尚未取数" : source.content_policy === "original_project_summary" ? "项目自写导读" : source.chunks ? "官方正文快照" : "正文未入库"}{source.stale && <small>快照待刷新</small>}<small title={source.license?.note}>{typeof source.license === "string" ? source.license : source.license?.name}</small></td>
-        <td>{source.source_updated_at || "原页未提供"}</td><td>{source.fetched_at ? source.fetched_at.slice(0, 10) : "尚未取得"}</td>
-      </tr>)}</tbody></table></div>
-    </details>
-    <p className="public-source-note">网页快照按清单定期检查并保留来源时间；访问日期不等于观测日期。动态数据入口尚未接通实时海况，不作为当前海温或海平面数值。中文标题与导读由本项目整理。</p>
-  </section>;
+  return (
+    <section className="public-ocean-resources" aria-label="公开海洋知识来源">
+      <h2>公开海洋知识</h2>
+      <p>
+        {status.successful_web_documents || 0} 篇官方网页正文 ·{" "}
+        {status.reference_guides || 0} 条项目参考导读 · {status.chunks || 0}{" "}
+        个可检索片段。课程资料之外，也可直接查阅这些公开来源。
+      </p>
+      <details>
+        <summary>查看 {rows.length} 个来源与更新时间</summary>
+        <div className="public-source-table">
+          <table>
+            <thead>
+              <tr>
+                <th>资料与机构</th>
+                <th>接入方式</th>
+                <th>原页更新</th>
+                <th>抓取日期</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((source) => (
+                <tr key={source.id}>
+                  <td>
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title_zh || source.title}
+                      <ArrowUpRight size={12} />
+                    </a>
+                    <small>{source.organization}</small>
+                    <p>{source.guide_zh}</p>
+                  </td>
+                  <td>
+                    {source.content_policy === "metadata_only"
+                      ? "数据入口 · 尚未取数"
+                      : source.content_policy === "original_project_summary"
+                        ? "项目自写导读"
+                        : source.chunks
+                          ? "官方正文快照"
+                          : "正文未入库"}
+                    {source.stale && <small>快照待刷新</small>}
+                    <small title={source.license?.note}>
+                      {typeof source.license === "string"
+                        ? source.license
+                        : source.license?.name}
+                    </small>
+                  </td>
+                  <td>{source.source_updated_at || "原页未提供"}</td>
+                  <td>
+                    {source.fetched_at
+                      ? source.fetched_at.slice(0, 10)
+                      : "尚未取得"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p className="public-source-note">
+        网页快照按清单定期检查并保留来源时间；访问日期不等于观测日期。动态数据入口尚未接通实时海况，不作为当前海温或海平面数值。中文标题与导读由本项目整理。
+      </p>
+    </section>
+  );
 }
 function ExternalLinkIcon() {
   return <ArrowUpRight size={12} />;

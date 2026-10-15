@@ -1,0 +1,1753 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-15",
+  "size": 60,
+  "purpose": "开发者编写的检索回归基准；含答案核对要点，不是独立盲测集，不度量生成答案正确率或引用蕴含率。",
+  "source_policy": "仅含自写问题/核对要点和已有来源定位，无教材正文。数值缺证据及未知题的 source_references 为空有意表示不能给出处。",
+  "cases": [
+    {
+      "id": "K01",
+      "category": "canonical",
+      "question": "声压和水听器测到的量是什么",
+      "answer_points": [
+        "说明声压是相对静压的扰动；常规水听器与矢量传感器测量量不同。"
+      ],
+      "applicable_conditions": "说明传感器类型、位置与频率响应。",
+      "must_not_claim": [
+        "不要把声压和粒子速度当同一个量。"
+      ],
+      "expected_node_ids": [
+        "acoustic_pressure"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 29,
+          "locator": "PDF 第 29 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 30,
+          "locator": "PDF 第 30 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K02",
+      "category": "canonical",
+      "question": "声强可以直接用声压平方除以阻抗吗",
+      "answer_points": [
+        "先说明平均声强依赖声压和质点速度及相位；平面行波下才有常用简式。"
+      ],
+      "applicable_conditions": "平面进行波、明确介质阻抗与 RMS 约定。",
+      "must_not_claim": [
+        "不要在驻波或复杂近场无条件套用行波关系。"
+      ],
+      "expected_node_ids": [
+        "acoustic_intensity",
+        "acoustic_impedance"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 31,
+          "locator": "PDF 第 31 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 32,
+          "locator": "PDF 第 32 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K03",
+      "category": "canonical",
+      "question": "水下分贝为什么要说明参考量",
+      "answer_points": [
+        "声压级常以 1 微帕为参考；声压比用20log，强度比用10log。"
+      ],
+      "applicable_conditions": "参考量、幅值约定、介质应明确。",
+      "must_not_claim": [
+        "不要把空气与水下声级直接相减解释强弱。"
+      ],
+      "expected_node_ids": [
+        "decibel"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 32,
+          "locator": "PDF 第 32 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K04",
+      "category": "canonical",
+      "question": "球面扩展中距离变成十倍损失增加多少",
+      "answer_points": [
+        "理想球面扩展的相对损失增量为20 dB。"
+      ],
+      "applicable_conditions": "均匀无界、忽略吸收与边界，相同参考距离。",
+      "must_not_claim": [
+        "不要当作任意实际海域完整传播损失。"
+      ],
+      "expected_node_ids": [
+        "spherical_spreading"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K05",
+      "category": "canonical",
+      "question": "柱面扩展适用什么情况",
+      "answer_points": [
+        "理想波导远距离能流约随距离倒数衰减；每十倍距离约增加10 dB。"
+      ],
+      "applicable_conditions": "波导近似与距离区间要说明。",
+      "must_not_claim": [
+        "不要用10log r替代全部环境损耗。"
+      ],
+      "expected_node_ids": [
+        "cylindrical_spreading"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 34,
+          "locator": "PDF 第 34 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K06",
+      "category": "canonical",
+      "question": "Helmholtz 方程有哪些假设",
+      "answer_points": [
+        "频域波动方程需明确源项、密度处理及边界条件。"
+      ],
+      "applicable_conditions": "常密度无源区域的简化形式与一般情形区分。",
+      "must_not_claim": [
+        "不要把简化形式当任意非均匀介质的完整方程。"
+      ],
+      "expected_node_ids": [
+        "helmholtz"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 90,
+          "locator": "PDF 第 90 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 91,
+          "locator": "PDF 第 91 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K07",
+      "category": "canonical",
+      "question": "SSP 如何随深度变化",
+      "answer_points": [
+        "声速剖面描述声速随深度分布；温盐压及环境变化决定形状。"
+      ],
+      "applicable_conditions": "站位、观测时间、单位与公式适用范围。",
+      "must_not_claim": [
+        "不要把某幅示意剖面当当前海区实测。"
+      ],
+      "expected_node_ids": [
+        "sound_speed_profile"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 22,
+          "locator": "PDF 第 22 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 23,
+          "locator": "PDF 第 23 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K08",
+      "category": "canonical",
+      "question": "深海声道是否困住所有发射角",
+      "answer_points": [
+        "低声速轴附近可形成折射束缚；是否被束缚与出射角及剖面有关。"
+      ],
+      "applicable_conditions": "声速结构、轴深和出射角。",
+      "must_not_claim": [
+        "不要声称所有声线都在声道内。"
+      ],
+      "expected_node_ids": [
+        "deep_sound_channel"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 23,
+          "locator": "PDF 第 23 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 43,
+          "locator": "PDF 第 43 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 44,
+          "locator": "PDF 第 44 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K09",
+      "category": "canonical",
+      "question": "表面声道对低频总是有效吗",
+      "answer_points": [
+        "表面声道的束缚与泄漏依赖频率及上层梯度。"
+      ],
+      "applicable_conditions": "实际声速剖面、频率和海面边界。",
+      "must_not_claim": [
+        "不要把示意声道视为全频无损导波。"
+      ],
+      "expected_node_ids": [
+        "surface_duct"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 44,
+          "locator": "PDF 第 44 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 45,
+          "locator": "PDF 第 45 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K10",
+      "category": "canonical",
+      "question": "压力释放海面和刚性海底的边界区别",
+      "answer_points": [
+        "理想压力释放边界令声压为零；理想刚性边界约束法向梯度。"
+      ],
+      "applicable_conditions": "理想平整边界；真实粗糙海面与沉积物另建模。",
+      "must_not_claim": [
+        "不要把两种边界等同或当真实海底参数。"
+      ],
+      "expected_node_ids": [
+        "pressure_release_surface",
+        "rigid_bottom"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 357,
+          "locator": "式 5.4"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K11",
+      "category": "canonical",
+      "question": "海底介质为什么会影响传播损失",
+      "answer_points": [
+        "密度、声速、衰减及层结构决定反射透射与底损。"
+      ],
+      "applicable_conditions": "说明流体或弹性海底及频率。",
+      "must_not_claim": [
+        "不要仅靠水深推定海底损耗。"
+      ],
+      "expected_node_ids": [
+        "seabed"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 27,
+          "locator": "PDF 第 27 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 28,
+          "locator": "PDF 第 28 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K12",
+      "category": "canonical",
+      "question": "Munk 理想剖面可以代表南海实测吗",
+      "answer_points": [
+        "它是可复现的理想化声速模型；实际海域需观测剖面。"
+      ],
+      "applicable_conditions": "参数与课程算例的离散设置明确。",
+      "must_not_claim": [
+        "不要称为南海当前实测剖面。"
+      ],
+      "expected_node_ids": [
+        "munk_profile"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 375,
+          "locator": "PDF 第 375 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 376,
+          "locator": "PDF 第 376 页"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/Munk/MunkK.env"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K13",
+      "category": "canonical",
+      "question": "简正波方法只能处理距离无关环境吗",
+      "answer_points": [
+        "基本分离形式常用于距离无关；距离相关可用耦合模态或满足条件的绝热近似。"
+      ],
+      "applicable_conditions": "核查耦合强度、环境变化尺度和误差。",
+      "must_not_claim": [
+        "不要绝对化为简正波完全不能处理距离相关。"
+      ],
+      "expected_node_ids": [
+        "normal_mode_field",
+        "coupled_modes"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 356,
+          "locator": "PDF 第 356 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 421,
+          "locator": "PDF 第 421 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 427,
+          "locator": "PDF 第 427 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K14",
+      "category": "canonical",
+      "question": "声源深度如何影响模态激发",
+      "answer_points": [
+        "模态源深处的模态函数影响权重；源位于某模态节点时该模态激发弱。"
+      ],
+      "applicable_conditions": "固定环境、频率、归一化和接收几何比较。",
+      "must_not_claim": [
+        "不要声称声道轴深总是使所有接收点最强。"
+      ],
+      "expected_node_ids": [
+        "source_depth",
+        "mode_excitation"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "式 5.13–5.14"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K15",
+      "category": "canonical",
+      "question": "为什么相干模态求和要保留相位",
+      "answer_points": [
+        "复声压先按相位叠加再取幅值；与强度直接相加不等价。"
+      ],
+      "applicable_conditions": "说明相干性、频带和时间平均约定。",
+      "must_not_claim": [
+        "不要把相干与非相干的结果混用。"
+      ],
+      "expected_node_ids": [
+        "modal_sum",
+        "coherent_modal_sum"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "式 5.17–5.18"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K16",
+      "category": "canonical",
+      "question": "Snell 定律中的角度相对哪里定义",
+      "answer_points": [
+        "先约定相对水平或法线；不同约定对应不同三角函数形式。"
+      ],
+      "applicable_conditions": "水平分层介质中的射线近似。",
+      "must_not_claim": [
+        "不要混用角度定义。"
+      ],
+      "expected_node_ids": [
+        "snell"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 176,
+          "locator": "PDF 第 176 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 217,
+          "locator": "PDF 第 217 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K17",
+      "category": "canonical",
+      "question": "高斯波束怎样处理焦散附近的问题",
+      "answer_points": [
+        "有限宽度波束可缓和几何射线焦散奇异性；结果仍依赖束参数与近似。"
+      ],
+      "applicable_conditions": "核查 BELLHOP 选项、波束数和环境。",
+      "must_not_claim": [
+        "不要把几何射线的无穷幅值解释为物理无穷声压。"
+      ],
+      "expected_node_ids": [
+        "gaussian_beams",
+        "caustic_shadow"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 199,
+          "locator": "PDF 第 199 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 201,
+          "locator": "PDF 第 201 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 194,
+          "locator": "PDF 第 194 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K18",
+      "category": "canonical",
+      "question": "标准抛物方程有什么角度限制",
+      "answer_points": [
+        "标准形式侧重前向、小角或近轴传播；宽角形式另有近似范围。"
+      ],
+      "applicable_conditions": "明确所用 PE 形式、步长和验证。",
+      "must_not_claim": [
+        "不要把所有 PE 实现视为任意角度精确。"
+      ],
+      "expected_node_ids": [
+        "parabolic_equation"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 477,
+          "locator": "PDF 第 477 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 478,
+          "locator": "PDF 第 478 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K19",
+      "category": "canonical",
+      "question": "KRAKEN 和 FIELD 各做什么",
+      "answer_points": [
+        "KRAKEN 求模态，FIELD 按声源接收几何合成声场；现有 wrapper 已串联。"
+      ],
+      "applicable_conditions": "隔离任务目录、核对输出与参数。",
+      "must_not_claim": [
+        "不要把模态文件等同完整接收声场。"
+      ],
+      "expected_node_ids": [
+        "matlab_kraken_wrapper",
+        "field_executable"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S20",
+          "locator": "at/kraken.m:8–17"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K20",
+      "category": "canonical",
+      "question": "ENV 和 FLP 中声源参数怎么对应",
+      "answer_points": [
+        "环境、频率、源深与场计算几何需要一致并可回读核查。"
+      ],
+      "applicable_conditions": "依据对应工具版本的文件格式。",
+      "must_not_claim": [
+        "不要只改 UI 参数而忽略实际输入文件。"
+      ],
+      "expected_node_ids": [
+        "env_file",
+        "flp_file"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S20",
+          "locator": "at/tests/Munk/MunkK.env"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/ReadWrite/read_env.m"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/Munk/MunkK.flp"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K21",
+      "category": "canonical",
+      "question": "SHD 文件的复数声压如何转成 TL",
+      "answer_points": [
+        "按实际维度读取复声压；在当前 FIELD 归一化约定下由幅值计算传播损失。"
+      ],
+      "applicable_conditions": "核查参考量、维度与近零处理。",
+      "must_not_claim": [
+        "不要直接对复数取对数或随意加固定分贝。"
+      ],
+      "expected_node_ids": [
+        "binary_shd_pressure",
+        "transmission_loss"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S20",
+          "locator": "at/ReadWrite/read_shd_bin.m:96–102"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K22",
+      "category": "canonical",
+      "question": "接收深度 1005 米不在网格上怎么办",
+      "answer_points": [
+        "报告实际选中的网格深度或经过明确方法的插值；不得悄悄改为请求值。"
+      ],
+      "applicable_conditions": "确认网格间隔、单位和插值规则。",
+      "must_not_claim": [
+        "不要把最近点标成精确1005米。"
+      ],
+      "expected_node_ids": [
+        "receiver_depth",
+        "range_depth_grid"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K23",
+      "category": "canonical",
+      "question": "近零声压应该怎样显示传播损失",
+      "answer_points": [
+        "非有限值与阈值以下声压应标识或过滤；有效数据比例单独报告。"
+      ],
+      "applicable_conditions": "阈值及参考归一化透明。",
+      "must_not_claim": [
+        "不要把数值下限产生的巨大TL当实测结论。"
+      ],
+      "expected_node_ids": [
+        "near_zero_pressure"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 357,
+          "locator": "PDF 第 357 页"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K24",
+      "category": "canonical",
+      "question": "控制变量比较两次仿真应该固定什么",
+      "answer_points": [
+        "固定环境、频率或源深以外的条件、接收网格和色标；分别比较曲线与场图。"
+      ],
+      "applicable_conditions": "明确被改变的唯一变量与统计量。",
+      "must_not_claim": [
+        "不要仅凭颜色或中位数判断所有位置优劣。"
+      ],
+      "expected_node_ids": [
+        "comparison"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/app.py:plot_result"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K25",
+      "category": "canonical",
+      "question": "会聚区间距是所有海域都固定的吗",
+      "answer_points": [
+        "会聚区由声速结构与几何决定，间距有环境依赖。"
+      ],
+      "applicable_conditions": "实际剖面、频率与边界条件。",
+      "must_not_claim": [
+        "不要给出通用于所有海域的固定间距。"
+      ],
+      "expected_node_ids": [
+        "convergence_zone"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 40,
+          "locator": "PDF 第 40 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 41,
+          "locator": "PDF 第 41 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 42,
+          "locator": "PDF 第 42 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K26",
+      "category": "canonical",
+      "question": "CTD 的图片能否直接作为仿真输入",
+      "answer_points": [
+        "需要原始数值、时间站位、深度单位和质量信息；图像不能直接冒充数据。"
+      ],
+      "applicable_conditions": "观测对应目标海域时段并选择适用声速公式。",
+      "must_not_claim": [
+        "不要从照片编造数值数组。"
+      ],
+      "expected_node_ids": [
+        "ctd",
+        "temperature_salinity_profiles"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S15",
+          "pdf_page": 54,
+          "locator": "3.7 节、表 38"
+        },
+        {
+          "source_id": "S07",
+          "pdf_page": 84,
+          "locator": "10.1 节"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 22,
+          "locator": "PDF 第 22 页"
+        },
+        {
+          "source_id": "S15",
+          "pdf_page": 54,
+          "locator": "PDF 第 54 页"
+        },
+        {
+          "source_id": "S07",
+          "pdf_page": 84,
+          "locator": "PDF 第 84 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K27",
+      "category": "canonical",
+      "question": "ASIAEX 2001 的观测能说明今天海况吗",
+      "answer_points": [
+        "历史实验可用于方法示例，不能代表今天的观测。"
+      ],
+      "applicable_conditions": "核对历史站位、时间及原始数据。",
+      "must_not_claim": [
+        "不要把2001观测说成本轮实时测量。"
+      ],
+      "expected_node_ids": [
+        "ASIAEX_CTD"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S15",
+          "pdf_page": 54,
+          "locator": "3.7 节、表 38"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K28",
+      "category": "canonical",
+      "question": "SW06 实验和 Munk 算例有什么不同",
+      "answer_points": [
+        "前者为历史实海实验，后者为理想化环境；重现实验需完整环境与几何。"
+      ],
+      "applicable_conditions": "不能仅凭 CTD 图宣称已复现 SW06。",
+      "must_not_claim": [
+        "不要把理想示例图当实验验证。"
+      ],
+      "expected_node_ids": [
+        "SW06_CTD",
+        "munk_case"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S07",
+          "pdf_page": 84,
+          "locator": "10.1 节"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/Munk/MunkK.env"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K29",
+      "category": "canonical",
+      "question": "仿真运行成功等于物理上正确吗",
+      "answer_points": [
+        "运行成功、数值收敛、与解析基准或观测一致是不同层面的验证。"
+      ],
+      "applicable_conditions": "采用同条件基准、单位核查和误差指标。",
+      "must_not_claim": [
+        "不要把成功返回或漂亮彩图当准确率。"
+      ],
+      "expected_node_ids": [
+        "validation"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 52,
+          "locator": "PDF 第 52 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 53,
+          "locator": "PDF 第 53 页"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K30",
+      "category": "canonical",
+      "question": "BELLHOP 与 RAM 在方法上有什么区别",
+      "answer_points": [
+        "分别对应射线/高斯波束与抛物方程类方法；输入输出和适用近似不同。"
+      ],
+      "applicable_conditions": "核对本项目实际接通的求解器，而非只看工具包存在。",
+      "must_not_claim": [
+        "不要宣称所有工具已能在网页执行。"
+      ],
+      "expected_node_ids": [
+        "bellhop",
+        "ram"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S20",
+          "locator": "at/bellhop.m"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 175,
+          "locator": "PDF 第 175 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 199,
+          "locator": "PDF 第 199 页"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/ram.m"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 477,
+          "locator": "PDF 第 477 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 478,
+          "locator": "PDF 第 478 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K31",
+      "category": "colloquial",
+      "question": "把声源放到声道轴附近为什么可能更有效",
+      "answer_points": [
+        "源深改变各模态激发；声道结构影响束缚传播，但接收处仍受相干相位影响。"
+      ],
+      "applicable_conditions": "固定频率和环境，比较具体接收点。",
+      "must_not_claim": [
+        "不要声称放轴上总是最优。"
+      ],
+      "expected_node_ids": [
+        "source_depth",
+        "mode_excitation",
+        "deep_sound_channel"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "式 5.13–5.14"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 23,
+          "locator": "PDF 第 23 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 43,
+          "locator": "PDF 第 43 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 44,
+          "locator": "PDF 第 44 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K32",
+      "category": "colloquial",
+      "question": "为什么接收位置平移一点会突然几乎听不到",
+      "answer_points": [
+        "多模态复声压相消可能形成低值；改变位置改变相位差，也需排查采样与数值阈值。"
+      ],
+      "applicable_conditions": "相干声场及接收网格说明。",
+      "must_not_claim": [
+        "不要仅据低幅值断言无声传播。"
+      ],
+      "expected_node_ids": [
+        "modal_sum",
+        "coherent_modal_sum",
+        "near_zero_pressure"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "式 5.17–5.18"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 357,
+          "locator": "PDF 第 357 页"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K33",
+      "category": "colloquial",
+      "question": "盐多一点声音会不会跑得快一些",
+      "answer_points": [
+        "在适用温压范围内讨论盐度对声速的影响；不能脱离温度压力给出统一增量。"
+      ],
+      "applicable_conditions": "说明声速公式及温盐压范围。",
+      "must_not_claim": [
+        "不要编造目标海区实测声速。"
+      ],
+      "expected_node_ids": [
+        "temperature_salinity"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 22,
+          "locator": "PDF 第 22 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K34",
+      "category": "colloquial",
+      "question": "声音在水里为什么会拐弯",
+      "answer_points": [
+        "声速空间梯度导致折射，可按射线近似和角度约定解释。"
+      ],
+      "applicable_conditions": "几何声学近似与剖面条件。",
+      "must_not_claim": [
+        "不要把所有弯曲都归因于海底反射。"
+      ],
+      "expected_node_ids": [
+        "snell",
+        "ray_method"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 176,
+          "locator": "PDF 第 176 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 217,
+          "locator": "PDF 第 217 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 175,
+          "locator": "PDF 第 175 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 194,
+          "locator": "PDF 第 194 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K35",
+      "category": "colloquial",
+      "question": "温度跃变那层深浅受什么影响",
+      "answer_points": [
+        "温跃层受加热、混合、风及季节等影响；需实际温度剖面判断深度。"
+      ],
+      "applicable_conditions": "概念解释不能代替指定海域当前观测。",
+      "must_not_claim": [
+        "不要把温跃层和声道轴视为同一个面。"
+      ],
+      "expected_node_ids": [
+        "sound_speed_profile"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 22,
+          "locator": "PDF 第 22 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 23,
+          "locator": "PDF 第 23 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K36",
+      "category": "colloquial",
+      "question": "水里和空气的分贝可以直接比吗",
+      "answer_points": [
+        "参考声压和介质阻抗不同，不能直接据分贝数字比较能流。"
+      ],
+      "applicable_conditions": "明确同类量与参考约定。",
+      "must_not_claim": [
+        "不要直接比较数字大小下结论。"
+      ],
+      "expected_node_ids": [
+        "decibel",
+        "acoustic_impedance"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 32,
+          "locator": "PDF 第 32 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K37",
+      "category": "colloquial",
+      "question": "距离远十倍为什么有时说掉20分贝有时10分贝",
+      "answer_points": [
+        "分别对应理想球面和柱面扩展的距离标度。"
+      ],
+      "applicable_conditions": "场景、距离范围与其他损耗分开。",
+      "must_not_claim": [
+        "不要把两者当对同一条件的矛盾。"
+      ],
+      "expected_node_ids": [
+        "spherical_spreading",
+        "cylindrical_spreading"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 33,
+          "locator": "PDF 第 33 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 34,
+          "locator": "PDF 第 34 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K38",
+      "category": "colloquial",
+      "question": "模态声压能不能先取绝对值再直接加",
+      "answer_points": [
+        "相干求和必须保留相位；先取模会丢失相消与相长。"
+      ],
+      "applicable_conditions": "确定相干、非相干或统计平均目标。",
+      "must_not_claim": [
+        "不要把幅值和强度相加视为同义。"
+      ],
+      "expected_node_ids": [
+        "modal_sum",
+        "coherent_modal_sum"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "式 5.17–5.18"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K39",
+      "category": "colloquial",
+      "question": "接收器设1005米为什么输出深度不一样",
+      "answer_points": [
+        "请求值可能不在离散接收网格上，需报告实际取样位置。"
+      ],
+      "applicable_conditions": "核对选点和插值方式。",
+      "must_not_claim": [
+        "不要把最近网格伪装精确命中。"
+      ],
+      "expected_node_ids": [
+        "receiver_depth",
+        "range_depth_grid"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 359,
+          "locator": "PDF 第 359 页"
+        },
+        {
+          "source_id": "PROJECT",
+          "locator": "backend/matlab/run_ocean_case.m"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K40",
+      "category": "colloquial",
+      "question": "射线结果在焦散点发散到无穷是不是物理现象",
+      "answer_points": [
+        "几何近似焦散奇异性不是物理无穷大；波动或有限束方法可改善。"
+      ],
+      "applicable_conditions": "区分几何近似失效与真实聚焦。",
+      "must_not_claim": [
+        "不要解释为无限声能。"
+      ],
+      "expected_node_ids": [
+        "caustic_shadow",
+        "gaussian_beams"
+      ],
+      "expected_any_source_ids": [],
+      "source_references": [
+        {
+          "source_id": "S17",
+          "pdf_page": 194,
+          "locator": "PDF 第 194 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 199,
+          "locator": "PDF 第 199 页"
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 201,
+          "locator": "PDF 第 201 页"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K41",
+      "category": "public",
+      "question": "海水变酸后贝壳为什么难长大",
+      "answer_points": [
+        "二氧化碳改变碳酸盐体系，可减少有利于部分生物钙化的碳酸根可用性。"
+      ],
+      "applicable_conditions": "不同物种与环境反应不同；中文导词是项目整理。",
+      "must_not_claim": [
+        "不要把酸化解释为海水必然变成pH小于7。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-ACIDIFICATION"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-ACIDIFICATION",
+          "url": "https://oceanservice.noaa.gov/facts/acidification.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K42",
+      "category": "public",
+      "question": "珊瑚太热变白是怎么回事",
+      "answer_points": [
+        "环境胁迫可导致共生藻丢失或色素变化，白化不等于当场全部死亡。"
+      ],
+      "applicable_conditions": "暴露时长、温度和物种差异。",
+      "must_not_claim": [
+        "不要把白化与死亡直接画等号。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-CORAL-BLEACH"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-CORAL-BLEACH",
+          "url": "https://oceanservice.noaa.gov/facts/coral_bleach.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K43",
+      "category": "public",
+      "question": "漂在海上的仪器怎么测水流",
+      "answer_points": [
+        "漂流浮标位移可反映流动；ADCP利用声学多普勒估计剖面流速。"
+      ],
+      "applicable_conditions": "区分表层漂移、吃水、风作用和仪器类型。",
+      "must_not_claim": [
+        "不要称当前已连接某浮标实时值。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-CURRENTMON"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-CURRENTMON",
+          "url": "https://oceanservice.noaa.gov/facts/currentmon.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K44",
+      "category": "public",
+      "question": "为什么潮水有时高有时低",
+      "answer_points": [
+        "引潮力、天体相对位置和局地海岸地形共同影响潮汐。"
+      ],
+      "applicable_conditions": "潮汐与风暴增水等水位变化分开。",
+      "must_not_claim": [
+        "不要只用月相解释全部局地水位。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-TIDES"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-TIDES",
+          "url": "https://oceanservice.noaa.gov/facts/tides.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K45",
+      "category": "public",
+      "question": "海底那层氧气不够了会怎么样",
+      "answer_points": [
+        "低溶解氧会限制生物生存，常与营养负荷、耗氧及分层有关。"
+      ],
+      "applicable_conditions": "氧阈值和物种耐受性有差异。",
+      "must_not_claim": [
+        "不要把所有深海都称为缺氧死区。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-DEADZONE"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-DEADZONE",
+          "url": "https://oceanservice.noaa.gov/facts/deadzone.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K46",
+      "category": "public",
+      "question": "海面越来越高主要是什么原因",
+      "answer_points": [
+        "海水热膨胀与陆地冰损失影响全球平均；局地相对海平面还受地面运动等影响。"
+      ],
+      "applicable_conditions": "区分全球平均、局地相对和观测时段。",
+      "must_not_claim": [
+        "不要把某典型趋势当今天的实测水位。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-SEALEVEL",
+        "O-NOAA-SEALEVEL-GLOBAL-LOCAL"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-SEALEVEL",
+          "url": "https://oceanservice.noaa.gov/facts/sealevel.html",
+          "reference_kind": "public_domain_text"
+        },
+        {
+          "source_id": "O-NOAA-SEALEVEL-GLOBAL-LOCAL",
+          "url": "https://oceanservice.noaa.gov/facts/sealevel-global-local.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K47",
+      "category": "public",
+      "question": "海底地震怎么产生海啸",
+      "answer_points": [
+        "大规模海水位移可产生长波；不是每次海底地震都会形成灾害性海啸。"
+      ],
+      "applicable_conditions": "断层形变、地形和传播条件。",
+      "must_not_claim": [
+        "不要根据知识页自制实时预警。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-NOAA-TSUNAMI"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-NOAA-TSUNAMI",
+          "url": "https://oceanservice.noaa.gov/facts/tsunami.html",
+          "reference_kind": "public_domain_text"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K48",
+      "category": "public",
+      "question": "Argo 的质量标记和延时模式有什么用",
+      "answer_points": [
+        "区分实时与延时质量控制并按变量读取质量标志。"
+      ],
+      "applicable_conditions": "当前来源是项目自写导读，需查原规范及数据。",
+      "must_not_claim": [
+        "不要把链接入口当已读完整浮标记录。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-ARGO-QC"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-ARGO-QC",
+          "url": "https://argo.ucsd.edu/data/data-faq/",
+          "reference_kind": "original_project_summary"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K49",
+      "category": "public",
+      "question": "TEOS-10 与温盐压输入有什么关系",
+      "answer_points": [
+        "区分实际盐度与绝对盐度等热力学变量，按标准定义转换。"
+      ],
+      "applicable_conditions": "具体算法、版本与变量单位需核查官方规范。",
+      "must_not_claim": [
+        "不要宣称已安装GSW或训练出热力学模型。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-TEOS-10"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-TEOS-10",
+          "url": "https://www.teos-10.org/",
+          "reference_kind": "original_project_summary"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K50",
+      "category": "public",
+      "question": "World Ocean Atlas 是今天的海温吗",
+      "answer_points": [
+        "它提供基于历史观测统计的气候态等产品，不等于今天站位实测。"
+      ],
+      "applicable_conditions": "说明产品时期、网格和统计定义。",
+      "must_not_claim": [
+        "不要把网页抓取时间当观测时间。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [
+        "O-WOA"
+      ],
+      "source_references": [
+        {
+          "source_id": "O-WOA",
+          "url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+          "reference_kind": "original_project_summary"
+        }
+      ],
+      "expected_gate_status": "candidate_evidence_only",
+      "retrieval_expected": true
+    },
+    {
+      "id": "K51",
+      "category": "numeric_gate",
+      "question": "今天东海一千米深海水声速是多少",
+      "answer_points": [
+        "明确缺少对应观测记录；要求时间、位置、深度、温盐压或声速变量及质控。"
+      ],
+      "applicable_conditions": "没有匹配的结构化实测数据时不给当前数值。",
+      "must_not_claim": [
+        "不得用1500m/s或Munk值冒充今天东海实测。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K52",
+      "category": "numeric_gate",
+      "question": "南海今天海水温度是多少",
+      "answer_points": [
+        "缺少站位和深度及当日观测；公开解释页不能给出海区统一温度。"
+      ],
+      "applicable_conditions": "需经质控的匹配时空数据。",
+      "must_not_claim": [
+        "不得引用冷海或声道背景来支持当前温度。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K53",
+      "category": "numeric_gate",
+      "question": "现在东海海平面多高",
+      "answer_points": [
+        "需站点、垂直基准和时间明确的潮位或海平面产品。"
+      ],
+      "applicable_conditions": "相对水位与全球平均海平面不可混用。",
+      "must_not_claim": [
+        "不得把上升趋势当当前水位。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K54",
+      "category": "numeric_gate",
+      "question": "今天南海流速是多少",
+      "answer_points": [
+        "需位置、深度、时间、流速方向与质控记录。"
+      ],
+      "applicable_conditions": "浮标入口及海流概念页不等于测量。",
+      "must_not_claim": [
+        "不得编造实测速度。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K55",
+      "category": "numeric_gate",
+      "question": "2024年东海100米深盐度实测值是多少",
+      "answer_points": [
+        "历史年份仍不足以定位一次观测；需要明确记录。"
+      ],
+      "applicable_conditions": "时间窗、位置、深度、单位和质控均应匹配。",
+      "must_not_claim": [
+        "不得把气候态当指定历史实测。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K56",
+      "category": "numeric_gate",
+      "question": "最新东海浪高是多少",
+      "answer_points": [
+        "需站位、时间和波高定义明确的观测或有标签的预报。"
+      ],
+      "applicable_conditions": "观测与预报分开，网页快照不提供即时值。",
+      "must_not_claim": [
+        "不得把网站更新时间当浪高观测时间。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K57",
+      "category": "numeric_gate",
+      "question": "今天黄海海水溶解氧含量是多少",
+      "answer_points": [
+        "需位置深度时间、氧变量单位及质量标志。"
+      ],
+      "applicable_conditions": "通用缺氧知识不能回答具体当前浓度。",
+      "must_not_claim": [
+        "不得从死区介绍推算黄海观测值。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K58",
+      "category": "numeric_gate",
+      "question": "今天东海和南海的海水声速哪个更快",
+      "answer_points": [
+        "两个海区都需匹配时间深度与环境观测；不能只凭地理标签比较。"
+      ],
+      "applicable_conditions": "相同变量定义和可比采样条件。",
+      "must_not_claim": [
+        "不得将典型剖面比较伪装实测比较。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "missing_observation_data",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K59",
+      "category": "unknown",
+      "question": "世界杯足球冠军是哪国",
+      "answer_points": [
+        "课程海洋资料未覆盖，严格资料模式应说明缺口。"
+      ],
+      "applicable_conditions": "一般知识模式允许另行标明模型知识。",
+      "must_not_claim": [
+        "不得添加海洋资料引用来回答足球。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "no_evidence",
+      "retrieval_expected": false
+    },
+    {
+      "id": "K60",
+      "category": "unknown",
+      "question": "zzzznonexistent",
+      "answer_points": [
+        "未检索到相关资料。"
+      ],
+      "applicable_conditions": "空命中时不通过图扩展拼接答案。",
+      "must_not_claim": [
+        "不得把关联图谱当依据。"
+      ],
+      "expected_node_ids": [],
+      "expected_any_source_ids": [],
+      "source_references": [],
+      "expected_gate_status": "no_evidence",
+      "retrieval_expected": false
+    }
+  ]
+}

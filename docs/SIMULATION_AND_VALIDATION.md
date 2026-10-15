@@ -14,7 +14,7 @@
 | [org-arl/arlpy](https://github.com/org-arl/arlpy) | `check_env2d` 在调用 BELLHOP 前检查海底、声速剖面、深度/距离覆盖范围及单调性 | 若将来开放自定义环境，可采用同样的数值约束；当前固定 Munk 无需新增依赖 | [真实 LICENSE：BSD 3-Clause](https://github.com/org-arl/arlpy/blob/master/LICENSE) |
 | [TritonOA/TritonOA](https://github.com/TritonOA/TritonOA) | 新组织版定位海洋声学数据建模分析，但 README 明确 API 处于早期、不稳定 | 当前不接入，不因仓库名称相同就混用旧版 | [真实 LICENSE：BSD 3-Clause](https://github.com/TritonOA/TritonOA/blob/main/LICENSE) |
 | [NeptuneProjects/TritonOA](https://github.com/NeptuneProjects/TritonOA) | 旧版本包含 AT / KRAKEN Python 交互，README 将 BELLHOP 写为未来功能 | 可读设计，不直接复制到现有 MIT 项目 | [真实 LICENSE：GPL-3.0](https://github.com/NeptuneProjects/TritonOA/blob/main/LICENSE)；与新组织版许可证不同 |
-| [LangGraph](https://github.com/langchain-ai/langgraph) | 显式状态、checkpoint、恢复；节点重跑带来的幂等性要求 | 学习状态/事件结构；单机队列保持原实现。存在多阶段恢复需求时才加运行时 | [真实 LICENSE：MIT](https://github.com/langchain-ai/langgraph/blob/main/LICENSE) |
+| [LangGraph](https://github.com/langchain-ai/langgraph) | 显式状态、checkpoint、恢复；节点重跑带来的幂等性要求 | 学习状态/事件结构；本项目采用 SQLite 持久领取与提交幂等。存在多阶段恢复需求时再评估运行时 | [真实 LICENSE：MIT](https://github.com/langchain-ai/langgraph/blob/main/LICENSE) |
 | [OpenHands Software Agent SDK](https://github.com/OpenHands/software-agent-sdk) | Action → Observation；工具 schema 与执行器分离；本地/远端 workspace | 借鉴工具契约，不将通用终端执行工具直接暴露给匿名访客 | [真实 LICENSE：MIT](https://github.com/OpenHands/software-agent-sdk/blob/main/LICENSE) |
 
 所有代码复用应保留对应版权及许可证；“仅用于课程作业、无商业用途”是本项目用途说明，不会替代第三方许可证，也不会把 MIT 自动变成禁止商业使用的许可证。
@@ -37,7 +37,7 @@
 
 OpenHands 的[工具架构](https://docs.openhands.dev/sdk/arch/tool-system)将输入与观察结果用 Pydantic 明确定义。可在本项目中独立实现同样的接口：`preview_simulation(plan) -> validation + cases`、`get_simulation_result(job_id) -> measured data + provenance`，既可被网页调用，也可将来暴露给模型。
 
-LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgraph/interrupts)强调节点重跑时副作用要幂等。这说明“模型重试一下”不能等于重新提交一份 MATLAB 任务；未来自然语言 Agent 应在提交时使用稳定 request_id，返回已有任务而不是生成重复计算。
+LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgraph/interrupts)强调节点重跑时副作用要幂等。本项目提交接口已支持稳定 `Idempotency-Key`，同一标识与相同参数返回已有任务，不因网络重试重复计算；模型尚不能自行提交任务。
 
 ## 当前项目已有能力
 
@@ -49,9 +49,11 @@ LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgr
 - 修改 ENV 后重新 `read_env` 检查频率和源深，再运行 KRAKEN / FIELD。
 - 读取 SHD，检查压力有限/非零、频率匹配，输出实际接收深度和网格偏差；近零压力产生的 TL 无效值被标记。
 - 后端检查 TL 维度与有效值，保存 PNG / CSV / summary，并允许下载结果包。
-- Agent 只提供授权文件列表和读取工具；没有自动修改项目或自然语言自动提交仿真的闭环。界面和文档应继续如实表述。
+- 本地模型 Agent 提供授权文件列表和读取工具；另有无需模型的自然语言参数草案接口。自动修改项目、模型自行提交仿真尚未实现。
 
-## 本轮可以立即落地的优先改进
+## 早期研究建议及实现依据
+
+本节记录研究时的接口与验证建议；已经实现的部分以文末“2026-10-15 后端改进”为准，不能把建议中的全部能力视为现有功能。
 
 ### P0：严格任务与问题模板
 
@@ -98,7 +100,7 @@ LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgr
 | 网格取点 | 请求 1001 m，网格为 20 m 间隔 | 实际 1000 m，误差 1 m，明确显示 |
 | 无结果 | FAILED / TIMEOUT 任务要求总结“成功结果” | 如实解释失败，不能报告仿真结论 |
 | 工具隔离 | 用户 A 请求用户 B 的结果 | 404 / 禁止读取 |
-| 重试 | 同一 request_id 重交（未来 Agent） | 只创建一次任务 |
+| 重试 | 同一 Idempotency-Key 与相同参数重交 | 只创建一次任务；不同参数复用同一标识返回 409 |
 
 CI 可以运行 schema、数值结果 fixture 和权限测试；真实 MATLAB 计算应单独作为可选集成检查，不把没有计算节点的 GitHub Actions `skipped` 说成通过。模型答案评测需要真实 API Key 才能运行，离线检索或 mock tests 不能替代真实模型评测。
 
@@ -119,6 +121,37 @@ CI 可以运行 schema、数值结果 fixture 和权限测试；真实 MATLAB �
 
 这些结果证明本次计算链路和产物一致性已经接通，不证明求解器数值收敛、真实海域校准或模型回答质量；真实供应商付费模型调用未测试。
 
+## 2026-10-15 后端改进
+
+`backend/persistence.py` 将队列领取放入 SQLite `BEGIN IMMEDIATE` 事务；任务状态、批次、提交幂等标识、状态事件和暂停设置均持久保存。连接按操作创建并在成功或异常后关闭；事务失败回滚。执行器持有操作系统文件锁，防止误启动第二个 MATLAB 执行线程。数据库读取历史时保留旧作业及消息，升级前使用 SQLite backup API 生成一致性备份，迁移过程不运行求解器。
+
+仅导入 `app.py` 不再初始化数据库、修改未完成作业或启动执行线程。服务 lifespan 启动后迁移，再启动执行器。重启后 `QUEUED` 保留；发现旧 `RUNNING` 时标为 `INTERRUPTED` 并暂停队列，管理员确认没有残留 MATLAB 进程后恢复。已有文件不会被据此认定为成功，旧执行也不会自动重跑。取消后的迟到成功回调不得覆盖取消终态。
+
+### 可预览的自然语言参数草案
+
+`POST /api/plans/draft` 接收 `{ "message": "Munk 频率0.05kHz 源深1km 接收深度1000m 距离1–50km" }`。当前解析器是 `deterministic_units_v1`，只解析显式中英文参数及 Hz/kHz、m/km/cm/mm 等单位，不调用模型。返回：
+
+| 字段 | 含义 |
+| --- | --- |
+| `draft_plan` | 已明确识别的标准单位参数；缺少的物理字段不自动补齐 |
+| `extracted_fields` | 字段名、原文、标准化值和单位 |
+| `missing_fields` | 缺失字段及需用户补充的问题 |
+| `assumptions` | 仅距离/深度采样点默认 201/251，可在表单修改 |
+| `warnings` / `unsupported_requests` / `validation_errors` | 假设边界、未支持请求和严格 Plan 验证错误 |
+| `ready_for_preview` / `requires_confirmation` / `execution_started` | 是否可继续预览、必须确认、本入口未执行计算 |
+
+需明确 Munk 环境、频率、源深、接收深度和起止距离。频率或源深仅给范围而未给步长时，要求用户列出明确控制值；单个终止距离不自动推断起点。草案与 `/plans/preview` 均不创建任务，只有确认后调用既有 `/jobs` 接口才入队。
+
+提交时沿用 Plan JSON，并发送 `Idempotency-Key`；同标识、同参数返回原 `ids` 与 `reused=true`，不同参数返回 409。修改计划或明确重跑应生成新标识。未发送标识的兼容客户端只在相同计划仍活跃时复用批次，完成后可以重新计算。公网网关负责验证访客及任务所有权，并把访客命名空间与幂等标识传给节点。
+
+### 已有结果的受控对比
+
+`POST /api/jobs/compare` 接收 `{ "ids": ["任务一", "任务二"] }`，只读取 2–4 个不同的成功任务。产物需通过现有 `science.verify_result`；存在 manifest 时核对作业标识、实际 result.json 与 case.env 哈希，拒绝被改动的产物。环境对比使用实际 ENV 内容，仅规范化明确作为控制变量的频率和单个源深行；缺少环境文件不能视为同环境。
+
+响应 `series` 提供每组实际距离轴、TL 曲线、频率、源深、实际接收深度、验证记录与文件证据；`pairs` 提供逐对条件检查及差异，4 组最多 6 对。可比条件还包括完整距离/深度轴、单位、归一化、接收深度和有限样本掩膜一致。任一条件不满足时不返回数值差结论；同时改变频率与源深时标记为非单因素对照。不会据此排名真实海域或宣称数值收敛。
+
+本次新增持久队列、解析与比较、实际 FastAPI 路由测试均使用临时目录、合成数值夹具及模拟执行；没有运行新的真实 MATLAB 仿真，未修改运行节点的 `.local` 数据。升级与回滚操作见 [部署说明](DEPLOYMENT.md)。
+
 ## 仍未实现的后续范围
 
-自然语言到 Plan 的模型闭环、模型工具提交幂等、多环境/多求解器、MATLAB 迁移至独立常驻计算主机、自动修改访客本机 MATLAB 项目仍需单独实现和实际验证。通用 OpenHands / LangGraph 运行时没有因本次界面改版而安装或成为现有依赖。
+用大模型解析任意自然语言、多步 Agent 自动执行、多环境/多求解器、求解器数值收敛基准、MATLAB 迁移至独立常驻计算主机、自动修改访客本机 MATLAB 项目仍需单独实现和实际验证。通用 OpenHands / LangGraph 运行时不是现有依赖。仅改变 FIELD 输出采样网格不能证明 KRAKEN 环境离散与模态解收敛。

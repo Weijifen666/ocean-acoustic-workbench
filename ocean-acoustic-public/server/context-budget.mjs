@@ -40,7 +40,15 @@ function historyUnits(history){
  }
  return units;
 }
-function projectEvidence(rows){return (rows||[]).map(row=>Object.fromEntries(EVIDENCE_FIELDS.filter(key=>row[key]!==undefined).map(key=>[key,clean(row[key])])))}
+function projectEvidence(rows){return (rows||[]).map(row=>{
+ const value=Object.fromEntries(EVIDENCE_FIELDS.filter(key=>row[key]!==undefined).map(key=>[key,clean(row[key])]));
+ // Ranking diagnostics and duplicate reference lists are UI metadata, not
+ // evidence text. Keep the actual citation and bounded typed relationships.
+ delete value.all_references;
+ if(value.retrieval)value.retrieval=Object.fromEntries(['method','methods','role','focus'].filter(k=>value.retrieval[k]!==undefined).map(k=>[k,value.retrieval[k]]));
+ if(Array.isArray(value.related_triples))value.related_triples=value.related_triples.slice(0,3);
+ return value;
+})}
 function prefix(text,characters){return Array.from(text).slice(0,characters).join('')}
 export function buildContext({question,system,evidence=[],history=[],template='',context_budget='auto',tools=[]}){
  const budget=resolveBudget(context_budget),limit=budget-CONTEXT_RESERVE;
@@ -71,7 +79,15 @@ export function buildContext({question,system,evidence=[],history=[],template=''
    while(lo<hi){const mid=Math.ceil((lo+hi)/2);row.text=prefix(original,mid);if(fits())lo=mid;else hi=mid-1;}
    row.text=prefix(original,lo);
    if(!row.text.trim())keptEvidence=[];
-  }else keptEvidence=[];
+  }else{
+   for(const key of ['related_triples','retrieval','all_references'])delete row[key];
+   row.context_metadata_reduced=true;
+   if(fits()){
+    let lo=0,hi=Array.from(original).length;
+    while(lo<hi){const mid=Math.ceil((lo+hi)/2);row.text=prefix(original,mid);if(fits())lo=mid;else hi=mid-1;}
+    row.text=prefix(original,lo);if(!row.text.trim())keptEvidence=[];
+   }else keptEvidence=[];
+  }
  }
  while(!fits()&&keptUnits.length)keptUnits.shift();
  if(!fits()){keptEvidence=[];keptTemplate='';templateTruncated=!!template;}

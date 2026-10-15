@@ -11,6 +11,7 @@ import {
 import { useChatSession } from "./chat-session";
 import ChatComposerControls from "./ChatComposerControls";
 import MascotFigure from "./MascotFigure";
+import RichMessage from "./RichMessage";
 import "./mascot.css";
 
 const POSITION_KEY = "ocean:assistant-position:v1";
@@ -19,14 +20,20 @@ const AVATAR_HEIGHT = 126;
 const MARGIN = 12;
 const PARKING_GAP = 12;
 const PARKING_CONTROLS =
-  ".button.primary, .drawer-footer button, .composer, .composer-controls, .composer-send, .composer textarea, .composer select, .apply-model, .exercise-actions button";
+  ".sidebar, .mobile-menu-button, .button.primary, .drawer-footer button, .composer, .composer-controls, .composer-send, .composer textarea, .composer select, .apply-model, .exercise-actions button, .answer-evidence-chips, .inline-evidence, .research-heading, .research-artifact-heading, #workspace-content .btn-regular, .workspace-login a";
 
 function screenSize() {
   return { width: window.innerWidth, height: window.innerHeight };
 }
+function avatarSize(screen = screenSize()) {
+  return screen.width <= 760
+    ? { width: 56, height: 72 }
+    : { width: AVATAR_WIDTH, height: AVATAR_HEIGHT };
+}
 function clampPosition(position, screen = screenSize()) {
-  const maxX = Math.max(MARGIN, screen.width - AVATAR_WIDTH - MARGIN);
-  const maxY = Math.max(MARGIN, screen.height - AVATAR_HEIGHT - 40);
+  const avatar = avatarSize(screen);
+  const maxX = Math.max(MARGIN, screen.width - avatar.width - MARGIN);
+  const maxY = Math.max(MARGIN, screen.height - avatar.height - 40);
   return {
     x: Math.round(Math.max(MARGIN, Math.min(maxX, position.x))),
     y: Math.round(Math.max(Math.min(62, maxY), Math.min(maxY, position.y))),
@@ -34,11 +41,12 @@ function clampPosition(position, screen = screenSize()) {
 }
 function defaultPosition() {
   const screen = screenSize();
+  const avatar = avatarSize(screen);
   return clearParking(
     clampPosition(
       {
-        x: screen.width - AVATAR_WIDTH - 23,
-        y: screen.height - AVATAR_HEIGHT - 46,
+        x: screen.width - avatar.width - 23,
+        y: screen.height - avatar.height - 46,
       },
       screen,
     ),
@@ -46,6 +54,7 @@ function defaultPosition() {
 }
 function clearParking(position) {
   const screen = screenSize();
+  const avatar = avatarSize(screen);
   const parked = clampPosition(position, screen);
   const controls = [...document.querySelectorAll(PARKING_CONTROLS)]
     // The floating chat intentionally overlays the page; only protect the workspace.
@@ -64,22 +73,22 @@ function clearParking(position) {
     !controls.some(
       (rect) =>
         candidate.x < rect.right + PARKING_GAP &&
-        candidate.x + AVATAR_WIDTH > rect.left - PARKING_GAP &&
+        candidate.x + avatar.width > rect.left - PARKING_GAP &&
         candidate.y < rect.bottom + PARKING_GAP &&
-        candidate.y + AVATAR_HEIGHT > rect.top - PARKING_GAP,
+        candidate.y + avatar.height > rect.top - PARKING_GAP,
     );
   if (clear(parked)) return parked;
   const candidates = controls.flatMap((rect) => [
-    { x: parked.x, y: rect.top - AVATAR_HEIGHT - PARKING_GAP },
+    { x: parked.x, y: rect.top - avatar.height - PARKING_GAP },
     { x: parked.x, y: rect.bottom + PARKING_GAP },
-    { x: rect.left - AVATAR_WIDTH - PARKING_GAP, y: parked.y },
+    { x: rect.left - avatar.width - PARKING_GAP, y: parked.y },
     { x: rect.right + PARKING_GAP, y: parked.y },
   ]);
   // Keep a manually chosen location if safe; otherwise prefer the nearest clear edge.
-  for (let y = 62; y < screen.height - 40; y += AVATAR_HEIGHT + PARKING_GAP) {
+  for (let y = 62; y < screen.height - 40; y += avatar.height + PARKING_GAP) {
     candidates.push(
       { x: MARGIN, y },
-      { x: screen.width - AVATAR_WIDTH - MARGIN, y },
+      { x: screen.width - avatar.width - MARGIN, y },
     );
   }
   const safe = candidates
@@ -159,9 +168,20 @@ export default function MascotDock({
   onOpenChat,
   onOpenSettings,
   onKnowledge,
+  onSimulation,
 }) {
-  const { text, setText, msgs, busy, send, ready, selectionBusy } =
-    useChatSession();
+  const {
+    text,
+    setText,
+    msgs,
+    busy,
+    send,
+    retry,
+    progress,
+    ready,
+    selectionBusy,
+    conversationBusy,
+  } = useChatSession();
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [preferences, setPreferences] = useState(false);
@@ -305,7 +325,11 @@ export default function MascotDock({
     const signature = reply?.id || reply?.text;
     if (!signature || signature === lastReply.current || busy) return;
     lastReply.current = signature;
-    if (reply.request_failed) return;
+    if (
+      reply.request_failed ||
+      ["stopped", "pending", "streaming"].includes(reply.status)
+    )
+      return;
     setWave(true);
     const timer = setTimeout(() => setWave(false), 2400);
     return () => clearTimeout(timer);
@@ -408,13 +432,14 @@ export default function MascotDock({
     setPreferences(false);
   }
 
+  const avatar = avatarSize(screen);
   const panelWidth = Math.min(420, screen.width - 24);
   const panelHeight = Math.min(550, Math.floor(screen.height * 0.7));
   const panelX = Math.max(
     MARGIN,
     Math.min(
       screen.width - panelWidth - MARGIN,
-      position.x + AVATAR_WIDTH - panelWidth,
+      position.x + avatar.width - panelWidth,
     ),
   );
   const above = position.y - panelHeight - 8;
@@ -422,10 +447,11 @@ export default function MascotDock({
     58,
     Math.min(
       screen.height - panelHeight - 37,
-      above >= 58 ? above : position.y + AVATAR_HEIGHT + 8,
+      above >= 58 ? above : position.y + avatar.height + 8,
     ),
   );
-  const canSend = ready && !busy && !selectionBusy && !!text.trim();
+  const canSend =
+    ready && !busy && !selectionBusy && !conversationBusy && !!text.trim();
   const preferenceMaxHeight = Math.max(0, screen.height - MARGIN * 2 - 28);
   const preferenceWidth = Math.min(
     preferenceSize.width,
@@ -436,7 +462,7 @@ export default function MascotDock({
     MARGIN,
     Math.min(
       screen.width - preferenceWidth - MARGIN,
-      position.x + AVATAR_WIDTH - preferenceWidth,
+      position.x + avatar.width - preferenceWidth,
     ),
   );
   const preferenceAbove = position.y - preferenceHeight - 10;
@@ -446,7 +472,7 @@ export default function MascotDock({
       screen.height - preferenceHeight - 40,
       preferenceAbove >= MARGIN
         ? preferenceAbove
-        : position.y + AVATAR_HEIGHT + 10,
+        : position.y + avatar.height + 10,
     ),
   );
 
@@ -615,26 +641,20 @@ export default function MascotDock({
                         : "课程助手"}
                   </span>
                 </div>
-                <p>{message.text}</p>
-                {message.role === "assistant" && (
-                  <details className="mascot-message-trace">
-                    <summary>
-                      回答详情
-                      {message.citations?.length
-                        ? ` · ${message.citations.length} 条依据`
-                        : ""}
-                    </summary>
-                    <p>{modelIdentity(message)}</p>
-                    {message.coverage_notice && (
-                      <small className="mascot-coverage-note">
-                        {message.coverage_notice}
-                      </small>
-                    )}
-                    <CompactSources
-                      message={message}
-                      onKnowledge={showKnowledge}
-                    />
-                  </details>
+                {message.role === "assistant" ? (
+                  <RichMessage
+                    compact
+                    message={message}
+                    onKnowledge={showKnowledge}
+                    onSimulation={(draft) => {
+                      setOpen(false);
+                      onSimulation?.(draft);
+                    }}
+                    onRetry={retry}
+                    onSettings={openSettings}
+                  />
+                ) : (
+                  <p>{message.text}</p>
                 )}
               </div>
             ))}
@@ -645,7 +665,7 @@ export default function MascotDock({
                   <i />
                   <i />
                 </span>
-                正在处理问题…
+                {progress || "正在处理问题…"}
               </div>
             )}
           </div>
@@ -684,70 +704,5 @@ export default function MascotDock({
         </section>
       )}
     </>
-  );
-}
-
-function CompactSources({ message, onKnowledge }) {
-  const citations = message.citations?.length
-    ? message.citations
-    : message.evidence || [];
-  if (!citations.length) return null;
-  return (
-    <div className="mascot-answer-sources">
-      {citations.slice(0, 4).map((citation, index) => {
-        const evidenceId =
-          citation.evidence_id || citation.id || citation.citation_id;
-        const evidence =
-          (evidenceId &&
-            message.evidence?.find(
-              (item) =>
-                item.id === evidenceId || item.evidence_id === evidenceId,
-            )) ||
-          citation;
-        const nodeId = citation.node_id || evidence.node_id;
-        const url = safeSourceUrl(
-          citation.url ||
-            citation.source_url ||
-            (citation.source_id && citation.pdf_page
-              ? `/api/source/${citation.source_id}/page/${citation.pdf_page}`
-              : null),
-        );
-        return (
-          <div key={evidenceId || index}>
-            <strong>
-              {citation.label ||
-                evidence.label ||
-                citation.source_id ||
-                "课程依据"}
-            </strong>
-            <small>
-              {[
-                citation.source_id,
-                citation.pdf_page
-                  ? `PDF 第 ${citation.pdf_page} 页`
-                  : citation.locator,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </small>
-            <div>
-              {nodeId && (
-                <button onClick={() => onKnowledge(nodeId)}>
-                  <Network size={12} />
-                  知识点
-                </button>
-              )}
-              {url && (
-                <a href={url} target="_blank" rel="noreferrer">
-                  <ExternalLink size={12} />
-                  原始来源
-                </a>
-              )}
-            </div>
-          </div>
-        );
-      })}
-      {citations.length > 4 && <small>完整依据可进入知识问答查看。</small>}
-    </div>
   );
 }

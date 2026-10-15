@@ -144,7 +144,7 @@ class KnowledgeTests(unittest.TestCase):
             chunks = retrieval.load_chunks(output)
             self.assertEqual(len(chunks), report["chunks"])
             self.assertEqual(report["needs_ocr_pages"], 0)
-            results = retrieval.retrieve(knowledge.graph_data(), knowledge.knowledge_cards(), "Munk 理想剖面", chunks=chunks)
+            results = retrieval.retrieve(knowledge.graph_data(), knowledge.knowledge_cards(), "idealized ocean conditions", chunks=chunks)
             self.assertTrue(any(card["evidence_type"] == "source_excerpt" for card in results))
             with patch.object(knowledge, "CHUNKS", output):
                 status = knowledge.retrieval_status()
@@ -157,7 +157,9 @@ class KnowledgeTests(unittest.TestCase):
             self.assertEqual(status["chunks"], status["source_chunks"])
             self.assertEqual(status["needs_ocr"], status["needs_ocr_pages"])
             self.assertEqual(status["indexed_pages"], 0)  # Markdown has no stable PDF page.
-            self.assertNotIn("RRF", status["methods"])
+            self.assertIn("RRF", status["methods"])  # Maintained query branches now have actual rank fusion.
+            self.assertFalse(status['text_integrity']['requires_rebuild'])
+            self.assertEqual(report['ingestion_version'], 2)
             self.assertNotIn(str(root), json.dumps(status))
             before = output.read_bytes()
             manifest.write_text(json.dumps({"sources": [{"id": "BROKEN", "path": "missing.md"}]}), encoding="utf-8")
@@ -221,13 +223,15 @@ class KnowledgeTests(unittest.TestCase):
             self.assertEqual(report['needs_ocr_pages'],2)
             values=retrieval.load_chunks(output)
             self.assertTrue(all(not chunk['node_ids'] for chunk in values))
-            evidence=retrieval.retrieve(knowledge.graph_data(),knowledge.knowledge_cards(),'声速剖面如何描述深度变化',chunks=values)
+            # An unmapped page remains searchable without claiming an exact
+            # reviewed concept's reference page. Exact concepts use that gate.
+            evidence=retrieval.retrieve(knowledge.graph_data(),knowledge.knowledge_cards(),'声速如何随深度变化',chunks=values)
             original=next(card for card in evidence if card['evidence_type']=='source_excerpt')
             self.assertEqual(original['source_id'],'EXTRA')
             self.assertEqual(original['pdf_page'],1)
             self.assertEqual(original['retrieval']['role'],'text_match')
             self.assertFalse(original.get('related_triples'))
-            self.assertTrue(any(card['source_id']=='EXTRA' and card.get('pdf_page')==4 for card in retrieval.retrieve(knowledge.graph_data(),knowledge.knowledge_cards(),'传播损失 TL',chunks=values)))
+            self.assertTrue(any(card['source_id']=='EXTRA' and card.get('pdf_page')==4 for card in retrieval.retrieve(knowledge.graph_data(),knowledge.knowledge_cards(),'reference interchangeable',chunks=values)))
             with patch.object(knowledge,'CHUNKS',output):status=knowledge.retrieval_status()
             self.assertEqual(status['source_coverage'][0]['total_pages'],4)
             self.assertEqual(status['source_coverage'][0]['processed_pages'],4)
@@ -264,16 +268,16 @@ class KnowledgeTests(unittest.TestCase):
         graph=knowledge.graph_data();cards=knowledge.knowledge_cards()
         values=[{'id':f'TEXT-{i}','source_id':'EXTRA','pdf_page':i+1,'node_ids':[],'text':f'Sample {i}: sound speed profile describes ocean sound speed versus depth, with measured environmental inputs.','evidence_type':'source_excerpt'} for i in range(1200)]
         retrieval._lexical_corpus.cache_clear()
-        first=retrieval.retrieve(graph,cards,'声速剖面',chunks=values)
+        first=retrieval.retrieve(graph,cards,'声速怎样随深度变化',chunks=values)
         self.assertTrue(any(card['source_id']=='EXTRA' for card in first))
         with patch.object(retrieval,'_expanded_text',side_effect=AssertionError('Unchanged corpus must not be expanded again')):
-            second=retrieval.retrieve(graph,cards,'SSP 与深度',chunks=values)
+            second=retrieval.retrieve(graph,cards,'声速与环境 inputs',chunks=values)
         self.assertTrue(second)
         self.assertTrue(any(card['source_id']=='EXTRA' for card in second))
         self.assertEqual(retrieval._lexical_corpus.cache_info().misses,1)
         self.assertEqual(retrieval._lexical_corpus.cache_info().hits,1)
         values[0]={**values[0],'text':'A revised transmission loss reference explicitly differs from the previous sound speed discussion.'}
-        updated=retrieval.retrieve(graph,cards,'传播损失',chunks=values)
+        updated=retrieval.retrieve(graph,cards,'revised transmission',chunks=values)
         self.assertTrue(any(card['id']=='TEXT-0' for card in updated))
         self.assertEqual(retrieval._lexical_corpus.cache_info().misses,2)
         self.assertNotIn('citation',values[0])

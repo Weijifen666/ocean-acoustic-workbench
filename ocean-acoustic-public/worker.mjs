@@ -3,6 +3,7 @@ import {FILES,GRAPH,MODELS,SOURCES,TEMPLATE,EXERCISES,OCEAN_SOURCES,OCEAN_CHUNKS
 import {createCourseRetriever} from './server/course-retrieval.mjs';
 import {createCloudModels} from './server/cloud-models.mjs';
 import {createPublicOceanKnowledge} from './server/open-ocean-retrieval.mjs';
+import {resolveVisitorIdentity,visitorCookie} from './server/identity.mjs';
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers}});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const encoder=new TextEncoder();
@@ -12,7 +13,7 @@ async function key(secret){return crypto.subtle.importKey('raw',await crypto.sub
 async function encrypt(data,secret){const iv=crypto.getRandomValues(new Uint8Array(12));const out=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},await key(secret),encoder.encode(JSON.stringify(data))));return base64(new Uint8Array([...iv,...out]))}
 async function decrypt(data,secret){const b=bytes64(data);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12)},await key(secret),b.slice(12))))}
 const db=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run(),all:async(sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results});
-const offline=()=>({version:'0.6.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
+const offline=()=>({version:'0.7.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:46,sources:20,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
 const coursePages=new Set(GRAPH.nodes.flatMap(n=>(n.images||[]).map(i=>i.url)).filter(u=>/^\/api\/source\/S\d{2}\/page\/\d+$/.test(u)));
 function graphPath(source,target){
  const ids=new Set(GRAPH.nodes.map(n=>n.id));if(!ids.has(source)||!ids.has(target))return null;
@@ -46,15 +47,17 @@ async function dynamic(request,env,ctx,url){
  if(!heart||Date.now()-heart.seen>15000){if(url.pathname==='/api/health')return json(offline());return json({detail:'MATLAB 计算节点暂未连接。知识图谱仍可浏览；请稍后重试。'},503)}
  const body=await request.text();if(body.length>65536)return json({detail:'请求内容过长'},413);
  const queued=await store.one("SELECT COUNT(*) AS n FROM bridge_requests WHERE state!='done' AND created>?",Date.now()-95000);if(queued.n>=80)return json({detail:'访问繁忙，请稍后重试'},429);
- const id=crypto.randomUUID(),payload=await encrypt({path:url.pathname+url.search,method:request.method,body,headers:{cookie:request.headers.get('cookie')||'',origin:url.origin,'x-ocean-client-ip':request.headers.get('cf-connecting-ip')||'cloud-visitor'}},env.GATEWAY_SECRET);
+ const identity=await resolveVisitorIdentity(request,env);
+ const id=crypto.randomUUID(),payload=await encrypt({path:url.pathname+url.search,method:request.method,body,headers:{cookie:'ocean_visitor='+identity.node_id,origin:url.origin,'idempotency-key':request.headers.get('idempotency-key')||'','x-ocean-client-ip':request.headers.get('cf-connecting-ip')||'cloud-visitor'}},env.GATEWAY_SECRET);
  await store.run("INSERT INTO bridge_requests(id,created,state,payload) VALUES(?,?,'queued',?)",id,Date.now(),payload);
  try{
   for(let i=0;i<44;i++){
+   if(request.signal.aborted)return json({detail:'请求已停止'},499);
    await sleep(i<4?500:2000);const row=await store.one('SELECT state FROM bridge_requests WHERE id=?',id);
    if(row?.state==='done'){
     const object=await env.BUCKET.get('rpc/'+id);if(!object)throw Error('missing response');
     const result=await decrypt(await object.text(),env.GATEWAY_SECRET),headers=new Headers(result.headers);
-    headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(bytes64(result.body),{status:result.status,headers});
+    headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');headers.set('Set-Cookie',visitorCookie(identity.cookie_id));return new Response(bytes64(result.body),{status:result.status,headers});
    }
   }
   return json({detail:'计算节点响应超时，请刷新任务列表或稍后重试'},504);

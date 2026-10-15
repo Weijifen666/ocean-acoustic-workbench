@@ -1,7 +1,12 @@
 // Anonymous visitor state stays server-side, encrypted at rest. No owner's key.
-import {courseCitation,COURSE_SYSTEM,noModelAnswer,normalize} from './course-retrieval.mjs';
+import {courseCitation,COURSE_SYSTEM,noModelAnswer,normalize,focusEvidenceGate} from './course-retrieval.mjs';
 import {answerPolicy,noteKnowledgeGap} from './knowledge-policy.mjs';
 import {buildContext,inactiveContext,resolveBudget,withProviderUsage} from './context-budget.mjs';
+import {createChatStore} from './chat-store.mjs';
+import {readProviderStream,eventStreamResponse} from './provider-stream.mjs';
+import {isCoxMunkOnly} from './query-planning.mjs';
+import {resolveVisitorIdentity,visitorCookie} from './identity.mjs';
+import {createWorkspaceApi} from './workspaces.mjs';
 export function defaults(catalog){const provider=catalog.providers.find(p=>p.id==='Qwen')||catalog.providers[0],model=catalog.models.find(m=>m.provider===provider.id&&m.id==='qwen3.7-plus')||catalog.models.find(m=>m.provider===provider.id);return {provider:provider.id,base_url:provider.base_url,model:model.id,api_key:''}}
 export const publicConfig=cfg=>({provider:cfg.provider,base_url:cfg.base_url,model:cfg.model,api_key_set:!!cfg.api_key,public_mode:true,storage:'cloud_encrypted'});
 export function validateConnection(cfg,catalog){
@@ -26,54 +31,85 @@ function safeNetworkMessage(error){
  return '网络连接未建立，请稍后重试；这不表示 API Key 无效。';
 }
 export async function providerFetch(cfg,path,options={},fetcher=fetch){
- const {timeoutMs=70000,...init}=options,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs);
+ const {timeoutMs=70000,signal,...init}=options,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs),abort=()=>controller.abort();
+ timer.unref?.();
+ let transferred=false,bodyAbort;
+ const cleanup=()=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);if(bodyAbort)controller.signal.removeEventListener('abort',bodyAbort)};
+ signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)controller.abort();
  try{
   const headers=new Headers(init.headers);headers.set('Authorization','Bearer '+cfg.api_key);headers.set('Accept','application/json');
   // workerd supports manual/follow; redirect:error throws before sending a request.
   // Reject redirects explicitly so credentials are never forwarded to another host.
   const response=await fetcher(cfg.base_url+path,{...init,headers,signal:controller.signal,redirect:'manual'});
   if(response.status>=300&&response.status<400)throw transportError(`供应商接口返回 HTTP ${response.status} 重定向，已停止请求；请核对官方 API 地址。`,'PROVIDER_REDIRECT');
-  return response;
+  if(!response.body)return response;
+  const reader=response.body.getReader();
+  const body=new ReadableStream({
+   start(output){bodyAbort=()=>{void reader.cancel().catch(()=>{});cleanup();try{output.error(signal?.aborted?Object.assign(new Error('请求已停止'),{name:'AbortError',code:'CANCELLED'}):transportError('连接供应商超时，回答尚未完成。','PROVIDER_TIMEOUT'))}catch{}};controller.signal.addEventListener('abort',bodyAbort,{once:true});if(controller.signal.aborted)bodyAbort()},
+   async pull(output){try{const item=await reader.read();if(item.done){cleanup();output.close()}else output.enqueue(item.value)}catch{cleanup();try{output.error(transportError('供应商响应连接中断。','PROVIDER_NETWORK'))}catch{}}},
+   async cancel(){controller.abort();cleanup();await reader.cancel().catch(()=>{})}
+  });
+  transferred=true;
+  return new Response(body,{status:response.status,statusText:response.statusText,headers:response.headers});
  }catch(error){
   if(error.status===502)throw error;
+  if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{name:'AbortError',code:'CANCELLED'});
   if(controller.signal.aborted||['AbortError','TimeoutError'].includes(error.name))throw transportError('连接供应商超时，请稍后重试；这不表示 API Key 无效。','PROVIDER_TIMEOUT');
   const name=/^[A-Za-z]{1,40}$/.test(error.name||'')?error.name:'Error';
   throw transportError(`云端连接供应商失败（${name}）：${safeNetworkMessage(error,cfg)}`,'PROVIDER_NETWORK');
- }finally{clearTimeout(timer)}
+ }finally{if(!transferred)cleanup()}
 }
-async function remote(cfg,catalog,body,fetcher){
+async function remote(cfg,catalog,body,fetcher,signal){
  cfg=validateConnection(cfg,catalog);
  const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
-  const r=await providerFetch(cfg,'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options})},fetcher);
+  const r=await providerFetch(cfg,'/chat/completions',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options})},fetcher);
   if(!r.ok)throw new Error(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
   if(!data.choices?.[0]?.message)throw new Error('供应商响应缺少文字消息');return data;
 }
+async function remoteStream(cfg,catalog,body,fetcher,onDelta,signal){
+ const controller=new AbortController(),abort=()=>controller.abort(),timer=setTimeout(()=>controller.abort(),90000);
+ signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)controller.abort();
+ try{
+  const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
+  const usageOptions=['DeepSeek','Qwen'].includes(cfg.provider)?{stream_options:{include_usage:true}}:{};
+  const r=await providerFetch(cfg,'/chat/completions',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options,stream:true,...usageOptions})},fetcher);
+  if(!r.ok)throw transportError(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`,'PROVIDER_RESPONSE');
+  const result=await readProviderStream(r,onDelta,controller.signal);return result;
+ }catch(error){
+  if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{name:'AbortError',code:'CANCELLED'});
+  if(controller.signal.aborted)throw transportError('供应商生成超时，回答尚未完成；可稍后重试。','PROVIDER_TIMEOUT');
+  if(error.status===502||error.code==='CANCELLED')throw error;
+  throw transportError('供应商流式响应未完成，请稍后重试。','PROVIDER_STREAM');
+ }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort)}
+}
 export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartbeat,template='',fetcher=fetch,publicKnowledge=null}){
+ const workspaceApi=createWorkspaceApi({encrypt,decrypt});
  const publicStatus=()=>publicKnowledge?.publicOceanStatus?.()||{registered_sources:0,indexed_sources:0,chunks:0,web_sources:[],live_web_search:false};
  const publicRetrieve=q=>publicKnowledge?.retrievePublicOcean?.(q,4)||[];
  function mergeEvidence(course,extra,q){
+  if(isCoxMunkOnly(q))return focusEvidenceGate(q,[...course,...extra],8);
   const focused=course.some(c=>c.retrieval?.role==='question_focus'||c.retrieval?.focus===true);
   if(extra.length&&!focused){
    const generic=new Set(['海洋','海水','水下','ocean','marine','sea','water','underwater','sound']);
    const anchors=[...new Set(extra.flatMap(c=>c.search_aliases||[]).map(normalize).filter(term=>term.length>=2&&!generic.has(term)&&normalize(q).includes(term)))];
    if(anchors.length)course=course.filter(c=>anchors.some(term=>normalize([c.label,c.text,c.formula].join(' ')).includes(term)));
   }
-  const rows=focused?[...course.slice(0,6),...extra,...course.slice(6)]:[...extra,...course];
-  const seen=new Set();return rows.filter(c=>{if(seen.has(c.id))return false;seen.add(c.id);return true}).slice(0,8);
+  const rows=focused?[...course,...extra]:[...extra,...course];
+  const seen=new Set();return focusEvidenceGate(q,rows.filter(c=>{if(seen.has(c.id))return false;seen.add(c.id);return true}),8);
  }
  const json=(d,status=200)=>new Response(JSON.stringify(d),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}}),store=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run()});
  async function load(request,env){
-  if(!env.GATEWAY_SECRET)throw Error('连接配置尚未完成');let id=(request.headers.get('cookie')||'').match(/(?:^|;\s*)ocean_visitor=([A-Za-z0-9_-]{40,86})(?:;|$)/)?.[1];let fresh=false;
-  if(!id){id=btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');fresh=true}
+  if(!env.GATEWAY_SECRET)throw Error('连接配置尚未完成');const identity=await resolveVisitorIdentity(request,env),{id,fresh}=identity;
   let row=await store(env).one('SELECT ciphertext,version,updated FROM cloud_visitors WHERE id=?',id);
-  if(row&&Date.now()-row.updated>2592000000){await store(env).run('DELETE FROM cloud_visitors WHERE id=? AND updated<?',id,Date.now()-2592000000);row=null;fresh=true}
+  // Cookie expiry controls access duration. Reading an old session never deletes
+  // its encrypted configuration or research history as a side effect.
   if(!row){const data={selected:defaults(catalog),profiles:{},history:[],calls:[],gaps:[]};await store(env).run('INSERT INTO cloud_visitors(id,ciphertext,version,updated) VALUES(?,?,0,?) ON CONFLICT(id) DO NOTHING',id,await encrypt(data,env.GATEWAY_SECRET),Date.now());row=await store(env).one('SELECT ciphertext,version,updated FROM cloud_visitors WHERE id=?',id)}
-  return {id,fresh,data:await decrypt(row.ciphertext,env.GATEWAY_SECRET),version:row.version};
+  return {...identity,data:await decrypt(row.ciphertext,env.GATEWAY_SECRET),version:row.version};
  }
  async function mutate(id,env,change){
   for(let attempt=0;attempt<4;attempt++){
    const row=await store(env).one('SELECT ciphertext,version FROM cloud_visitors WHERE id=?',id),data=await decrypt(row.ciphertext,env.GATEWAY_SECRET);change(data);
-   while(JSON.stringify(data).length>80000&&data.history.length>2)data.history.splice(0,2);
+   if(JSON.stringify(data).length>1000000)throw Error('访客配置超过容量限制，请导出资料并联系维护者');
    const result=await store(env).run('UPDATE cloud_visitors SET ciphertext=?,version=version+1,updated=? WHERE id=? AND version=?',await encrypt(data,env.GATEWAY_SECRET),Date.now(),id,row.version);
    if((result.meta?.changes??result.changes)>0)return data;
   }
@@ -82,19 +118,21 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
  function ownRequest(request,id,path){const headers=new Headers(request.headers);headers.set('cookie','ocean_visitor='+id);return new Request(new URL(path,request.url),{method:'GET',headers})}
  async function evidenceFor(q,request,env,ctx,id){
   if(await heartbeat(env)){
-   try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return rows.some(c=>/public|web/.test(c.evidence_type||''))?rows.slice(0,8):mergeEvidence(rows,publicRetrieve(q),q)}}catch{}
+   try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return mergeEvidence(rows,publicRetrieve(q),q)}}catch{}
   }
   return mergeEvidence(retrieve(q),publicRetrieve(q),q);
  }
  return async(request,env,ctx,url)=>{
-  const path=url.pathname,known=['/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/public-sources','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path))return null;
-  if(!['GET','POST','PUT'].includes(request.method))return json({detail:'此操作不支持该请求方法'},405);
+  const path=url.pathname,isWorkspace=/^\/api\/workspaces(?:\/|$)/.test(path),known=['/api/account','/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/conversations','/api/conversations/selected','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/public-sources','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path)&&!isWorkspace)return null;
+  if(!['GET','POST','PUT','DELETE'].includes(request.method))return json({detail:'此操作不支持该请求方法'},405);
   if(request.method!=='GET'&&request.headers.get('origin')!==url.origin)return json({detail:'请从当前网站提交请求'},403);
-  const methods={'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/knowledge/public-sources':['GET'],'/api/knowledge/gaps':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
+  const methods={'/api/account':['GET'],'/api/config':['GET','PUT'],'/api/models/profiles':['GET'],'/api/models/test':['POST'],'/api/models/list':['POST'],'/api/chat':['POST'],'/api/chat/history':['GET'],'/api/conversations':['GET','POST'],'/api/conversations/selected':['PUT'],'/api/health':['GET'],'/api/knowledge/search':['GET'],'/api/knowledge/status':['GET'],'/api/knowledge/public-sources':['GET'],'/api/knowledge/gaps':['GET'],'/api/session/clear-keys':['POST'],'/api/environment/check':['POST']};if(!isWorkspace&&!methods[path].includes(request.method))return json({detail:'请求方法不匹配'},405);
   let session;try{session=await load(request,env)}catch{return json({detail:'访客配置服务暂不可用，请稍后重试'},503)}
-  const finish=r=>{const headers=new Headers(r.headers);if(session.fresh)headers.set('Set-Cookie',`ocean_visitor=${session.id}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`);headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers})};
+  const finish=r=>{const headers=new Headers(r.headers);headers.set('Set-Cookie',visitorCookie(session.cookie_id));headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers})};
   try{
+   if(isWorkspace)return finish(await workspaceApi(request,env,ctx,url,session));
    const cfg=session.data.selected;
+   if(path==='/api/account')return finish(json({authenticated:session.account.authenticated,display_name:session.account.display_name,storage_scope:session.account.authenticated?'account':'browser_visitor',sign_in_url:'/signin-with-chatgpt?return_to=%2F',sign_out_url:'/signout-with-chatgpt?return_to=%2F',note:'登录账户与浏览器访客使用独立配置；原访客记录保留在原浏览器空间。'}));
    if(path==='/api/config'&&request.method==='GET')return finish(json(publicConfig(cfg)));
    if(path==='/api/session/clear-keys'){const saved=await mutate(session.id,env,state=>{state.selected.api_key='';for(const value of Object.values(state.profiles))value.api_key=''});return finish(json({cleared:true,...publicConfig(saved.selected)}));}
    if(path==='/api/config'){
@@ -104,18 +142,28 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     const saved=await mutate(session.id,env,state=>{state.profiles[state.selected.provider]=state.selected;state.selected=next;state.profiles[provider]=next});return finish(json(publicConfig(saved.selected)));
    }
    if(path==='/api/models/profiles')return finish(json(Object.fromEntries(Object.entries({...session.data.profiles,[cfg.provider]:cfg}).map(([p,c])=>[p,publicConfig(c)]))));
-   if(path==='/api/chat/history')return finish(json(session.data.history));
+   const chats=createChatStore(env,encrypt,decrypt);
+   async function conversation(requested){
+    const legacy=await chats.ensure(session.id,session.data.history||[]),id=requested||session.data.selected_conversation||legacy;await chats.owned(session.id,id);return id;
+   }
+   if(path==='/api/chat/history')return finish(json(await chats.history(session.id,await conversation(url.searchParams.get('conversation_id')))));
+   if(path==='/api/conversations'&&request.method==='GET'){const selected_id=await conversation();return finish(json({items:await chats.list(session.id),selected_id}))}
+   if(path==='/api/conversations'||path==='/api/conversations/selected'){
+    const raw=await request.text();if(raw.length>4096)throw Error('对话设置过长');const body=JSON.parse(raw);await conversation();
+    if(path.endsWith('selected')){await chats.owned(session.id,body.id);await mutate(session.id,env,state=>{state.selected_conversation=body.id});return finish(json({selected_id:body.id}))}
+    const created=await chats.create(session.id,body.title);await mutate(session.id,env,state=>{state.selected_conversation=created.id});return finish(json(created));
+   }
    if(path==='/api/knowledge/gaps')return finish(json(session.data.gaps||[]));
-   if(path==='/api/knowledge/search')return finish(json(await evidenceFor(url.searchParams.get('q')||'',request,env,ctx,session.id)));
+   if(path==='/api/knowledge/search')return finish(json(await evidenceFor(url.searchParams.get('q')||'',request,env,ctx,session.node_id)));
    if(path==='/api/knowledge/status'||path==='/api/knowledge/public-sources'){
-    if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/knowledge/status'),env,ctx);if(r.ok){const data=await r.json(),ocean=data.public_ocean||publicStatus();return finish(json(path.endsWith('public-sources')?(data.web_sources||ocean.web_sources):{...data,public_ocean:ocean,web_sources:data.web_sources||ocean.web_sources}))}}catch{}}
+    if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.node_id,'/api/knowledge/status'),env,ctx);if(r.ok){const data=await r.json(),ocean=data.public_ocean||publicStatus();return finish(json(path.endsWith('public-sources')?(data.web_sources||ocean.web_sources):{...data,public_ocean:ocean,web_sources:data.web_sources||ocean.web_sources}))}}catch{}}
     const ocean=publicStatus();
     return finish(json(path.endsWith('public-sources')?ocean.web_sources:{mode:'ocean_document_rag',cards:46,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,source_coverage:[],coverage:null,public_ocean:ocean,web_sources:ocean.web_sources,methods:['BM25','typed_graph_context','public_document_bm25'],training_required:false,node_online:false,scope:'计算节点离线，当前仍可检索云端课程知识卡与公开海洋网页快照；私有教材全文索引未连接。'}));
    }
    if(path==='/api/health'||path==='/api/environment/check'){
-    let data={version:'0.6.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
+    let data={version:'0.7.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.node_id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
     if(path==='/api/environment/check')return finish(json({checks:[{name:'MATLAB 计算节点',ok:data.matlab_available,detail:data.matlab_available?'计算节点已连接':'仅仿真依赖计算节点，云端知识卡和模型问答仍可用'},{name:'KRAKEN / FIELD',ok:data.solver_available,detail:'固定 Munk 模板，结果按输入和坐标验证'},{name:'你的模型 API Key',ok:!!cfg.api_key,detail:cfg.api_key?'云端加密保存，未代表已通过调用测试':'填写供应商 Key 后可调用模型'}]}));
-    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.6.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
+    const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.7.0',model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
    }
    const raw=await request.text();if(raw.length>65536)return finish(json({detail:'请求内容过长'},413));const body=JSON.parse(raw);
    if(path.startsWith('/api/models/')){
@@ -136,9 +184,22 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    const knowledgeScope=body.knowledge_mode||'course';if(!['course','general'].includes(knowledgeScope))throw Error('请选择课程依据或模型一般知识');
    const requestedBudget=body.context_budget===undefined?'auto':body.context_budget;resolveBudget(requestedBudget);
    await mutate(session.id,env,state=>{state.calls=(state.calls||[]).filter(t=>Date.now()-t<60000);if(state.calls.length>=12)throw Error('对话过于频繁，请稍后再试');state.calls.push(Date.now())});
-   let evidence=await evidenceFor(message,request,env,ctx,session.id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));const policy=answerPolicy(evidence,knowledgeScope,body.mode);let reply,used=false,responseModel=null,contextMetadata=inactiveContext(requestedBudget);
+   const conversationId=await conversation(body.conversation_id),priorHistory=await chats.history(session.id,conversationId,80);
+   let evidence=await evidenceFor(message,request,env,ctx,session.node_id),citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));const policy=answerPolicy(evidence,knowledgeScope,body.mode,message);
+   const requestKey=request.headers.get('idempotency-key')||crypto.randomUUID(),token=await chats.begin(session.id,conversationId,requestKey,{message,provider:selected.provider,model:selected.model,mode:body.mode||'chat',knowledgeScope,requestedBudget},!!selected.api_key&&policy.can_generate);
+   if(token.replay)return finish(body.stream===true?eventStreamResponse(async send=>send('done',token.replay)):json(token.replay));
+   async function execute(onDelta,signal){
+   let reply,used=false,responseModel=null,contextMetadata=inactiveContext(requestedBudget),simulationDraft=null,finishReason=null;
+   if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{code:'CANCELLED'});
+   if(body.mode==='agent'&&/仿真|模拟|计算|运行|对比|频率|\bHz\b|\bMunk\b/i.test(message)&&await heartbeat(env)){
+    try{
+     const draftRequest=new Request(new URL('/api/plans/draft',request.url),{method:'POST',headers:{'content-type':'application/json',cookie:'ocean_visitor='+session.node_id,origin:url.origin},body:JSON.stringify({message})});
+     const result=await proxy(draftRequest,env,ctx);if(result.ok)simulationDraft=await result.json();
+    }catch{}
+   }
    if(!evidence.length&&body.mode!=='agent')await mutate(session.id,env,state=>noteKnowledgeGap(state,message));
-   if(!selected.api_key){
+   if(policy.coverage_status==='missing_observation_data')reply=policy.coverage_notice;
+   else if(!selected.api_key){
     reply=(knowledgeScope==='general'?'模型一般知识需要先配置你的 API Key。当前仅提供课程与公开资料检索。\n\n':'')+noModelAnswer(evidence);
     // Actual answer provenance is course retrieval. Keep the user's requested
     // mode separately; no pretrained generation or template analysis ran.
@@ -146,18 +207,29 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
    }
    else if(!policy.can_generate)reply=policy.coverage_notice+'\n这条问题已加入你的待补资料记录，不会把无关知识点当作答案。';
    else{
-    const packed=buildContext({question:message,system:policy.system+'\n课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。',evidence,history:session.data.history,template:body.mode==='agent'?template:'',context_budget:requestedBudget});
+    const packed=buildContext({question:message,system:policy.system+'\n课程层级和建议阅读顺序不是物理因果；原文片段未经自动事实认证。'+(simulationDraft?'\n系统工具提取的参数草案（尚未执行；缺少的条件必须明确询问，不得宣称已仿真）：'+JSON.stringify(simulationDraft):''),evidence,history:priorHistory,template:body.mode==='agent'?template:'',context_budget:requestedBudget});
     if(knowledgeScope==='course'&&body.mode!=='agent'&&!packed.evidence.length)throw Object.assign(new Error('检索到了课程资料，但所选预算无法保留必要依据，请调大上下文预算后重试；未调用模型。'),{status:422,code:'CONTEXT_BUDGET_EXCEEDED'});
     evidence=packed.evidence;citations=evidence.map(c=>({...courseCitation(c),...(c.citation||{}),id:c.id,label:c.label,node_id:c.node_id||null}));
-    const actualPolicy=answerPolicy(evidence,knowledgeScope,body.mode);Object.assign(policy,{knowledge_scope:actualPolicy.knowledge_scope,coverage_status:actualPolicy.coverage_status,coverage_notice:actualPolicy.coverage_notice});
-    const data=await remote(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;contextMetadata=withProviderUsage(packed.context,data.usage);
+    const actualPolicy=answerPolicy(evidence,knowledgeScope,body.mode,message);Object.assign(policy,actualPolicy);
+    if(!actualPolicy.can_generate)reply=actualPolicy.coverage_notice;
+    else if(onDelta){const data=await remoteStream(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher,onDelta,signal);reply=data.reply;used=true;responseModel=data.model;finishReason=data.finish_reason;contextMetadata=withProviderUsage(packed.context,data.usage)}
+    else{const data=await remote(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher,signal);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;finishReason=data.choices[0].finish_reason||null;contextMetadata=withProviderUsage(packed.context,data.usage)}
    }
    const methods=[...new Set(evidence.flatMap(c=>Array.isArray(c.retrieval?.methods)?c.retrieval.methods:c.retrieval?.method==='bm25+curated-graph'?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:c.retrieval?.method==='bm25+editorial-bilingual-aliases'?['BM25','editorial_bilingual_topic_aliases']:c.retrieval?.method?[c.retrieval.method]:[]))];
    const scope=[...new Set(evidence.map(c=>c.evidence_type==='public_web_excerpt'?'公开网页快照':c.evidence_type==='public_reference_guide'?'项目参考导读':c.evidence_type==='source_excerpt'?'教材原文片段':'课程知识卡'))].join('、')||'未提供资料片段';
    const retrieval={methods,evidence_count:evidence.length,source_excerpts:evidence.filter(c=>c.evidence_type==='source_excerpt').length,public_web_excerpts:evidence.filter(c=>c.evidence_type==='public_web_excerpt').length,public_reference_guides:evidence.filter(c=>c.evidence_type==='public_reference_guide').length,scope};
-   const metadata={model_used:used,model_provider:used?selected.provider:null,requested_model:used?selected.model:null,response_model:responseModel,requested_knowledge_mode:knowledgeScope,knowledge_scope:policy.knowledge_scope,coverage_status:policy.coverage_status,coverage_notice:policy.coverage_notice,context:contextMetadata};
-   await mutate(session.id,env,state=>{state.history.push({role:'user',text:message},{role:'assistant',text:reply,evidence,citations,retrieval,...metadata});state.history=state.history.slice(-40)});
-   return finish(json({reply,...metadata,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval}));
-  }catch(e){const msg=String(e.message||'').slice(0,220);const status=e.status===502||msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}
+   const metadata={conversation_id:conversationId,request_id:token.id,finish_reason:finishReason,completion_status:finishReason==='length'?'truncated':finishReason==='content_filter'?'filtered':'complete',completion_notice:finishReason==='length'?'模型达到输出上限，本条回答被截断。':finishReason==='content_filter'?'供应商限制了部分内容，本条回答未完整返回。':'',model_used:used,model_provider:used?selected.provider:null,requested_model:used?selected.model:null,response_model:responseModel,requested_knowledge_mode:knowledgeScope,knowledge_scope:policy.knowledge_scope,coverage_status:policy.coverage_status,coverage_notice:policy.coverage_notice,evidence_assessment:policy.evidence_assessment,context:contextMetadata};
+   const answer={reply,...metadata,evidence_ids:evidence.map(c=>c.id),evidence,citations,retrieval,...(simulationDraft?{simulation_draft:simulationDraft}:{})};
+   if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{code:'CANCELLED'});
+   await chats.finish(token,message,answer);return answer;
+   }
+   if(body.stream===true){
+    return finish(eventStreamResponse(async(send,signal)=>{
+     try{send('status',{stage:'generating',message:'正在依据资料处理',request_id:token.id});const answer=await execute(text=>send('delta',{text}),signal);send('done',answer)}
+     catch(error){await chats.abandon(token,signal.aborted?'cancelled':'failed');error.publicMessage=error.status===502?error.message:'本次生成未完成，请稍后重试';throw error}
+    },{signal:request.signal,onCancel:()=>chats.abandon(token,'cancelled')}));
+   }
+   try{return finish(json(await execute(null,request.signal)))}catch(error){await chats.abandon(token,error.code==='CANCELLED'?'cancelled':'failed');throw error}
+  }catch(e){const msg=String(e.message||'').slice(0,220);const status=[404,409,429,502].includes(e.status)?e.status:msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}
  };
 }

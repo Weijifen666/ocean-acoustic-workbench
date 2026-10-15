@@ -3,11 +3,17 @@ import { createRoot } from "react-dom/client";
 import GraphExplorer from "./GraphExplorer";
 import ModelPanel from "./ModelPanel";
 import { ChatProvider, useChatSession } from "./chat-session";
-import OceanBanner from "./OceanBanner";
+import RichMessage from "./RichMessage";
+import ConversationPicker from "./ConversationPicker";
+import ResearchWorkspace from "./ResearchWorkspace";
+import { AccountBadge, AccountProvider } from "./account";
+import { OceanProfile, guideImage } from "./SakanaGuide";
+import { SimulationAssistant, JobComparison } from "./SimulationAssist";
 import MascotDock from "./MascotDock";
 import ChatComposerControls from "./ChatComposerControls";
 import {
   Waves,
+  Users,
   MessageSquare,
   Network,
   FlaskConical,
@@ -43,6 +49,8 @@ import {
 import "./style.css";
 import "./workbench.css";
 import "./ocean-theme.css";
+import "./vendor/fuwari.css";
+import "./anime-theme.css";
 const api = async (path, options = {}) => {
   const r = await fetch("/api" + path, {
     headers: { "Content-Type": "application/json" },
@@ -64,6 +72,7 @@ const stateName = {
   SUCCEEDED: "已完成",
   FAILED: "失败",
   CANCELLED: "已取消",
+  INTERRUPTED: "执行中断",
 };
 const relationName = {
   has_boundary: "边界条件",
@@ -81,6 +90,7 @@ const pages = [
   ["simulation", "声场仿真", FlaskConical],
   ["project", "课程代码", FolderCode],
   ["jobs", "任务与结果", Activity],
+  ["workspace", "共享课题", Users],
 ];
 const classes = {
   声学原理: "#15868e",
@@ -126,7 +136,10 @@ function App() {
   const [image, setImage] = useState(null);
   const [refresh, setRefresh] = useState(0);
   const [activeJob, setActiveJob] = useState(null);
+  const [initialSimulation, setInitialSimulation] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingNote, setPendingNote] = useState(null);
+  const consumeNote = useCallback(() => setPendingNote(null), []);
 
   useEffect(() => {
     if (!chat.ready) return;
@@ -174,7 +187,7 @@ function App() {
         setImage(null);
         setSidebarOpen(false);
       }
-      if (event.altKey && /^[1-6]$/.test(event.key)) {
+      if (event.altKey && /^[1-7]$/.test(event.key)) {
         event.preventDefault();
         setPage(
           [...pages.map((item) => item[0]), "settings"][Number(event.key) - 1],
@@ -202,6 +215,29 @@ function App() {
     },
     [navigate],
   );
+  const openSimulationDraft = useCallback(
+    (value) => {
+      setInitialSimulation({
+        draft: value?.draft_plan ? value : null,
+        node_id: value?.node_id || null,
+        request: Date.now(),
+        apply: !!value?.draft_plan,
+      });
+      navigate("simulation");
+    },
+    [navigate],
+  );
+  useEffect(() => {
+    const collect = (event) => {
+      if (event.detail && typeof event.detail.body === "string") {
+        setPendingNote(event.detail);
+        navigate("workspace");
+      }
+    };
+    window.addEventListener("ocean-save-research-note", collect);
+    return () =>
+      window.removeEventListener("ocean-save-research-note", collect);
+  }, [navigate]);
   const connected = !!health?.matlab_available;
 
   return (
@@ -235,6 +271,7 @@ function App() {
             海洋声学<span>课程工作台</span>
           </div>
         </a>
+        <OceanProfile />
         <div className="side-label">研究与学习</div>
         <nav>
           {pages.map(([id, label, Icon], index) => (
@@ -264,7 +301,7 @@ function App() {
         <div className="side-bottom">
           <button
             className={page === "settings" ? "nav-item active" : "nav-item"}
-            title="Alt + 6"
+            title="Alt + 7"
             onClick={() => navigate("settings")}
           >
             <Settings2 size={17} />
@@ -285,6 +322,7 @@ function App() {
             <br />
             高嘉豪 · 周子涵 · 刘继洲 · 李杰
           </div>
+          <AccountBadge onOpen={() => navigate("workspace")} />
           <div className="course-purpose">仅用于课程作业 · 无商业用途</div>
         </div>
       </aside>
@@ -338,7 +376,6 @@ function App() {
           </div>
         </header>
         <main id="workspace-content" tabIndex={-1}>
-          {page === "graph" && <OceanBanner />}
           {!chat.ready && (
             <section className="panel visitor-loading">
               <Loader2 className="spin" size={20} />
@@ -360,23 +397,22 @@ function App() {
                 );
                 navigate("chat");
               }}
-              onSimulation={() => navigate("simulation")}
+              onSimulation={(node) => openSimulationDraft({ node_id: node.id })}
             />
           )}
           {chat.ready && page === "chat" && (
             <ChatView
               health={health}
               notify={setToast}
-              openSettings={() => navigate("settings")}
-              onKnowledge={(nodeId) => {
-                setInitialKnowledge({ id: nodeId, request: Date.now() });
-                navigate("graph");
-              }}
+              openSettings={openMascotSettings}
+              onSimulation={openSimulationDraft}
+              onKnowledge={openMascotKnowledge}
             />
           )}
           {chat.ready && page === "simulation" && (
             <Simulation
               notify={setToast}
+              initialDraft={initialSimulation}
               onSubmit={(id) => {
                 setActiveJob(id);
                 navigate("jobs");
@@ -391,6 +427,13 @@ function App() {
               setActiveJob={setActiveJob}
               openSim={() => navigate("simulation")}
               setImage={setImage}
+            />
+          )}
+          {chat.ready && page === "workspace" && (
+            <ResearchWorkspace
+              notify={setToast}
+              pendingNote={pendingNote}
+              onConsumed={consumeNote}
             />
           )}
           {chat.ready && page === "settings" && (
@@ -413,7 +456,7 @@ function App() {
                 : "课程图谱可用 · 计算节点待连接"}
           </span>
           <span>
-            课程空间<span className="status-divider">|</span>v0.6
+            课程空间<span className="status-divider">|</span>v0.7
           </span>
         </footer>
       </div>
@@ -421,6 +464,7 @@ function App() {
         onOpenChat={openMascotChat}
         onOpenSettings={openMascotSettings}
         onKnowledge={openMascotKnowledge}
+        onSimulation={openSimulationDraft}
       />
       {toast && (
         <div className="toast" role="status">
@@ -473,13 +517,32 @@ function PageTitle({ title, description, children }) {
     </div>
   );
 }
-function ChatView({ openSettings, onKnowledge }) {
-  const { mode, text, setText, msgs, busy, send, selectionBusy, ready } =
-    useChatSession();
+function ChatView({ openSettings, onKnowledge, onSimulation }) {
+  const {
+    mode,
+    text,
+    setText,
+    msgs,
+    busy,
+    send,
+    retry,
+    progress,
+    conversationBusy,
+    selectionBusy,
+    ready,
+  } = useChatSession();
   const messages = useRef(null);
-  const canSend = ready && !busy && !selectionBusy && !!text.trim();
+  const followLatest = useRef(true);
+  const lastQuestion = useRef(null);
+  const canSend =
+    ready && !busy && !selectionBusy && !conversationBusy && !!text.trim();
   useEffect(() => {
-    if (messages.current)
+    const question = [...msgs].reverse().find((row) => row.role === "user")?.id;
+    if (question !== lastQuestion.current) {
+      followLatest.current = true;
+      lastQuestion.current = question;
+    }
+    if (messages.current && followLatest.current)
       messages.current.scrollTop = messages.current.scrollHeight;
   }, [msgs, busy]);
   return (
@@ -493,28 +556,51 @@ function ChatView({ openSettings, onKnowledge }) {
             <Waves size={17} />
             海洋声学助手
           </span>
-          <small>NPU · 课程项目</small>
+          <div className="chat-heading-tools">
+            <ConversationPicker />
+            <small>NPU · 课程项目</small>
+          </div>
         </div>
         <div
           className="chat-scroll"
           ref={messages}
+          onScroll={(event) => {
+            const el = event.currentTarget;
+            followLatest.current =
+              el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+          }}
           role="log"
           aria-live="polite"
           aria-relevant="additions"
         >
           {!msgs.length && (
             <div className="chat-welcome">
-              <h2>想探索哪片海洋知识？</h2>
-              <p>问海洋与声学原理、核对来源，或分析课程代码。</p>
-              <div className="prompt-grid">
-                {[
-                  "声源深度如何影响模态激发？",
-                  "海洋酸化为什么会影响珊瑚生长？",
-                ].map((question) => (
-                  <button key={question} onClick={() => setText(question)}>
-                    {question}
-                  </button>
-                ))}
+              <div className="welcome-copy">
+                <span className="section-kicker">
+                  海洋研究 · 从一个问题开始
+                </span>
+                <h2>想探索哪片海洋知识？</h2>
+                <p>
+                  查阅声学原理，核对海洋资料，
+                  <br />
+                  或一起整理下一组仿真实验。
+                </p>
+                <div className="prompt-grid">
+                  {[
+                    "声源深度如何影响模态激发？",
+                    "海洋酸化为什么会影响珊瑚生长？",
+                  ].map((question) => (
+                    <button key={question} onClick={() => setText(question)}>
+                      {question}
+                      <ArrowUpRight size={13} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="welcome-art">
+                <span className="welcome-orbit" />
+                <img src={guideImage} alt="原创海洋研究员，手持水听器" />
+                <small>让每一个结论，都能找到回响。</small>
               </div>
             </div>
           )}
@@ -534,9 +620,16 @@ function ChatView({ openSettings, onKnowledge }) {
                       : "海洋声学助手"
                     : "你"}
                 </div>
-                <div className="message-text">{message.text}</div>
-                {message.role === "assistant" && (
-                  <MessageTrace message={message} onKnowledge={onKnowledge} />
+                {message.role === "assistant" ? (
+                  <RichMessage
+                    message={message}
+                    onKnowledge={onKnowledge}
+                    onSimulation={onSimulation}
+                    onRetry={retry}
+                    onSettings={openSettings}
+                  />
+                ) : (
+                  <div className="message-text">{message.text}</div>
                 )}
               </div>
             </div>
@@ -544,7 +637,7 @@ function ChatView({ openSettings, onKnowledge }) {
           {busy && (
             <div className="thinking">
               <Loader2 className="spin" size={16} />
-              正在处理…
+              {progress || "正在处理…"}
             </div>
           )}
         </div>
@@ -579,103 +672,6 @@ function ChatView({ openSettings, onKnowledge }) {
     </div>
   );
 }
-function MessageTrace({ message, onKnowledge }) {
-  const count = message.citations?.length || message.evidence?.length || 0;
-  return (
-    <details className="message-trace">
-      <summary>回答详情{count ? ` · ${count} 条依据` : ""}</summary>
-      <div className="message-provenance">
-        {message.request_failed ? (
-          <span>请求未完成</span>
-        ) : message.model_used === false ? (
-          <span>资料检索 · 未调用模型</span>
-        ) : message.model_used === true ? (
-          <span>
-            {message.model_provider} · 请求 {message.requested_model}
-            {message.response_model && <> · 返回 {message.response_model}</>}
-          </span>
-        ) : (
-          <span>模型调用记录未提供</span>
-        )}
-        {message.knowledge_scope && (
-          <span>
-            {message.knowledge_scope === "general"
-              ? "资料 + 模型知识"
-              : "仅依据资料"}
-          </span>
-        )}
-      </div>
-      {message.coverage_notice && (
-        <p className="answer-coverage-notice">{message.coverage_notice}</p>
-      )}
-      <AnswerSources message={message} onKnowledge={onKnowledge} />
-    </details>
-  );
-}
-function AnswerSources({ message, onKnowledge }) {
-  const citations = message.citations || [],
-    evidence = message.evidence || [];
-  const rows = citations.length ? citations : evidence;
-  if (!rows.length && !message.retrieval) return null;
-  const methods = message.retrieval?.methods || [];
-  return (
-    <div className="answer-sources embedded">
-      {!!methods.length && <p>检索方式：{methods.join(" + ")}</p>}
-      {rows.map((row, index) => {
-        const evidenceId = row.evidence_id || row.id || row.citation_id;
-        const chunk =
-          (evidenceId &&
-            evidence.find(
-              (item) =>
-                item.id === evidenceId || item.evidence_id === evidenceId,
-            )) ||
-          row;
-        const nodeId = row.node_id || chunk.node_id;
-        const sourceUrl =
-          row.url ||
-          row.source_url ||
-          (row.source_id && row.pdf_page
-            ? `/api/source/${row.source_id}/page/${row.pdf_page}`
-            : null);
-        const safeUrl =
-          typeof sourceUrl === "string" &&
-          (sourceUrl.startsWith("/api/") || /^https:\/\//i.test(sourceUrl))
-            ? sourceUrl
-            : null;
-        return (
-          <div key={evidenceId || index}>
-            <strong>
-              {row.label || chunk.label || row.source_id || `依据 ${index + 1}`}
-            </strong>
-            <p>{chunk.text || chunk.excerpt || chunk.snippet || row.locator}</p>
-            <small>
-              {[
-                row.source_id,
-                row.pdf_page ? `PDF 第 ${row.pdf_page} 页` : row.locator,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </small>
-            <div>
-              {nodeId && (
-                <button onClick={() => onKnowledge(nodeId)}>
-                  打开知识点
-                  <Network size={12} />
-                </button>
-              )}
-              {safeUrl && (
-                <a href={safeUrl} target="_blank" rel="noreferrer">
-                  核对原页
-                  <ExternalLink size={12} />
-                </a>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 const initialPlan = {
   frequencies_hz: "50, 100",
   source_depths_m: "500, 1000",
@@ -685,12 +681,28 @@ const initialPlan = {
   range_points: 201,
   depth_points: 251,
 };
-function Simulation({ notify, onSubmit }) {
+function Simulation({ notify, onSubmit, initialDraft }) {
   const [form, setForm] = useState(initialPlan),
     [preview, setPreview] = useState(null),
     [busy, setBusy] = useState(false);
   const [exerciseData, setExerciseData] = useState(null);
   const [exerciseId, setExerciseId] = useState("");
+  const submission = useRef(null),
+    appliedRequest = useRef(null);
+  async function applyDraft(draft) {
+    if (!draft?.ready_for_preview) return;
+    applyExercise(draft.draft_plan);
+    try {
+      setPreview(
+        await api("/plans/preview", {
+          method: "POST",
+          body: JSON.stringify(draft.draft_plan),
+        }),
+      );
+    } catch (error) {
+      notify(error.message);
+    }
+  }
   useEffect(() => {
     api("/exercises")
       .then(setExerciseData)
@@ -700,6 +712,20 @@ function Simulation({ notify, onSubmit }) {
     ? exerciseData
     : exerciseData?.exercises || [];
   const exercise = exercises.find((item) => item.id === exerciseId);
+  useEffect(() => {
+    if (!initialDraft || appliedRequest.current === initialDraft.request)
+      return;
+    if (initialDraft.draft && initialDraft.apply) {
+      appliedRequest.current = initialDraft.request;
+      void applyDraft(initialDraft.draft);
+    } else if (initialDraft.node_id && exercises.length) {
+      const linked = exercises.find((item) =>
+        item.knowledge_nodes?.includes(initialDraft.node_id),
+      );
+      if (linked) setExerciseId(linked.id);
+      appliedRequest.current = initialDraft.request;
+    }
+  }, [initialDraft, exercises.length]);
   function applyExercise(preset) {
     setForm({
       template: preset.template || "munk_5000m",
@@ -747,17 +773,28 @@ function Simulation({ notify, onSubmit }) {
     }
   }
   async function run() {
+    if (submission.current?.busy) return;
+    const payload = plan(),
+      fingerprint = JSON.stringify(payload);
+    const key =
+      submission.current?.fingerprint === fingerprint
+        ? submission.current.key
+        : crypto.randomUUID();
+    submission.current = { fingerprint, key, busy: true };
     setBusy(true);
     try {
       const r = await api("/jobs", {
         method: "POST",
-        body: JSON.stringify(plan()),
+        headers: { "Content-Type": "application/json", "Idempotency-Key": key },
+        body: JSON.stringify(payload),
       });
+      submission.current = null;
       notify("已提交 " + r.ids.length + " 组真实 MATLAB 计算");
       onSubmit(r.ids[0]);
     } catch (e) {
       notify(e.message);
     } finally {
+      if (submission.current) submission.current.busy = false;
       setBusy(false);
     }
   }
@@ -767,6 +804,11 @@ function Simulation({ notify, onSubmit }) {
         eyebrow="SIMULATION STUDIO"
         title="配置声场仿真"
         description="确认参数后，由项目计算节点的 MATLAB 执行；访客无需安装，每批最多 4 组。"
+      />
+      <SimulationAssistant
+        initialDraft={initialDraft?.draft}
+        onApply={applyDraft}
+        notify={notify}
       />
       {!!exercises.length && (
         <section className="panel course-exercises">
@@ -998,6 +1040,18 @@ function Jobs({ notify, activeJob, setActiveJob, openSim, setImage }) {
     [detail, setDetail] = useState(null),
     [tab, setTab] = useState("result"),
     [paused, setPaused] = useState(false);
+  const [selectedJobs, setSelectedJobs] = useState([]),
+    [comparing, setComparing] = useState(false);
+  function toggleComparison(id) {
+    setComparing(false);
+    setSelectedJobs((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : current.length < 4
+          ? [...current, id]
+          : current,
+    );
+  }
   useEffect(() => {
     let alive = true;
     const poll = async () => {
@@ -1072,6 +1126,32 @@ function Jobs({ notify, activeJob, setActiveJob, openSim, setImage }) {
           新建仿真
         </Button>
       </PageTitle>
+      {!!selectedJobs.length && (
+        <div className="job-compare-toolbar">
+          <span>已选 {selectedJobs.length} / 4 组完成任务</span>
+          <button
+            disabled={selectedJobs.length < 2}
+            onClick={() => setComparing(true)}
+          >
+            查看对照
+          </button>
+          <button
+            onClick={() => {
+              setSelectedJobs([]);
+              setComparing(false);
+            }}
+          >
+            清空选择
+          </button>
+        </div>
+      )}
+      {comparing && (
+        <JobComparison
+          key={selectedJobs.join(",")}
+          ids={selectedJobs}
+          onClose={() => setComparing(false)}
+        />
+      )}
       {jobs.length === 0 ? (
         <div className="empty panel">
           <Activity size={42} />
@@ -1088,25 +1168,41 @@ function Jobs({ notify, activeJob, setActiveJob, openSim, setImage }) {
               运行记录 <span>{jobs.length}</span>
             </div>
             {jobs.map((j) => (
-              <button
-                key={j.id}
-                className={(activeJob || jobs[0].id) === j.id ? "selected" : ""}
-                onClick={() => setActiveJob(j.id)}
-              >
-                <div>
-                  <strong>
-                    {j.plan.frequency_hz} Hz · {j.plan.source_depth_m} m
-                  </strong>
-                  <Badge state={j.state} />
-                </div>
-                <small>
-                  {j.id} ·{" "}
-                  {new Date(j.created).toLocaleTimeString("zh-CN", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </small>
-              </button>
+              <div className="job-row" key={j.id}>
+                {j.state === "SUCCEEDED" && (
+                  <label className="job-compare-select">
+                    <input
+                      type="checkbox"
+                      checked={selectedJobs.includes(j.id)}
+                      onChange={() => toggleComparison(j.id)}
+                      disabled={
+                        !selectedJobs.includes(j.id) && selectedJobs.length >= 4
+                      }
+                    />
+                    加入对照
+                  </label>
+                )}
+                <button
+                  className={
+                    (activeJob || jobs[0].id) === j.id ? "selected" : ""
+                  }
+                  onClick={() => setActiveJob(j.id)}
+                >
+                  <div>
+                    <strong>
+                      {j.plan.frequency_hz} Hz · {j.plan.source_depth_m} m
+                    </strong>
+                    <Badge state={j.state} />
+                  </div>
+                  <small>
+                    {j.id} ·{" "}
+                    {new Date(j.created).toLocaleTimeString("zh-CN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </small>
+                </button>
+              </div>
             ))}
           </aside>
           <section className="panel job-detail">
@@ -1559,6 +1655,8 @@ function Config({ notify, onSaved }) {
 }
 createRoot(document.getElementById("root")).render(
   <ChatProvider>
-    <App />
+    <AccountProvider>
+      <App />
+    </AccountProvider>
   </ChatProvider>,
 );

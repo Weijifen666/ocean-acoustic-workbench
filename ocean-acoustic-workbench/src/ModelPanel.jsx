@@ -11,6 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import "./models.css";
+import { useAccount } from "./account";
 const request = async (path, body) => {
   const r = await fetch("/api" + path, {
     method: body ? "POST" : "GET",
@@ -27,6 +28,7 @@ const request = async (path, body) => {
   return data;
 };
 export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
+  const personalAccount = useAccount();
   const [catalog, setCatalog] = useState(null),
     [profiles, setProfiles] = useState({}),
     [action, setAction] = useState(""),
@@ -98,7 +100,11 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
       }));
       setProfiles({});
       setAccount(null);
-      notify(cfg.public_mode ? "你的全部模型密钥已从云端删除。" : "本机模型密钥已清除。");
+      notify(
+        cfg.public_mode
+          ? "你的全部模型密钥已从云端删除。"
+          : "本机模型密钥已清除。",
+      );
       window.dispatchEvent(new CustomEvent("ocean-model-config-changed"));
     } catch (error) {
       notify(error.message);
@@ -115,7 +121,13 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
             供应商与模型连接
           </h2>
           <p>
-            {cfg.public_mode ? "选择具体供应商与模型，密钥在云端加密保存，按访客隔离。换浏览器或清除站点 Cookie 会建立新的访客配置。" : "选择具体供应商与模型，密钥保存在本机私有目录，按供应商分别管理，不随源码同步。"}
+            {cfg.public_mode
+              ? personalAccount.loading
+                ? "模型连接在当前个人空间加密保存。"
+                : personalAccount.authenticated
+                  ? "模型连接在你的登录账户中加密保存，可跨设备使用；课题成员不会获得你的模型密钥。"
+                  : "模型连接在当前访客空间加密保存。换浏览器或清除 Cookie 会建立新空间；登录账户可跨设备同步，访客密钥不会自动合并。"
+              : "选择具体供应商与模型，密钥保存在本机私有目录，按供应商分别管理，不随源码同步。"}
           </p>
         </div>
         <span className="catalog-stamp">

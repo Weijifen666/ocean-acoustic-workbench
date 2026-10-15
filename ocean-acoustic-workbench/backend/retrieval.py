@@ -16,6 +16,7 @@ import unicodedata
 from pathlib import Path
 
 from vendor.rank_bm25 import BM25Okapi
+from query_planning import plan_query, reciprocal_rank_fusion, focus_query, cox_munk_only, COX_MUNK
 
 
 ALIASES = {
@@ -55,6 +56,14 @@ ALIASES = {
     "normal mode": ("简正波", "normal_mode_field"),
     "简正波": ("简正波", "normal_mode_field"),
     "模态激励": ("模态激励", "mode_excitation"),
+    "模态激发": ("模态激励", "mode_excitation"),
+    "刚性海底": ("刚性海底边界", "rigid_bottom"),
+    "焦散": ("焦散与阴影区", "caustic_shadow"),
+    "近零声压": ("近零声压与无效值", "near_zero_pressure"),
+    "耦合模态": ("耦合模态与绝热近似", "coupled_modes"),
+    "绝热近似": ("耦合模态与绝热近似", "coupled_modes"),
+    "海底介质": ("海底介质与损耗", "seabed"),
+    "海底损耗": ("海底介质与损耗", "seabed"),
     "coherent": ("相干", "coherent_modal_sum"),
     "snell": ("Snell", "snell"),
     "helmholtz": ("Helmholtz", "helmholtz"),
@@ -65,6 +74,7 @@ ALIASES = {
     "sw06": ("SW06", "SW06_CTD"),
 }
 STOP_TOKENS = {"请问", "如何", "怎么", "什么", "为何", "为什么", "一下", "解释", "说明", "有关", "相关", "知识", "课程", "我们", "这个", "以及", "哪些", "是否", "可以", "问题", "进行", "the", "and", "with", "what", "how", "please", "explain", "is", "of", "to", "a", "an"}
+STOP_TOKENS.update({'海洋','海水','水下','水中','ocean','marine','water','underwater'})
 
 
 def normalize(text):
@@ -138,7 +148,10 @@ def _load_chunks_cached(filename, modified, size):
         if not chunk.get("source_id") or not isinstance(chunk.get("text"), str):
             raise ValueError(f"知识片段来源或原文缺失：第 {line_number} 行")
         ids.add(chunk["id"])
-        chunks.append({key: value for key, value in chunk.items() if key not in {"path", "source_path", "file_path"}})
+        value={key: value for key, value in chunk.items() if key not in {"path", "source_path", "file_path"}}
+        if value.get('evidence_type')=='source_excerpt' and value.get('ingestion_version',1)<2:
+            value['text_integrity_warning']='旧版文本索引可能丢失上/下标，须核对原页并从授权原文重建；当前未自动恢复公式。'
+        chunks.append(value)
     return tuple(chunks)
 
 
@@ -169,23 +182,26 @@ def _lexical_corpus(raw_texts):
     return expanded, tuple(frozenset(terms) for terms in corpus), BM25Okapi(corpus) if any(corpus) else None
 
 
-def retrieve(graph, cards, query, limit=8, chunks=()):
+def _retrieve_single(graph, cards, query, limit=8, chunks=()):
     query = normalize(query)
+    explicit_query=focus_query(query)
     limit = max(0, min(int(limit), 20))
     if not query or not limit:
         return []
     by_id = {node["id"]: node for node in graph["nodes"]}
-    focus = {node["id"] for node in graph["nodes"] if node.get("kind") == "knowledge" and contains_term(query, node["label"])}
-    expansions = [phrase for term, (phrase, _) in ALIASES.items() if contains_term(query, term)]
-    focus.update(node_id for term, (_, node_id) in ALIASES.items() if contains_term(query, term) and node_id in by_id)
+    focus = {node["id"] for node in graph["nodes"] if node.get("kind") == "knowledge" and contains_term(explicit_query, node["label"])}
+    expansions = [phrase for term, (phrase, _) in ALIASES.items() if contains_term(explicit_query, term)]
+    focus.update(node_id for term, (_, node_id) in ALIASES.items() if contains_term(explicit_query, term) and node_id in by_id)
     # Chinese labels often carry an English abbreviation; match their Chinese
     # portion too, without matching a single Chinese character.
     for node in graph["nodes"]:
         if node.get("kind") != "knowledge":
             continue
         for label_part in re.findall(r"[\u4e00-\u9fff]{2,}", node["label"]):
-            if label_part in query:
+            if label_part in explicit_query:
                 focus.add(node["id"])
+    if 'munk_profile' in focus:
+        focus.discard('sound_speed_profile')
     if any(term in query for term in ("munk 算例", "munk算例", "munk 示例", "munk示例")):
         focus.discard("munk_profile")
         focus.add("munk_case")
@@ -194,7 +210,16 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         if edge["group"] == "related" and (edge["source"] in focus or edge["target"] in focus):
             context.update((edge["source"], edge["target"]))
 
-    documents = list(cards) + list(chunks)
+    # A named surface model must not be answered by the similarly named sound
+    # speed card. Only original snippets actually naming Cox–Munk can remain.
+    cox_only=cox_munk_only(query)
+    if cox_only:
+        focus=set();context=set()
+        # Keep whole-corpus IDF statistics; scoring only one/two retained pages
+        # can make every shared word's BM25 IDF non-positive.
+        documents=list(chunks)
+    else:documents = list(cards) + list(chunks)
+    focus_pages={(ref['source_id'],ref['pdf_page']) for node_id in focus for ref in by_id[node_id].get('references',[]) if ref.get('pdf_page') is not None}
     if not documents:
         return []
     expanded_texts, term_sets, scorer = _lexical_corpus(tuple(_raw_card_text(card, by_id.get(card.get("node_id"), {})) for card in documents))
@@ -209,6 +234,7 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
     lexical_ranks = {index: rank for rank, index in enumerate(lexical_order, 1)}
     ranked = []
     for index, card in enumerate(documents):
+        if cox_only and not re.search(COX_MUNK,normalize(card.get('text','')),re.I):continue
         node_ids = set(card.get("node_ids", [])) | {card.get("node_id")}
         focused = bool(focus.intersection(node_ids))
         adjacent = bool(context.intersection(node_ids)) and not focused
@@ -217,6 +243,10 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         # raw source must also match the question; a link is not relevance.
         lexical_rank = lexical_ranks.get(index)
         if is_excerpt and not lexical_rank:
+            continue
+        if is_excerpt and focus and (card.get('source_id'),card.get('pdf_page')) not in focus_pages:
+            # Exact reviewed concepts use their reviewed source pages. A bare
+            # surname/"profile" token elsewhere in a book is not this concept.
             continue
         if focus and not context.intersection(node_ids):
             # Unmapped document text can still answer a focused question when
@@ -231,7 +261,12 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         # ahead of a loosely related graph card. Exact reviewed concepts remain
         # first, preserving their assumptions and equation checks.
         source_prior=0.06 if is_excerpt and lexical_rank and not adjacent else 0
-        fusion = (3 / (60 + lexical_rank) if lexical_rank else 0) + (0.25 if focused else 0.04 if adjacent else 0) + source_prior
+        # Multiple unreviewed excerpts from the same cited page can otherwise
+        # crowd out the exact reviewed concept/assumptions card as books grow.
+        # 0.12 exceeds the raw-text prior plus its maximum lexical contribution
+        # (0.06 + 3/61); the priority therefore holds as the corpus grows.
+        reviewed_focus_prior=0.12 if focused and not is_excerpt else 0
+        fusion = (3 / (60 + lexical_rank) if lexical_rank else 0) + (0.25 if focused else 0.04 if adjacent else 0) + source_prior + reviewed_focus_prior
         ranked.append((fusion, focused, index, adjacent))
     ranked.sort(key=lambda item: (-item[0], not item[1], documents[item[2]]["id"]))
     result=[]
@@ -239,7 +274,7 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         card=deepcopy(documents[index])
         node_ids=set(card.get('node_ids',[]))|{card.get('node_id')}
         lexical_rank=lexical_ranks.get(index)
-        card["retrieval"] = {"method": "bm25+curated-graph", "bm25_score": round(float(scores[index]), 6), "fusion_score": round(fusion, 6), "role": "question_focus" if focused else "graph_context" if adjacent else "text_match", "is_direct_evidence": bool(focused or (lexical_rank and not adjacent))}
+        card["retrieval"] = {"method": "bm25+curated-graph", "bm25_score": round(float(scores[index]), 6), "fusion_score": round(fusion, 6), "role": "question_focus" if focused else "graph_context" if adjacent else "text_match", "is_direct_evidence": bool(focused or (lexical_rank and not adjacent)), "support_status": "candidate_only", "claim_support_verified": False, "direct_match_note": "直接命中只表示检索相关，不表示已证明回答中的命题。"}
         card["evidence_type"] = card.get("evidence_type", "reviewed_course_card")
         card["citation"] = {"source_id": card.get("source_id"), "pdf_page": card.get("pdf_page"), "printed_page": card.get("printed_page"), "locator": card.get("locator", ""), "citation_id": card["id"]}
         node = by_id.get(card.get("node_id"), {})
@@ -253,3 +288,47 @@ def retrieve(graph, cards, query, limit=8, chunks=()):
         card["related_triples"] = card["related_triples"][:10]
         result.append(card)
     return result
+
+
+GENERIC_PUBLIC_ANCHORS={'海洋','海水','水下','剖面','声速剖面','声速','温度','盐度','压力','深度','profile','profiles','sound','speed','海底','模型','传播','观测','ocean','marine','sea','water','underwater'}
+PUBLIC_SOURCE_NAMES={'O-WOA':['World Ocean Atlas'],'O-WOD':['World Ocean Database']}
+
+
+def focused_evidence(query,evidence,limit=8):
+    """Select answer context; never pad an exact topic with generic matches."""
+    cap=max(0,min(int(limit),20))
+    if cox_munk_only(query):
+        return [row for row in evidence if row.get('evidence_type') in {'source_excerpt','public_web_excerpt'} and re.search(COX_MUNK,normalize(row.get('text','')),re.I)][:cap]
+    manual=lambda row:row.get('evidence_type') in {'reviewed_course_card','knowledge_card'}
+    focused=[row for row in evidence if manual(row) and (row.get('retrieval',{}).get('role')=='question_focus' or row.get('retrieval',{}).get('focus') is True)]
+    if not focused:return evidence[:cap]
+    labels=normalize(' '.join(str(row.get(key) or '') for row in focused for key in ['label','text','formula']));question=normalize(query)
+    pages={(ref['source_id'],ref['pdf_page']) for row in focused for ref in row.get('all_references',[]) if ref.get('pdf_page') is not None}
+    public=[row for row in evidence if row.get('evidence_type') in {'public_web_excerpt','public_reference_guide'} and any(normalize(term) not in GENERIC_PUBLIC_ANCHORS and contains_term(question,term) and not contains_term(labels,term) for term in list(row.get('search_aliases',[]))+PUBLIC_SOURCE_NAMES.get(row.get('source_id'),[]))]
+    raw=[row for row in evidence if row.get('evidence_type')=='source_excerpt' and (row.get('source_id'),row.get('pdf_page')) in pages]
+    # Prefer one excerpt per cited page before taking another of that page.
+    seen_pages=set();first=[];rest=[]
+    for row in raw:
+        page=(row['source_id'],row['pdf_page'])
+        (rest if page in seen_pages else first).append(row);seen_pages.add(page)
+    related=[row for row in evidence if manual(row) and row not in focused and row.get('retrieval',{}).get('role')=='graph_context']
+    selected=focused+public[:2]+(first+rest)[:2]+related[:2]
+    seen=set()
+    return [row for row in selected if not(row['id'] in seen or seen.add(row['id']))][:cap]
+
+
+def retrieve(graph, cards, query, limit=8, chunks=()):
+    """Preserve precise queries; fuse bounded maintained paraphrase branches."""
+    cap = max(0, min(int(limit), 20))
+    plan = plan_query(query)
+    if not plan['rule_ids']:
+        return focused_evidence(query,_retrieve_single(graph, cards, query, max(cap,12), chunks),cap)
+    rankings = [_retrieve_single(graph, cards, variant, max(cap, 12), chunks) for variant in plan['queries']]
+    result = []
+    for row, score in reciprocal_rank_fusion(rankings, cap, plan['target_node_ids']):
+        row = deepcopy(row)
+        row['retrieval'].update({'methods': ['BM25', 'typed_graph_context', 'maintained_query_rules', 'RRF'], 'rrf_score': score, 'query_rule_ids': plan['rule_ids'], 'query_variants': len(plan['queries'])})
+        if row.get('node_id') in plan['target_node_ids']:
+            row['retrieval'].update(role='question_focus', focus_origin='maintained_query_rule')
+        result.append(row)
+    return focused_evidence(query,result,cap)

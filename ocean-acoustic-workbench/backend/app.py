@@ -6,34 +6,31 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationError
 from typing import Literal
 import httpx
-import knowledge, models, science, answer_policy, context_budget, public_ocean
+import knowledge, models, science, answer_policy, context_budget, public_ocean, persistence, simulation
 
-ROOT=Path(__file__).resolve().parents[1]; LOCAL=ROOT/'.local';LOCAL.mkdir(exist_ok=True)
+ROOT=Path(__file__).resolve().parents[1]; LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
-def connect():
-    c=sqlite3.connect(DB);c.row_factory=sqlite3.Row;return c
-with connect() as c:
-    c.executescript('CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY, state TEXT, created TEXT, updated TEXT, plan TEXT, error TEXT); CREATE TABLE IF NOT EXISTS messages(id INTEGER PRIMARY KEY, session TEXT, role TEXT, text TEXT, created TEXT);')
-    if 'metadata' not in [row[1] for row in c.execute('PRAGMA table_info(messages)')]:c.execute("ALTER TABLE messages ADD COLUMN metadata TEXT DEFAULT '{}'")
-    c.execute("UPDATE jobs SET state='FAILED', error='后台重启中断，需重新提交' WHERE state IN ('QUEUED','RUNNING')")
+STORE=persistence.JobStore(DB)
+def connect():return STORE.connection()
 def config():return json.loads(CONFIG.read_text(encoding='utf-8')) if CONFIG.exists() else {}
 def stamp():return datetime.now().astimezone().isoformat(timespec='seconds')
 def kbfile(name):return LOCAL/'kb'/name
 def claims():return knowledge.knowledge_cards()
 def sources():return json.loads(kbfile('source_registry.json').read_text(encoding='utf-8'))['sources']
 def job(id):
-    with connect() as c:r=c.execute('SELECT * FROM jobs WHERE id=?',(id,)).fetchone()
-    if not r:raise HTTPException(404,'任务不存在')
-    v=dict(r);v['plan']=json.loads(v['plan']);return v
-def update(id,state,error=None):
-    with connect() as c:c.execute('UPDATE jobs SET state=?,error=?,updated=? WHERE id=?',(state,error,stamp(),id))
+    value=STORE.get(id)
+    if not value:raise HTTPException(404,'任务不存在')
+    return value
 def run_dir(id):
     if not re.fullmatch(r'[a-f0-9]{12}',id):raise HTTPException(400,'非法任务标识')
     return LOCAL/'runs'/id
-Q=queue.Queue();PROCESSES={};PAUSED=False;STATELOCK=threading.RLock();PDFLOCK=threading.Lock()
+PROCESSES={};PAUSED=False;STATELOCK=threading.RLock();PDFLOCK=threading.Lock()
+CANCEL_REQUESTS=set();WORKER_ERROR=None
+WORKER_STOP=threading.Event();WORKER_WAKE=threading.Event();WORKER_ACTIVE=False;WORKER_THREAD=None
+WORKER_LOCK=persistence.WorkerLock(DB.with_suffix('.worker.lock'));WORKER_OWNER=uuid.uuid4().hex
 
 class Plan(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
@@ -79,51 +76,102 @@ def plot_result(folder,plan):
     science.write_manifest(folder.name,plan,folder,validation,analysis,finished_at=data['created'])
 
 def worker():
-    while True:
-        id=Q.get()
-        while PAUSED:time.sleep(.4)
+    global WORKER_ACTIVE,PAUSED,WORKER_ERROR
+    while not WORKER_STOP.is_set():
+        if not WORKER_LOCK.acquire():
+            WORKER_STOP.wait(2);continue
         try:
+            STORE.recover_running();WORKER_ACTIVE=True;WORKER_ERROR=None
+            while not WORKER_STOP.is_set():
+                PAUSED=STORE.paused()
+                case_job=STORE.claim_next(WORKER_OWNER)
+                if not case_job:
+                    WORKER_WAKE.wait(.75);WORKER_WAKE.clear();continue
+                execute_job(case_job)
+        except (sqlite3.Error,OSError) as error:
+            WORKER_ERROR='持久队列暂不可用，任务已保留；请检查数据库及运行目录。'
+            print('Queue unavailable:',type(error).__name__,flush=True);WORKER_STOP.wait(2)
+        finally:
+            WORKER_ACTIVE=False;WORKER_LOCK.release()
+
+def execute_job(case_job):
+    id=case_job['id'];plan=case_job['plan']
+    try:
+        if WORKER_STOP.is_set():
+            STORE.finish(id,'INTERRUPTED','服务停止，任务未启动；请核对后重新提交。',owner=WORKER_OWNER);return
+        cfg=config();folder=run_dir(id);folder.mkdir(parents=True,exist_ok=True)
+        executable=Path(cfg.get('matlab_path',''))
+        if not executable.is_file():raise RuntimeError('MATLAB 路径不存在，请检查环境配置')
+        toolbox=Path(cfg['toolbox_path'])
+        for name in ['kraken.exe','field.exe']:
+            if not (toolbox/'bin'/name).is_file():raise RuntimeError('缺少 '+name)
+        case={**plan,'toolbox_path':str(toolbox),'template_env':str(toolbox/'tests/Munk/MunkK.env')}
+        (folder/'case.json').write_text(json.dumps(case,ensure_ascii=False),encoding='utf-8')
+        shutil.copy2(ROOT/'backend/matlab/run_ocean_case.m',folder/'run_ocean_case.m')
+        with (folder/'run.log').open('wb') as log:
+            log.write(('任务 '+id+'\nMATLAB 固定 Munk 模板；以下保留实际进程输出\n').encode());log.flush()
             with STATELOCK:
-                if job(id)['state']=='CANCELLED':continue
-                update(id,'RUNNING')
-            cfg=config();plan=job(id)['plan'];folder=run_dir(id);folder.mkdir(parents=True,exist_ok=True)
-            executable=Path(cfg.get('matlab_path',''))
-            if not executable.is_file():raise RuntimeError('MATLAB 路径不存在，请检查环境配置')
-            toolbox=Path(cfg['toolbox_path'])
-            for name in ['kraken.exe','field.exe']:
-                if not (toolbox/'bin'/name).is_file():raise RuntimeError('缺少 '+name)
-            case={**plan,'toolbox_path':str(toolbox),'template_env':str(toolbox/'tests/Munk/MunkK.env')}
-            (folder/'case.json').write_text(json.dumps(case,ensure_ascii=False),encoding='utf-8')
-            shutil.copy2(ROOT/'backend/matlab/run_ocean_case.m',folder/'run_ocean_case.m')
-            with (folder/'run.log').open('wb') as log:
-                log.write(('任务 '+id+'\nMATLAB 实际计算，Munk 深海模板\n').encode());log.flush()
-                with STATELOCK:
-                    if job(id)['state']=='CANCELLED':continue
-                    proc=subprocess.Popen([str(executable),'-wait','-noFigureWindows','-batch','run_ocean_case'],cwd=folder,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
-                    PROCESSES[id]=proc
-                try:code=proc.wait(timeout=int(cfg.get('timeout_seconds',240)))
-                except subprocess.TimeoutExpired:
-                    kill(id);raise RuntimeError('计算超时，当前任务已终止')
-            if job(id)['state']=='CANCELLED':continue
-            if code!=0:raise RuntimeError('MATLAB 运行失败，退出码 '+str(code)+'；请查看日志')
-            if not (folder/'result.json').exists():raise RuntimeError('缺少本次 result.json')
-            plot_result(folder,plan)
-            with STATELOCK:
-                if job(id)['state']!='CANCELLED':update(id,'SUCCEEDED')
-        except Exception as exc:
-            if job(id)['state']!='CANCELLED':update(id,'FAILED',str(exc))
-        finally:PROCESSES.pop(id,None);Q.task_done()
+                if job(id)['state']!='RUNNING':return
+                if WORKER_STOP.is_set():
+                    STORE.finish(id,'INTERRUPTED','服务停止，任务未启动。',owner=WORKER_OWNER);return
+                proc=subprocess.Popen([str(executable),'-wait','-noFigureWindows','-batch','run_ocean_case'],cwd=folder,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0,start_new_session=os.name!='nt')
+                PROCESSES[id]=proc
+            try:code=proc.wait(timeout=int(cfg.get('timeout_seconds',240)))
+            except subprocess.TimeoutExpired:
+                if not kill(id):
+                    STORE.set_paused(True);raise RuntimeError('计算超时且未确认进程停止，队列已暂停，请管理员检查残留进程。')
+                raise RuntimeError('计算超时，当前任务已终止')
+        while id in CANCEL_REQUESTS and not WORKER_STOP.is_set():time.sleep(.02)
+        if job(id)['state']!='RUNNING':return
+        if WORKER_STOP.is_set():
+            STORE.finish(id,'INTERRUPTED','服务停止导致计算中断；未自动重跑。',owner=WORKER_OWNER);return
+        if code!=0:raise RuntimeError('MATLAB 运行失败，退出码 '+str(code)+'；请查看日志')
+        if not (folder/'result.json').exists():raise RuntimeError('缺少本次 result.json')
+        plot_result(folder,plan)
+        STORE.finish(id,'SUCCEEDED',owner=WORKER_OWNER)
+    except Exception as exc:
+        STORE.finish(id,'INTERRUPTED' if WORKER_STOP.is_set() else 'FAILED',str(exc)[:1000],owner=WORKER_OWNER)
+    finally:PROCESSES.pop(id,None)
 def kill(id):
     proc=PROCESSES.get(id)
-    if proc and proc.poll() is None:
-        if os.name=='nt':subprocess.run(['taskkill','/PID',str(proc.pid),'/T','/F'],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW)
-        else:proc.terminate()
-threading.Thread(target=worker,daemon=True).start()
-app=FastAPI(title='海洋声学工作台',docs_url='/api/docs')
+    if not proc or proc.poll() is not None:return True
+    try:
+        if os.name=='nt':subprocess.run(['taskkill','/PID',str(proc.pid),'/T','/F'],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW,timeout=10)
+        else:
+            import signal
+            try:os.killpg(proc.pid,signal.SIGTERM)
+            except ProcessLookupError:pass
+        try:proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            if os.name!='nt':
+                os.killpg(proc.pid,signal.SIGKILL);proc.wait(timeout=3)
+    except (OSError,subprocess.TimeoutExpired):pass
+    return proc.poll() is not None
+@asynccontextmanager
+async def app_lifespan(application):
+    start_executor()
+    try:
+        refresh_public_ocean_startup()
+        yield
+    finally:stop_executor()
 
-@app.on_event('startup')
+app=FastAPI(title='海洋声学工作台',docs_url='/api/docs',lifespan=app_lifespan)
+
+def start_executor():
+    global WORKER_THREAD,PAUSED
+    STORE.migrate();PAUSED=STORE.paused();WORKER_STOP.clear()
+    if os.environ.get('OCEAN_DISABLE_WORKER')!='1':
+        WORKER_THREAD=threading.Thread(target=worker,daemon=True);WORKER_THREAD.start()
+
+def stop_executor():
+    WORKER_STOP.set();WORKER_WAKE.set()
+    with STATELOCK:
+        for id in list(PROCESSES):
+            if not kill(id):STORE.set_paused(True)
+    if WORKER_THREAD:WORKER_THREAD.join(timeout=10)
+
 def refresh_public_ocean_startup():
-    public_ocean.refresh_if_stale(ttl_hours=168,background=True)
+    if os.environ.get('OCEAN_DISABLE_PUBLIC_REFRESH')!='1':public_ocean.refresh_if_stale(ttl_hours=168,background=True)
 
 @app.middleware('http')
 async def local_guard(request:Request,call_next):
@@ -136,7 +184,7 @@ async def local_guard(request:Request,call_next):
 @app.get('/api/health')
 def health():
     cfg=config();t=Path(cfg.get('toolbox_path','.'))
-    return {'version':'0.6.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
+    return {'version':'0.7.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
 @app.get('/api/config')
 def get_config():
     cfg=config();cfg['api_key_set']=bool(cfg.pop('api_key',''));cfg.update(public_mode=False,storage='local_private');return cfg
@@ -230,38 +278,100 @@ def knowledge_status():
 def public_sources():return public_ocean.public_ocean_status()['web_sources']
 @app.get('/api/exercises')
 def exercises():return json.loads((ROOT/'backend/data/exercises.json').read_text(encoding='utf-8'))
+class DraftRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True)
+    message:str=Field(min_length=1,max_length=12000)
+
+@app.post('/api/plans/draft')
+def plan_draft(body:DraftRequest):
+    result=simulation.draft_plan(body.message)
+    try:
+        candidate=Plan(**result['draft_plan'])
+        if not result['missing_fields']:candidate.checked()
+    except ValidationError as error:
+        result['validation_errors']=[{'field':'.'.join(map(str,item['loc'])),'message':item['msg']} for item in error.errors()]
+    except HTTPException as error:result['validation_errors']=[{'field':'plan','message':error.detail}]
+    result['ready_for_preview']=bool(result['ready_for_preview'] and not result['validation_errors'])
+    result['case_count']=len(result['draft_plan'].get('frequencies_hz',[]))*len(result['draft_plan'].get('source_depths_m',[])) or None
+    return result
+
 @app.post('/api/plans/preview')
 def preview(plan:Plan):
     plan.checked();return {'plan':plan.model_dump(),'case_count':len(plan.frequencies_hz)*len(plan.source_depths_m),'warnings':['Munk 5000 m 示例环境，不代表指定真实海域','接收深度使用最近网格点，结果显示实际深度','相干简正波计算；固定 TL 色标 40–110 dB'],'cases':[{'frequency_hz':f,'source_depth_m':z} for f in plan.frequencies_hz for z in plan.source_depths_m]}
 @app.post('/api/jobs')
-def submit(plan:Plan):
-    plan.checked();ids=[]
-    for f in plan.frequencies_hz:
-        for z in plan.source_depths_m:
-            id=uuid.uuid4().hex[:12];cfg=plan.model_dump();cfg.update(frequency_hz=f,source_depth_m=z);ids.append(id)
-            with connect() as c:c.execute('INSERT INTO jobs VALUES(?,?,?,?,?,NULL)',(id,'QUEUED',stamp(),stamp(),json.dumps(cfg)))
-            Q.put(id)
-    return {'ids':ids}
+def submit(plan:Plan,request:Request):
+    plan.checked()
+    try:result=STORE.submit(plan.model_dump(),scope=request.headers.get('x-ocean-submission-scope','local'),idempotency_key=request.headers.get('idempotency-key'))
+    except persistence.StoreError as error:raise HTTPException(error.status,str(error)) from None
+    WORKER_WAKE.set();return result
+
+class ComparisonRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True)
+    ids:list[str]=Field(min_length=2,max_length=4)
+    @field_validator('ids')
+    @classmethod
+    def valid_ids(cls,values):
+        if len(set(values))!=len(values) or any(not re.fullmatch(r'[a-f0-9]{12}',value) for value in values):raise ValueError('请选择 2–4 个不同的有效作业标识。')
+        return values
+
+@app.post('/api/jobs/compare')
+def compare_jobs(body:ComparisonRequest):
+    cases=[]
+    for id in body.ids:
+        value=job(id)
+        if value['state']!='SUCCEEDED':raise HTTPException(409,'只能比较已经完成且通过验证的任务。')
+        folder=run_dir(id);result_path=folder/'result.json';env_path=folder/'case.env';manifest_path=folder/'manifest.json'
+        if not result_path.is_file():raise HTTPException(409,'已有任务缺少实际 result.json，不能对比。')
+        try:result=json.loads(result_path.read_text(encoding='utf-8-sig'))
+        except (ValueError,OSError):raise HTTPException(409,'已有结果文件不可读取，不能对比。') from None
+        if not isinstance(result,dict) or not science.verify_result(result,value['plan'])['ok']:raise HTTPException(409,'已有结果未通过数值一致性校验，不能对比。')
+        manifest=None
+        if manifest_path.is_file():
+            try:
+                data=json.loads(manifest_path.read_text(encoding='utf-8-sig'))
+                if data.get('job_id')!=id:raise ValueError('job mismatch')
+                recorded={item['name']:item['sha256'] for item in data.get('artifacts',[])}
+                for name,path in [('result.json',result_path),('case.env',env_path)]:
+                    if name in recorded and (not path.is_file() or science.file_sha256(path)!=recorded[name]):raise ValueError('artifact mismatch')
+                manifest={'artifact':'manifest.json','sha256':science.file_sha256(manifest_path),'result_hash_verified':'result.json' in recorded,'environment_hash_verified':'case.env' in recorded}
+            except (ValueError,OSError,KeyError,TypeError):raise HTTPException(409,'已有产物与溯源记录不一致，不能对比。') from None
+        try:environment=simulation.environment_signature(env_path.read_text(encoding='utf-8-sig')) if env_path.is_file() else None
+        except (OSError,UnicodeError):raise HTTPException(409,'已有环境文件不可读取，不能核验对比条件。') from None
+        cases.append({'id':id,'plan':value['plan'],'result':result,'result_sha256':science.file_sha256(result_path),'manifest':manifest,'units':result.get('units',{'range':'m','depth':'m','tl':'dB'}),'environment_signature':environment})
+    return simulation.compare_cases(cases)
 @app.get('/api/jobs')
 def jobs():
-    with connect() as c:rows=c.execute('SELECT * FROM jobs ORDER BY created DESC,rowid DESC LIMIT 100').fetchall()
-    return [{**dict(r),'plan':json.loads(r['plan'])} for r in rows]
+    return STORE.list()
 @app.get('/api/jobs/{id}')
 def details(id:str):
     v=job(id);folder=run_dir(id);v['log']=(folder/'run.log').read_text(encoding='utf-8',errors='replace')[-50000:] if (folder/'run.log').exists() else '等待执行器领取任务…'
     v['artifacts']=[p.name for p in folder.glob('*') if p.is_file()] if folder.exists() else []
+    v['events']=STORE.events(id)
     if v['state']=='SUCCEEDED':v['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
     return v
 @app.post('/api/jobs/{id}/cancel')
 def cancel(id:str):
     with STATELOCK:
-        if job(id)['state'] not in ['QUEUED','RUNNING']:raise HTTPException(409,'任务已结束')
-        update(id,'CANCELLED');kill(id)
+        value=job(id)
+        if value['state'] not in persistence.ACTIVE:raise HTTPException(409,'任务已结束')
+        if value['state']=='RUNNING' and value.get('claimed_by')!=WORKER_OWNER:raise HTTPException(503,'任务由另一执行器进程持有，当前进程不能确认停止；请管理员检查单进程部署。')
+        CANCEL_REQUESTS.add(id)
+        try:
+            if not kill(id):
+                STORE.set_paused(True)
+                raise HTTPException(503,'取消尚未确认进程停止，队列已暂停；请管理员检查，任务没有被误标为已取消。')
+            if not STORE.finish(id,'CANCELLED','用户取消任务，执行进程已停止或尚未启动。',owner=WORKER_OWNER):raise HTTPException(409,'任务已结束或已由其他执行器领取，请刷新状态。')
+        finally:CANCEL_REQUESTS.discard(id)
     return {'cancelled':True}
 @app.post('/api/queue/pause')
 async def pause(request:Request):
     global PAUSED
-    PAUSED=bool((await request.json()).get('paused'));return {'paused':PAUSED}
+    PAUSED=bool((await request.json()).get('paused'));STORE.set_paused(PAUSED);WORKER_WAKE.set();return {'paused':PAUSED}
+
+@app.get('/api/queue/status')
+def queue_status():
+    with connect() as connection:counts={row['state']:row['count'] for row in connection.execute('SELECT state,COUNT(*) AS count FROM jobs GROUP BY state')}
+    return {'backend':'sqlite_durable_v2','worker_active':WORKER_ACTIVE,'last_error':WORKER_ERROR,'paused':STORE.paused(),'counts':counts,'restart_policy':'QUEUED 保留；孤立 RUNNING 标为 INTERRUPTED 并暂停队列，管理员确认无残留进程后恢复。'}
 @app.get('/api/jobs/{id}/artifact/{name}')
 def artifact(id:str,name:str):
     job(id);folder=run_dir(id);path=(folder/name).resolve()
@@ -317,12 +427,18 @@ async def chat(body:Chat):
     if not entry:raise HTTPException(422,'未知供应商')
     saved=cfg if provider==cfg.get('provider') else models.profiles(config).get(provider,{})
     cfg={**cfg,**saved,'provider':provider,'base_url':saved.get('base_url') or entry['base_url'],'model':body.model or saved.get('model') or next(m['id'] for m in catalog['models'] if m['provider']==provider),'api_key':saved.get('api_key','')}
-    models.validate_endpoint(provider,cfg['base_url']);evidence=search(body.message);policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode);response_model=None;context_metadata=context_budget.inactive_context(body.context_budget)
+    models.validate_endpoint(provider,cfg['base_url']);evidence=search(body.message);policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode,body.message);response_model=None;context_metadata=context_budget.inactive_context(body.context_budget)
     previous_history=history(body.session)
     if not evidence and body.mode!='agent':answer_policy.note_gap(kbfile('knowledge-gaps.json'),body.message)
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
-    if not cfg.get('api_key'):
-        reply=('尚未配置模型 API Key。以下为课程与公开资料检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c.get('formula') else '')+f"\n适用条件：{c.get('conditions') or '原文片段需核查环境与单位。'}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语。'
+    def finish_reply(reply,used):
+        metadata={'model_used':used,'model_provider':provider if used else None,'requested_model':cfg['model'] if used else None,'response_model':response_model,'requested_knowledge_mode':body.knowledge_mode,'knowledge_scope':policy['knowledge_scope'] if used else 'course','coverage_status':policy['coverage_status'],'coverage_notice':policy['coverage_notice'],'evidence_assessment':policy.get('evidence_assessment'),'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status(),'context':context_metadata}
+        with connect() as c:c.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',(body.session,'assistant',reply,stamp(),json.dumps(metadata,ensure_ascii=False)))
+        return {'reply':reply,'evidence_ids':[e['id'] for e in evidence],**metadata}
+    if policy['coverage_status']=='missing_observation_data':
+        return finish_reply(policy['coverage_notice'],False)
+    elif not cfg.get('api_key'):
+        reply=knowledge.format_no_model_answer(evidence)
         if body.mode=='agent':reply='Agent 当前接入文件列表与读取工具。云端项目分析需要 API Key；自动修改代码尚未实现。项目面板和模板仿真可直接使用。\n\n'+reply
         if body.knowledge_mode=='general':reply='模型一般知识需要先配置 API Key。当前仅提供课程与公开资料检索。\n\n'+reply
         # Describe the answer actually produced, separately from the requested
@@ -340,7 +456,8 @@ async def chat(body:Chat):
         except context_budget.ContextBudgetError as error:raise HTTPException(422,str(error)) from None
         if body.knowledge_mode=='course' and body.mode!='agent' and not packed['evidence']:raise HTTPException(422,'检索到了课程资料，但所选预算无法保留必要依据，请调大上下文预算后重试；未调用模型。')
         msgs=packed['messages'];evidence=packed['evidence'];context_metadata=packed['context']
-        policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode)
+        policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode,body.message)
+        if not policy['can_generate']:return finish_reply(policy['coverage_notice'],False)
         provider_http_status=None
         try:
             async with httpx.AsyncClient(timeout=90) as client:
@@ -374,9 +491,7 @@ async def chat(body:Chat):
             reasons={401:'密钥无效或地域不匹配',402:'余额或额度不足',403:'账户没有该模型权限',404:'模型或接口不存在',429:'请求频率或额度受限'}
             detail=f"模型供应商返回 HTTP {provider_http_status}：{reasons.get(provider_http_status,'请求未成功，请核对官方参数')}。" if provider_http_status is not None else '模型请求未完成或返回格式不兼容，请检查供应商配置后重试。'
             raise HTTPException(502,detail) from None
-    metadata={'model_used':used,'model_provider':provider if used else None,'requested_model':cfg['model'] if used else None,'response_model':response_model,'requested_knowledge_mode':body.knowledge_mode,'knowledge_scope':policy['knowledge_scope'],'coverage_status':policy['coverage_status'],'coverage_notice':policy['coverage_notice'],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status(),'context':context_metadata}
-    with connect() as c:c.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',(body.session,'assistant',reply,stamp(),json.dumps(metadata,ensure_ascii=False)))
-    return {'reply':reply,'evidence_ids':[e['id'] for e in evidence],**metadata}
+    return finish_reply(reply,used)
 
 if (ROOT/'dist').exists():app.mount('/',StaticFiles(directory=ROOT/'dist',html=True),name='frontend')
 if __name__=='__main__':

@@ -1,5 +1,6 @@
 """Visitor-scoped public gateway. Administrative localhost API is never tunneled."""
 import json,secrets,time,sqlite3,asyncio,re,hashlib
+from contextlib import contextmanager,closing
 from pathlib import Path
 import httpx
 from fastapi import FastAPI,Request,HTTPException
@@ -7,9 +8,15 @@ from fastapi.responses import JSONResponse,Response
 import knowledge,models
 ROOT=Path(__file__).resolve().parents[1];LOCAL=ROOT/'.local';STATE=LOCAL/'public-runtime.json';DB=LOCAL/'public-visitors.sqlite3'
 runtime=json.loads(STATE.read_text(encoding='utf-8'));SECRET=runtime['gateway_secret'];ORIGIN=runtime['site_origin'];PRIVATE='http://127.0.0.1:8765'
+@contextmanager
 def connect():
- c=sqlite3.connect(DB);c.row_factory=sqlite3.Row;return c
-with connect() as db:db.executescript('CREATE TABLE IF NOT EXISTS visitors(id TEXT PRIMARY KEY, seen REAL); CREATE TABLE IF NOT EXISTS owned_jobs(id TEXT PRIMARY KEY, visitor TEXT); CREATE TABLE IF NOT EXISTS visitor_messages(id INTEGER PRIMARY KEY, visitor TEXT, role TEXT, text TEXT);')
+ c=sqlite3.connect(DB,timeout=15);c.row_factory=sqlite3.Row;c.execute('PRAGMA busy_timeout=15000')
+ try:
+  with c:yield c
+ finally:c.close()
+with connect() as db:
+ db.execute('PRAGMA journal_mode=WAL')
+ db.executescript('CREATE TABLE IF NOT EXISTS visitors(id TEXT PRIMARY KEY, seen REAL); CREATE TABLE IF NOT EXISTS owned_jobs(id TEXT PRIMARY KEY, visitor TEXT); CREATE INDEX IF NOT EXISTS owned_jobs_visitor ON owned_jobs(visitor); CREATE TABLE IF NOT EXISTS visitor_messages(id INTEGER PRIMARY KEY, visitor TEXT, role TEXT, text TEXT); CREATE TABLE IF NOT EXISTS public_submissions(visitor TEXT NOT NULL,request_key TEXT NOT NULL,body_hash TEXT NOT NULL,response TEXT,created REAL NOT NULL,PRIMARY KEY(visitor,request_key));')
 profiles={};limits={};submit_lock=asyncio.Lock();app=FastAPI(docs_url=None,redoc_url=None,openapi_url=None)
 def defaults():return {'provider':'Qwen','base_url':'https://dashscope.aliyuncs.com/compatible-mode/v1','model':'qwen3.7-plus','api_key':'','public_mode':True,'api_key_set':False}
 def current(visitor):return profiles.setdefault(visitor,{'selected':defaults(),'providers':{}})['selected'].copy()
@@ -34,10 +41,48 @@ async def protect(request,call_next):
  if fresh:response.set_cookie('ocean_visitor',visitor,max_age=30*86400,httponly=True,secure=True,samesite='lax',path='/')
  return response
 async def upstream(request,path=None,body=None):
+ key=request.headers.get('idempotency-key','')
+ if key and not re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',key):raise HTTPException(422,'请求标识不合法')
+ headers={'Content-Type':'application/json','X-Ocean-Submission-Scope':submission_identity(request.state.visitor,key)[0]}
+ if key:
+  headers['Idempotency-Key']=submission_identity(request.state.visitor,key)[1]
  async with httpx.AsyncClient(timeout=100) as client:
-  response=await client.request(request.method,PRIVATE+(path or request.url.path),params=request.query_params,content=json.dumps(body,ensure_ascii=False).encode() if body is not None else await request.body(),headers={'Content-Type':'application/json'})
+  response=await client.request(request.method,PRIVATE+(path or request.url.path),params=request.query_params,content=json.dumps(body,ensure_ascii=False).encode() if body is not None else await request.body(),headers=headers)
  headers={k:v for k,v in response.headers.items() if k.lower() in ['content-type','content-disposition']}
  return Response(response.content,status_code=response.status_code,headers=headers)
+
+def submission_identity(visitor,key):
+ return 'public-'+hashlib.sha256(visitor.encode()).hexdigest(),'pub-'+hashlib.sha256((visitor+':'+key).encode()).hexdigest()
+
+def valid_submission_ids(values,count=None):
+ return isinstance(values,list) and 1<=len(values)<=4 and (count is None or len(values)==count) and all(isinstance(value,str) and re.fullmatch(r'[a-f0-9]{12}',value) for value in values) and len(set(values))==len(values)
+
+def local_submission_receipt(visitor,key,fingerprint,count):
+ """Read only the fixed node DB and this visitor's server-derived identity.
+
+ A gateway pending row is not proof that MATLAB jobs were accepted. Conversely,
+ a transport failure after the node commit must not lose the visitor's jobs.
+ """
+ scope,mapped_key=submission_identity(visitor,key);path=(LOCAL/'workbench.sqlite3').resolve()
+ try:
+  with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True,timeout=15)) as db:
+   db.row_factory=sqlite3.Row;db.execute('PRAGMA busy_timeout=15000')
+   row=db.execute('SELECT batch_id,plan_sha256,ids FROM submissions WHERE scope=? AND idempotency_key=?',(scope,mapped_key)).fetchone()
+ except (OSError,sqlite3.Error):raise HTTPException(503,'暂时无法核实节点提交记录；原请求标识已保留，请稍后重试，不会盲目重复提交。') from None
+ if not row:return None
+ if row['plan_sha256']!=fingerprint:raise HTTPException(409,'节点已有同一请求标识的不同参数，不能复用')
+ try:ids=json.loads(row['ids'])
+ except (ValueError,TypeError):raise HTTPException(503,'节点提交记录暂不可核验，请管理员检查。') from None
+ if not valid_submission_ids(ids,count):raise HTTPException(503,'节点任务标识暂不可核验，请管理员检查。')
+ return {'ids':ids,'batch_id':row['batch_id'],'reused':True,'plan_sha256':row['plan_sha256']}
+
+def save_submission_receipt(visitor,key,data):
+ with connect() as db:
+  for id in data['ids']:
+   existing=db.execute('SELECT visitor FROM owned_jobs WHERE id=?',(id,)).fetchone()
+   if existing and existing['visitor']!=visitor:raise HTTPException(503,'任务归属记录不一致，未把其他访客的任务返回给你。')
+   db.execute('INSERT INTO owned_jobs VALUES(?,?) ON CONFLICT(id) DO NOTHING',(id,visitor))
+  if key:db.execute('UPDATE public_submissions SET response=? WHERE visitor=? AND request_key=?',(json.dumps(data),visitor,key))
 @app.get('/api/health')
 async def health(request:Request):
  async with httpx.AsyncClient(timeout=5) as c:r=await c.get(PRIVATE+'/api/health')
@@ -118,20 +163,55 @@ async def submit(request:Request):
  async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)
  if validation.status_code!=200:return Response(validation.content,status_code=validation.status_code,media_type='application/json')
  body=validation.json()['plan']
+ request_key=request.headers.get('idempotency-key','')
+ if request_key and not re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',request_key):raise HTTPException(422,'请求标识不合法')
+ fingerprint=hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest()
  count=len(body.get('frequencies_hz',[50]))*len(body.get('source_depths_m',[1000]))
  if count>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
  async with submit_lock:
+  prior=None
+  if request_key:
+   with connect() as db:prior=db.execute('SELECT body_hash,response FROM public_submissions WHERE visitor=? AND request_key=?',(visitor,request_key)).fetchone()
+   if prior and prior['body_hash']!=fingerprint:raise HTTPException(409,'同一请求标识不能用于不同参数')
+   if prior and prior['response']:return JSONResponse({**json.loads(prior['response']),'reused':True})
+   receipt=local_submission_receipt(visitor,request_key,fingerprint,count)
+   if receipt:
+    # Recover even when the node committed before a gateway crash could create
+    # its own pending row. No new compute and no quota bypass occurs here.
+    with connect() as db:db.execute('INSERT INTO public_submissions(visitor,request_key,body_hash,created) VALUES(?,?,?,?) ON CONFLICT(visitor,request_key) DO NOTHING',(visitor,request_key,fingerprint,time.time()))
+    save_submission_receipt(visitor,request_key,receipt);return JSONResponse(receipt)
   async with httpx.AsyncClient(timeout=10) as c:jobs=(await c.get(PRIVATE+'/api/jobs')).json()
   active=[j for j in jobs if j['state'] in ['RUNNING','QUEUED']]
   with connect() as db:owned={r['id'] for r in db.execute('SELECT id FROM owned_jobs WHERE visitor=?',(visitor,))}
   if len(active)+count>16:raise HTTPException(429,'计算节点队列已满，请稍后提交')
   if any(j['id'] in owned for j in active):raise HTTPException(429,'你的上一批仿真尚未完成')
-  result=await upstream(request,body=body)
+  if request_key:
+   with connect() as db:db.execute('INSERT INTO public_submissions(visitor,request_key,body_hash,created) VALUES(?,?,?,?) ON CONFLICT(visitor,request_key) DO NOTHING',(visitor,request_key,fingerprint,time.time()))
+  try:result=await upstream(request,body=body)
+  except httpx.RequestError:
+   raise HTTPException(503,'提交响应中断；请求标识已保留。请使用同一标识重试以核实是否已经创建任务。') from None
+  if request_key and result.status_code!=200:
+   receipt=local_submission_receipt(visitor,request_key,fingerprint,count)
+   if receipt:save_submission_receipt(visitor,request_key,receipt);return JSONResponse(receipt)
+   # A completed upstream failure plus a readable, empty receipt proves this
+   # attempt did not commit. An unavailable/ambiguous DB keeps the pending row.
+   with connect() as db:db.execute('DELETE FROM public_submissions WHERE visitor=? AND request_key=? AND response IS NULL',(visitor,request_key))
   if result.status_code==200:
-   data=json.loads(result.body)
-   with connect() as db:
-    for id in data['ids']:db.execute('INSERT INTO owned_jobs VALUES(?,?)',(id,visitor))
+   try:data=json.loads(result.body)
+   except (ValueError,TypeError):raise HTTPException(502,'节点提交响应不完整，请使用原请求标识重试核实。') from None
+   if not isinstance(data,dict) or not valid_submission_ids(data.get('ids'),count):raise HTTPException(502,'节点未返回合法任务标识，请使用原请求标识重试核实。')
+   save_submission_receipt(visitor,request_key,data)
   return result
+@app.post('/api/jobs/compare')
+async def compare_owned_jobs(request:Request):
+ try:body=await request.json()
+ except ValueError:raise HTTPException(422,'比较请求须为有效 JSON 对象') from None
+ if not isinstance(body,dict) or set(body)!={'ids'}:raise HTTPException(422,'比较请求仅接受 ids 字段')
+ ids=body.get('ids')
+ if not isinstance(ids,list) or not 2<=len(ids)<=4 or any(not isinstance(id,str) or not re.fullmatch(r'[a-f0-9]{12}',id) for id in ids) or len(set(ids))!=len(ids):raise HTTPException(422,'请选择2–4个不同的任务')
+ with connect() as db:
+  if any(not db.execute('SELECT 1 FROM owned_jobs WHERE id=? AND visitor=?',(id,request.state.visitor)).fetchone() for id in ids):raise HTTPException(404,'任务不存在或不属于当前访客')
+ return await upstream(request,body=body)
 @app.get('/api/jobs')
 async def jobs(request:Request):
  async with httpx.AsyncClient(timeout=10) as c:data=(await c.get(PRIVATE+'/api/jobs')).json()
@@ -149,6 +229,7 @@ async def own_job(id:str,request:Request,rest:str=''):
 async def readonly(path:str,request:Request):
  permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search','knowledge/status','knowledge/public-sources','exercises'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
  if request.method=='GET' and re.fullmatch(r'source/S\d{2}',path):raise HTTPException(403,'公开版提供教材原页片段，完整资料请使用课程资料包')
+ if request.method=='POST' and path=='plans/draft':return await upstream(request)
  if request.method=='POST' and path=='plans/preview':
   body=await request.json()
   async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)

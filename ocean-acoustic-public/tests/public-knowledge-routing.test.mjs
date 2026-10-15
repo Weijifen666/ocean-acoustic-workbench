@@ -13,7 +13,7 @@ test('public ocean evidence remains searchable without the private node or a mod
  const answer=await state.call('/api/chat','POST',{message:'海洋酸化如何影响珊瑚礁',knowledge_mode:'general',context_budget:8192},first.cookie);
  assert.equal(answer.r.status,200);assert.equal(answer.data.model_used,false);
  assert.ok(answer.data.evidence.some(row=>row.evidence_type==='public_web_excerpt'));
- assert.match(answer.data.retrieval.scope,/公开网页快照/);assert.ok(!answer.data.retrieval.methods.includes('RRF'));
+ assert.match(answer.data.retrieval.scope,/公开网页快照/);assert.ok(answer.data.retrieval.methods.includes('RRF'));
  assert.ok(answer.data.citations.some(row=>row.url?.startsWith('https://oceanservice.noaa.gov/')));
  assert.match(answer.data.coverage_notice,/未调用模型/);
  assert.equal(answer.data.context.applied,false);assert.equal(answer.data.context.budget_tokens,8192);

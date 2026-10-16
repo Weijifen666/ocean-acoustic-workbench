@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import GraphExplorer from './GraphExplorer';
 import ModelPanel from './ModelPanel';
 import MatlabPanel from './MatlabPanel';
+import MarkdownRenderer from './MarkdownRenderer';
 import {Waves,MessageSquare,Network,FlaskConical,FolderCode,Settings2,Activity,ArrowUpRight,ChevronRight,Search,Maximize2,Plus,Minus,RotateCcw,BookOpen,ExternalLink,ArrowUp,Play,Pause,Check,AlertCircle,X,Download,FileText,Terminal,GitBranch,SlidersHorizontal,Image as ImageIcon,Loader2,CheckCircle2,Save,PanelRightClose,Cpu} from 'lucide-react';
 import './style.css';
 const api=async(path,options={})=>{const r=await fetch('/api'+path,{headers:{'Content-Type':'application/json'},...options});if(!r.ok){const data=await r.json().catch(()=>({detail:r.statusText}));throw Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail));}return r.json()};
@@ -28,56 +29,7 @@ function App(){
 }
 function PageTitle({eyebrow,title,description,children}){return <div className="page-title"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{description&&<p>{description}</p>}</div><div className="page-actions">{children}</div></div>}
 function FormattedText({text, setImage}){
- if(!text)return null;
- const lines=text.split('\n');
- return (
-  <div className="formatted-chat-msg">
-   {lines.map((line,idx)=>{
-    const imgMatch=line.match(/^!\[(.*?)\]\((.*?)\)$/);
-    if(imgMatch){
-     const caption=imgMatch[1];
-     const url=imgMatch[2];
-     return (
-      <div key={idx} style={{margin:'10px 0'}}>
-       <div
-        style={{border:'1px solid #d2e1e6',borderRadius:8,overflow:'hidden',background:'#f8fbfc',cursor:'pointer',boxShadow:'0 2px 6px rgba(0,0,0,0.05)'}}
-        onClick={()=>setImage&&setImage({url,caption:caption||'声场计算结果'})}
-       >
-        <img src={url} alt={caption} style={{width:'100%',display:'block'}}/>
-        <div style={{padding:'6px 12px',fontSize:11,color:'#4b7582',display:'flex',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid #e5eff2'}}>
-         <span>🖼️ {caption}</span>
-         <small style={{color:'#15868e',fontWeight:500}}>点击放大查看 🔍</small>
-        </div>
-       </div>
-      </div>
-     );
-    }
-    const linkMatch=line.match(/\[(.*?)\]\((.*?)\)/);
-    if(linkMatch){
-     const parts=line.split(/\[.*?\]\(.*?\)/);
-     return (
-      <div key={idx} style={{margin:'4px 0'}}>
-       {parts[0]}
-       <a href={linkMatch[2]} target="_blank" rel="noreferrer" style={{color:'#13868e',textDecoration:'underline',fontWeight:500}}>
-        {linkMatch[1]}
-       </a>
-       {parts[1]||''}
-      </div>
-     );
-    }
-    if(line.startsWith('### ')){
-     return <h3 key={idx} style={{fontSize:14,margin:'10px 0 4px',color:'#13868e',fontWeight:600}}>{line.slice(4)}</h3>;
-    }
-    if(line.startsWith('#### ')){
-     return <h4 key={idx} style={{fontSize:12,margin:'8px 0 3px',color:'#2b5866',fontWeight:600}}>{line.slice(5)}</h4>;
-    }
-    if(line.trim()===''){
-     return <div key={idx} style={{height:6}}/>;
-    }
-    return <div key={idx} style={{margin:'2px 0'}}>{line}</div>;
-   })}
-  </div>
- );
+  return <MarkdownRenderer content={text} setImage={setImage}/>;
 }
 function ChatView({health,notify,openSettings,initialQuestion,setImage}){
  const [mode,setMode]=useState('agent'),[text,setText]=useState(''),[msgs,setMsgs]=useState([]),[busy,setBusy]=useState(false);const bottom=useRef(null);

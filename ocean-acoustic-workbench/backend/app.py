@@ -819,7 +819,7 @@ async def chat(body:Chat):
             "  * 执行 kraken 命令：system(['\"', fullfile(tb,'bin','kraken.exe'), '\" pekeris']);\n"
             "  * 读取模态必须传入文件名与频率：clear read_modes_bin; Mods = read_modes('pekeris.mod', freq);\n"
             "  * 严格传播模态满足 real(k) >= 2*pi*freq/c_bottom 且衰减系数 abs(imag(k)) < 1e-6；\n"
-            "  * 绘图后使用 saveas(gcf, 'pekeris_modes.png') 保存，并在最终回复中用 ![图表说明](image_url) 插入展示，严密解析物理机制。\n"
+            "  * 绘图后使用 saveas(gcf, 'pekeris_modes.png') 保存，并在最终回复中用工具返回的真实图片 URL（如 ray_plot_url 或 /outputs/*.png）通过 Markdown 语法 ![图表说明](真实URL) 插入展示，严密解析物理机制。\n"
             + json.dumps(evidence, ensure_ascii=False)
         )
         msgs=[{'role':'system','content':sys_prompt}]
@@ -883,6 +883,7 @@ async def chat(body:Chat):
             {'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}
         ]
         try:
+            last_generated_images = []
             async with httpx.AsyncClient(timeout=180) as client:
                 for turn in range(10):
                     payload=models.chat_payload(cfg,msgs,tools)
@@ -899,9 +900,20 @@ async def chat(body:Chat):
                             print(f"[Agent Turn {turn+1}] Calling tool: {fname}")
                             if fname=='list_project_files':value=files()
                             elif fname=='read_project_file':value=read_file(args['path'])
-                            elif fname=='run_ray_simulation':value=execute_ray_job(args)
-                            elif fname=='run_acoustic_code':value=execute_code_job(args.get('code',''), args.get('description',''), args.get('language','python'))
-                            elif fname=='run_ocean_simulation':value=await execute_simulation_and_wait(args)
+                            elif fname=='run_ray_simulation':
+                                value=execute_ray_job(args)
+                                if isinstance(value, dict) and value.get('ray_plot_url'):
+                                    last_generated_images.append(value['ray_plot_url'])
+                            elif fname=='run_acoustic_code':
+                                value=execute_code_job(args.get('code',''), args.get('description',''), args.get('language','python'))
+                                if isinstance(value, dict) and value.get('image_urls'):
+                                    last_generated_images.extend(value['image_urls'])
+                            elif fname=='run_ocean_simulation':
+                                value=await execute_simulation_and_wait(args)
+                                if isinstance(value, dict):
+                                    for r_sim in value.get('results', []):
+                                        if r_sim.get('tl_map_url'): last_generated_images.append(r_sim['tl_map_url'])
+                                        if r_sim.get('tl_curve_url'): last_generated_images.append(r_sim['tl_curve_url'])
                             else:value={'error':'不允许的工具'}
                         except Exception as e:value={'error':str(e)}
                         print(f"[Agent Turn {turn+1}] Result summary: {str(value)[:180]}")
@@ -913,6 +925,12 @@ async def chat(body:Chat):
                         # 仿真已成功完成并生成数据，下一轮强制关闭工具调用，令模型直接输出图表解析与总结
                         tools = None
                 else:reply='已达到工具调用轮次上限。'
+            if last_generated_images:
+                for ph in ['(image_url_placeholder)', '(image_url)', '(placeholder)', '(url)']:
+                    if ph in reply:
+                        reply = reply.replace(ph, f"({last_generated_images[0]})")
+                if '![' not in reply:
+                    reply += "\n\n" + "\n".join(f"![声学仿真图表]({u})" for u in last_generated_images)
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))

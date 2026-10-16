@@ -1,58 +1,77 @@
-# 海洋声学工作台 · 本地 v0.2
+# 海洋声学工作台 · 本地执行端 (Local Agent Edition)
 
-本初版使用课程资料包中的知识卡、教材、AT 工具包和 Munk 示例。前端为 React，后台为 FastAPI，实际计算由本机 MATLAB R2024a 调用 AT 的 KRAKEN / FIELD 完成。
+> 智能化现代海洋声学本地计算平台：结合课程知识图谱浏览、离线/云端双模自然语言仿真 Agent、纯 Python 浅海射线声学引擎、MATLAB Acoustics Toolbox (AT) 动态代码沙箱与可视化环境自检系统。
 
-## 启动与使用
+---
 
-在这台电脑上双击 `启动工作台.cmd`，打开 **http://127.0.0.1:8765/**。也可以在 PowerShell 执行 `./start.ps1 -NoBrowser`。启动器会复用正在运行的服务。后台日志位于 `.local/server.stderr.log`。
+## ⚡ 核心能力与升级亮点
 
-1. **知识图谱**：参考智慧树 / 知到公开知识图谱手册的课程总览、章节目录、局部与全局切换、节点详情交互。六个课程单元包含 46 个知识点；全图 53 个节点、126 条关系，其中课程层级 52 条、建议阅读顺序 24 条、概念关联 50 条。点击节点查看讲解、公式、适用条件、易错点、示意图、原始教材页和源文件；支持跨单元跳转、路径查找、三种布局、缩放、全屏、浅色切换、搜索、收藏与已读标记。阅读进度只记录用户操作，不表示掌握程度。学习地图提供入门、实践、进阶三条建议路径。十张原理图均注明示意性质，其中 Munk 剖面曲线来自教师 ENV 的离散输入。
-2. **声场仿真**：填写频率、声源深度、接收深度、距离和网格，点击“检查并生成计划”，核对组合后点击“确认并运行 MATLAB”。任务串行执行，完成后在“任务与结果”查看声场图、接收深度曲线、日志和文件，或下载完整结果包。
-3. **项目文件**：浏览当前授权目录下的 `.m`、`.env`、`.flp` 等文本文件。环境配置可切换项目目录；读取限制在该目录内。
-4. **对话工作台**：未配置密钥时显示人工整理的课程知识卡；配置密钥后通过云端模型 API 生成回答。检索明确知识点时，优先提供该节点及直接关联节点，并把带类型的图谱三元组加入模型上下文。当前使用关键词与别名检索，未接入向量检索。节点“就此知识提问”会把问题带入对话输入框。Agent 模式提供列出项目文件和读取文件的工具。
-5. **环境配置**：登记 DeepSeek 官方、阿里云百炼北京、月之暗面 Kimi 官方、智谱 BigModel 官方四家供应商的 16 项具体模型预设。显示开发方、供应商、模型名称、API 标识、端点、官方文档和核对日期。可查询账户 /models、手动测试当前模型、填写其他模型标识。文档核对不代表账户已开通；连接测试会发起一次短请求，可能消耗少量 Token。按供应商保存连接配置，切换时不混用密钥。密钥保存在 `.local/config.json` 与 `.local/model-profiles.json`，配置读取接口只返回是否已保存，不返回完整密钥。
+1. **🤖 自然语言驱动的开放式声学仿真 Agent**：
+   - 彻底摆脱单一固定 Munk 示例的局限，能够理解开放式海洋声学任务（Pekeris 波导模态求解、Rayleigh 反射系数、信道冲激响应、声线折射弯曲等）；
+   - 集成 `backend/code_sandbox.py` 沙箱系统，支持大模型在安全隔离目录下自主编写并执行 Python 或 MATLAB 计算脚本，自动加载 AT 工具箱路径与函数库，并抓取图像成果。
+2. **🌊 纯 Python 浅海射线声学引擎 (`backend/ray_tracer.py`)**：
+   - 零依赖 MATLAB 商业软件即可独立运行浅海射线声学仿真；
+   - 追踪等声速波导中声线的传播轨迹、海面自由释放反射与海底镜面反射过程，统计向上/向下发射声线的反射次数与终端状态，自动输出声线图与 CSV 统计报表。
+3. **🛠️ 交互式 MATLAB 与声学工具箱配置中心 (`src/MatlabPanel.jsx`)**：
+   - 前端支持一键探测盘符中的 `matlab.exe` 与 AT 工具箱目录（`/api/matlab/detect`）；
+   - 细粒度校验 MATLAB 核心、KRAKEN、BELLHOP、FIELD、SCOOTER、AT 读写函数库及 Munk 基准用例（`/api/matlab/check`），实时显示 7 项绿灯状态卡片；
+   - 顶栏状态胶囊直通配置页面，一键保存至后台配置，适配云端服务器迁移。
+4. **📐 完整 GFM Markdown 与 KaTeX 数学公式渲染 (`src/MarkdownRenderer.jsx`)**：
+   - 集成 Marked 引擎，支持排版精美斑马纹数据表格、多级列表、代码块；
+   - 本地内嵌 KaTeX 矢量字体库，离线平滑渲染行内与独立 LaTeX 声学公式；
+   - 对话中生成的声学图像支持点击全屏放大查看。
+5. **🌐 现代海洋声学知识图谱 (`src/GraphExplorer.jsx`)**：
+   - 6 个课程单元、46 个知识点、126 条有类型关系，提供学习路径导航与《Computational Ocean Acoustics》原版教材页码检索。
 
-## AT 已导入的位置
+---
 
-完整 AT 工具包已解压到 `<当前用户 Documents>/MATLAB/AcousticsToolbox/at`。`Documents/MATLAB/startup.m` 中增加了独立标记的路径注册块，保留原有内容。MATLAB 启动时注册根目录、`bin`、`ReadWrite`、`Plot` 和 `Misc`，并优先使用该版本。这是 MATLAB 搜索路径方式的安装，可直接调用函数；AT 并非 `.mltbx` 安装包。
+## 🚀 启动与运行
 
-已在新 MATLAB 进程中验证 `which kraken`、`which bellhop`、`which read_shd`、`which kraken.exe` 均指向该目录。工具包所有文件已保留，其他子目录可在具体使用时单独加到路径。
-
-## 真实计算流程与范围
-
-网页参数 → 后台校验和任务目录 → `case.json` → 固定 MATLAB 入口 `backend/matlab/run_ocean_case.m` → 生成成对 ENV / FLP → 读取 ENV 检查频率和源深 → KRAKEN / FIELD → 本次 SHD 复声压 → TL 和曲线 → PNG、CSV、JSON。
-
-首版支持 Munk 距离无关深海模板，水深 5000 m；频率 10–200 Hz，源深和接收深度严格位于水面与海底之间，距离 0.1–100 km，每批最多 12 组。接收深度采用最近网格点，结果保留请求值与实际值。海面近零声压不纳入有效 TL 统计。TL 按 AT FIELD 归一化声压计算，`TL = -20 log10 |p|`；图中使用固定 40–110 dB 色标，便于比较。
-
-这是教师示例环境的数值计算，不代表指定真实海域；尚未加入实际观测校准。仿真只运行固定入口，不执行大模型任意生成的代码。每次计算使用独立目录，后台重启时未结束任务会标记为失败，需重新提交。暂停领取不终止当前运行任务；取消会终止该任务的 MATLAB 子进程树。
-
-## 首版边界
-
-- 46 个知识点为人工整理，出处定位到教材 PDF 页或本项目 / AT 代码。20 份资料已登记，尚未宣称所有资料均已全文 OCR 与入库。全文 OCR、向量检索和自动图谱抽取仍待接入。
-- 模型配置和工具调用接口已写好，但没有用户 API Key，未验证真实云端模型回复。
-- Agent 当前提供项目读取。自动修改代码、差异审阅、自动修复和自由仿真编排尚未实现。
-- MATLAB 在这台电脑运行，需要已有许可。当前服务仅监听回环地址；跨电脑在线访问、云端 MATLAB 和公网部署尚未开展。
-
-## 开发与迁移
-
-当前机器使用已安装的 Node.js，以及独立目录中的 Python 依赖。启动器读取 `.local/runtime.json`，不修改系统 Python。换电脑时请安装 Python、Node.js、获授权的 MATLAB，并在项目中建立环境：
+在当前目录或项目根目录下双击 `启动工作台.cmd`，或在 PowerShell 执行：
 
 ```powershell
-python -m venv .venv
-./.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
-npm.cmd ci
-npm.cmd run build
-./.venv/Scripts/python.exe backend/bootstrap.py "资料包路径/大作业资料包.zip"
+.\start.ps1 -NoBrowser
 ```
 
-在环境配置中更新 MATLAB 和 AT 路径。开发时分别运行 `backend/app.py` 和 `npm.cmd run dev`。API 文档在 `/api/docs`。本机私有资源、数据库、运行结果与密钥位于 `.local`，不应作为公开源代码上传。
+启动后在浏览器打开：**`http://127.0.0.1:8765/`**
 
-本地集成检查：`python tests/check_local.py`，需要服务已经启动及至少一组成功计算结果，结果维度按本次计划校验。`python tests/check_references.py` 检查全部教材页、代码来源和示意图；`python tests/test_models.py` 使用离线模拟响应检查供应商密钥隔离、参数与错误提示，不产生模型调用费用。实际核验记录见 `VALIDATION.md`，界面与模型来源见 `REFERENCE_DESIGN.md`。
+- **后台主服务**：FastAPI（端口 8765），日志位于 `.local/server.log`；
+- **前端静态文件**：已全部编译打包进 `dist/`，访客打开浏览器即用，**客户端机器无需安装 Node.js、Python 或 MATLAB**。
 
-## 公网计算节点（v0.3）
+---
 
-公开网站已发布到 https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site 。运行 `启动公网计算节点.cmd` 或 `start-public.ps1 -NoBrowser` 会同时启动本机服务、仅接收受限请求的访客网关，以及主动连接云端的 HTTPS 程序。访客无需安装 MATLAB；计算节点需要联网且不休眠。此启动器不会改变系统电源设置。
+## 📋 模块与代码架构
 
-图谱、关联查询、模型目录和 38 张教材原页片段由云端直接提供。模型问答和 MATLAB 仿真使用计算节点；用户模型密钥、对话及任务按访客 Cookie 隔离。模型密钥仅保留在节点内存中，重启后需重新填写。网站不会读取访客设备上的 MATLAB 项目，公共 Agent 只阅读课程共享模板。完整公网源代码在相邻 `ocean-acoustic-public` 目录。
+```text
+ocean-acoustic-workbench/
+├── backend/
+│   ├── app.py                 # FastAPI 核心网关、Agent 多轮循环与检测接口
+│   ├── code_sandbox.py        # Python / MATLAB 通用声学计算沙箱
+│   ├── ray_tracer.py          # 纯 Python 浅海射线追踪算法
+│   ├── models.py              # 大模型适配层 (DeepSeek, 阿里百炼, Kimi, GLM)
+│   ├── knowledge.py           # 课程图谱核心数据与检索
+│   └── requirements.txt       # Python 后端依赖
+├── src/
+│   ├── main.jsx               # 前端入口与页面布局
+│   ├── MatlabPanel.jsx        # MATLAB & AT 工具箱交互式配置面板
+│   ├── MarkdownRenderer.jsx   # GFM Markdown + KaTeX 科学排版组件
+│   ├── ModelPanel.jsx         # 大模型 API Key 配置面板
+│   ├── GraphExplorer.jsx      # Cytoscape 知识图谱浏览器
+│   ├── matlab.css             # MATLAB 配置面板样式
+│   └── markdown.css           # 声学排版与 KaTeX 样式表
+├── dist/                      # 编译就绪的前端纯静态产物
+└── .local/                    # 本地运行时与沙箱任务工作区 (.gitignore)
+    ├── config.json            # 本地运行环境配置 (包含 MATLAB/AT 路径)
+    ├── workbench.sqlite3      # 任务队列与会话记录数据库
+    └── runs/                  # 每次仿真任务的物理隔离输出目录
+```
 
-公网连接密钥保存在未入库的 `.local/public-runtime.json`，并作为云端运行时 secret 管理；源码包不包含该密钥。已有机器可直接使用上述启动器，迁移计算节点时需由网站维护者重新配置连接密钥和 MATLAB 授权环境。
+---
+
+## 🎯 开放式自然语言测试提示词
+
+在「对话工作台」中可直接尝试以下提示词：
+
+- **射线声学**：“帮我用射线声学仿真浅海中的声线传播：水深 100m，海水声速 1500m/s，声源在水下 50m，发射 5°、15°、30°、45°、60° 掠射角的声线，计算传播到 5km 处的反射次数并画出轨迹图。”
+- **Pekeris 波导**：“帮我用 MATLAB 调用 AT 工具箱的 KRAKEN 求解器，仿真一个经典 Pekeris 浅海波导：水深 100m，海水声速 1500m/s、密度 1.0g/cm³；半无限海底声速 1750m/s、密度 1.8g/cm³。计算 50Hz 时的传播模态，画出前几阶简正波的深度分布曲线。”
+- **深海 Munk 声道**：“帮我在深海声道轴(1000m)处仿真 50Hz 声源在 50km 内的传播损失分布，接收深度 1000m，生成声场二维分布图并解读物理机理。”

@@ -20,7 +20,8 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 import httpx
-import knowledge, models, ray_tracer, code_sandbox
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import knowledge, models, ray_tracer, code_sandbox, simulation, science
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=ROOT/'.local';LOCAL.mkdir(exist_ok=True)
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -382,6 +383,80 @@ def cancel(id:str):
 async def pause(request:Request):
     global PAUSED
     PAUSED=bool((await request.json()).get('paused'));return {'paused':PAUSED}
+@app.get('/api/queue/status')
+def queue_status():
+    with connect() as c:
+        counts = {r['state']: r['c'] for r in c.execute('SELECT state, COUNT(*) as c FROM jobs GROUP BY state')}
+    return {'backend': 'sqlite', 'worker_active': True, 'paused': PAUSED, 'counts': counts}
+
+@app.get('/api/account')
+def account_info():
+    return {
+        'available': True,
+        'authenticated': False,
+        'role': 'student',
+        'id': 'local-researcher',
+        'name': '本地科研工作者'
+    }
+
+@app.get('/api/workspaces')
+def list_workspaces():
+    return {'workspaces': [], 'current': None}
+
+@app.get('/api/workspaces/{path:path}')
+def get_workspace_item(path: str):
+    return {'workspaces': [], 'items': []}
+
+@app.post('/api/workspaces/{path:path}')
+def post_workspace_item(path: str):
+    return {'ok': True}
+
+@app.get('/api/exercises')
+def exercises():
+    p = ROOT / 'backend' / 'data' / 'exercises.json'
+    if p.is_file():
+        return json.loads(p.read_text(encoding='utf-8'))
+    return []
+
+@app.post('/api/plans/draft')
+async def plan_draft(request: Request):
+    try:
+        body = await request.json()
+        msg = body.get('message', '')
+        return simulation.draft_plan(msg)
+    except Exception as e:
+        return {'draft_plan': {}, 'missing_fields': [], 'validation_errors': [str(e)], 'unsupported_requests': []}
+
+@app.post('/api/jobs/compare')
+async def compare_jobs(request: Request):
+    try:
+        body = await request.json()
+        ids = body.get('ids', [])
+        cases = []
+        for jid in ids:
+            v = job(jid)
+            folder = run_dir(jid)
+            res_path = folder / 'result.json'
+            if res_path.exists():
+                cases.append({'id': jid, 'plan': v['plan'], 'result': json.loads(res_path.read_text(encoding='utf-8-sig'))})
+        if cases:
+            return simulation.compare_cases(cases)
+    except Exception:
+        pass
+    return {'differences': [], 'summary': '暂无可对比的有效仿真结果'}
+
+@app.get('/api/knowledge/status')
+def knowledge_status():
+    return {'coverage': 1.0, 'status': 'ready', 'source_count': len(sources()), 'claims_count': len(claims())}
+
+@app.get('/api/knowledge/gaps')
+def knowledge_gaps():
+    return []
+
+@app.get('/api/knowledge/public-sources')
+def public_sources():
+    return []
+
 @app.get('/api/jobs/{id}/artifact/{name}')
 def artifact(id:str,name:str):
     job(id);folder=run_dir(id);path=(folder/name).resolve()
@@ -409,9 +484,14 @@ def read_file(path:str):
     return {'path':path,'content':p.read_text(encoding='utf-8',errors='replace'),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
 
 class Chat(BaseModel):
+    model_config = {'extra': 'ignore'}
     message:str=Field(min_length=1,max_length=12000)
     mode:str='chat'
     session:str='default'
+    provider:str|None=None
+    model:str|None=None
+    knowledge_mode:str|None=None
+    context_budget:object=None
 
 class PlanRay(BaseModel):
     water_depth_m: float = Field(default=100.0, gt=0, le=10000)

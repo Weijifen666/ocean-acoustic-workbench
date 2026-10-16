@@ -1,0 +1,320 @@
+.matlab-panel {
+  grid-column: 1 / -1;
+  padding: 26px;
+  background: #fff;
+  border: 1px solid #dfe7e9;
+  border-radius: 9px;
+}
+
+.matlab-panel-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.matlab-eyebrow {
+  font-size: 10px;
+  color: #8194a5;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.matlab-panel-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 21px;
+  font-weight: 600;
+  margin: 10px 0;
+  color: #203742;
+}
+
+.matlab-panel-heading p {
+  font-size: 12px;
+  color: #7b8d9e;
+  margin: 0;
+}
+
+.matlab-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.matlab-status-badge.ready {
+  background: #edf7f0;
+  color: #3b875d;
+  border: 1px solid #c8e6d2;
+}
+
+.matlab-status-badge.pending {
+  background: #fff5e8;
+  color: #b5833c;
+  border: 1px solid #fae2c0;
+}
+
+.matlab-detect-bar {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f7fafb;
+  border: 1px solid #e3edf0;
+  border-radius: 8px;
+}
+
+.matlab-detect-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #436270;
+  margin-bottom: 12px;
+}
+
+.matlab-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #fff;
+  border: 1px solid #d3e2e7;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #385a67;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.preset-chip:hover {
+  background: #eef7f6;
+  border-color: #278893;
+  color: #176f78;
+}
+
+.preset-chip.active {
+  background: #e5f4f4;
+  border-color: #1a7e87;
+  color: #105c63;
+  font-weight: 500;
+}
+
+.matlab-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 24px;
+  margin: 22px 0;
+}
+
+.matlab-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: #405c69;
+}
+
+.matlab-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.matlab-field input {
+  border: 1px solid #dce5ed;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #fff;
+  color: #2c4755;
+  font-size: 12px;
+  font-family: Consolas, monospace;
+}
+
+.matlab-field small {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #8397a5;
+}
+
+.matlab-actions-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.matlab-test-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 18px;
+  background: #f0f7f8;
+  border: 1px solid #23838e;
+  color: #166c75;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.matlab-test-btn:hover {
+  background: #e1f2f3;
+}
+
+.matlab-save-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 22px;
+  background: #23838e;
+  border: 1px solid #23838e;
+  color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.matlab-save-btn:hover {
+  background: #1a6a73;
+}
+
+.matlab-components-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.comp-card {
+  padding: 12px 14px;
+  border: 1px solid #e2ebef;
+  border-radius: 7px;
+  background: #fafcfd;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.comp-card.ok {
+  border-color: #d1ebd8;
+  background: #f7fbf8;
+}
+
+.comp-card.missing {
+  border-color: #f7ddd5;
+  background: #fef9f8;
+}
+
+.comp-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.comp-card.ok .comp-icon {
+  background: #e2f4e8;
+  color: #2b8c56;
+}
+
+.comp-card.missing .comp-icon {
+  background: #fcece8;
+  color: #c9523f;
+}
+
+.comp-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comp-info strong {
+  display: block;
+  font-size: 11px;
+  color: #2e4a57;
+  margin-bottom: 2px;
+}
+
+.comp-info small {
+  display: block;
+  font-size: 10px;
+  color: #79919f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.matlab-test-result {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 7px;
+  font-size: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.matlab-test-result.success {
+  background: #eef8f1;
+  border: 1px solid #c9e7d2;
+  color: #2c6e48;
+}
+
+.matlab-test-result.error {
+  background: #fff4ed;
+  border: 1px solid #efdaca;
+  color: #a35930;
+}
+
+.settings-tab-switcher {
+  margin-bottom: 22px;
+  width: fit-content;
+}
+
+.matlab-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #dbe6ea;
+  border-radius: 5px;
+  background: #fff;
+  color: #4a6673;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all .15s;
+}
+
+.matlab-header-btn:hover {
+  background: #f2f8f9;
+  border-color: #a4c9cf;
+}
+
+.mini-badge {
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  background: #edf7f1;
+  color: #3b875d;
+}
+
+@media (max-width: 800px) {
+  .matlab-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

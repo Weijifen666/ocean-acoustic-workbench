@@ -136,31 +136,167 @@ async def local_guard(request:Request,call_next):
 
 @app.get('/api/health')
 def health():
-    cfg=config();t=Path(cfg.get('toolbox_path','.'))
-    return {'version':'0.2.0','matlab_available':Path(cfg.get('matlab_path','')).is_file(),'matlab_version':'R2024a','solver_available':(t/'bin/kraken.exe').is_file() and (t/'bin/field.exe').is_file(),'model_configured':bool(cfg.get('api_key')),'knowledge_cards':len(claims()),'model_name':next((m['name'] for m in models.catalog()['models'] if m['provider']==cfg.get('provider') and m['id']==cfg.get('model')),cfg.get('model','')),'provider_name':next((p['name'] for p in models.catalog()['providers'] if p['id']==cfg.get('provider')),cfg.get('provider','')),'sources':len(sources()),'paused':PAUSED}
+    cfg = config()
+    t = Path(cfg.get('toolbox_path', '.'))
+    m_path = cfg.get('matlab_path', '')
+    matlab_ver = 'R2024b'
+    if m_path:
+        match = re.search(r'R202\d[ab]', m_path, re.IGNORECASE)
+        if match:
+            matlab_ver = match.group(0).upper()
+        elif Path(m_path).is_file():
+            matlab_ver = '已连接'
+    return {
+        'version': '0.2.0',
+        'matlab_available': Path(m_path).is_file() if m_path else False,
+        'matlab_version': matlab_ver,
+        'solver_available': (t / 'bin/kraken.exe').is_file() and (t / 'bin/field.exe').is_file(),
+        'model_configured': bool(cfg.get('api_key')),
+        'knowledge_cards': len(claims()),
+        'model_name': next((m['name'] for m in models.catalog()['models'] if m['provider'] == cfg.get('provider') and m['id'] == cfg.get('model')), cfg.get('model', '')),
+        'provider_name': next((p['name'] for p in models.catalog()['providers'] if p['id'] == cfg.get('provider')), cfg.get('provider', '')),
+        'sources': len(sources()),
+        'paused': PAUSED
+    }
+
 @app.get('/api/config')
 def get_config():
-    cfg=config();cfg['api_key_set']=bool(cfg.pop('api_key',''));return cfg
+    cfg = config()
+    cfg['api_key_set'] = bool(cfg.pop('api_key', ''))
+    return cfg
+
 @app.put('/api/config')
-async def save_config(request:Request):
-    data=await request.json();cfg=config()
-    old_provider=cfg.get('provider');new_provider=data.get('provider',old_provider)
-    if new_provider not in [p['id'] for p in models.catalog()['providers']]:raise HTTPException(422,'未知供应商')
-    if new_provider!=old_provider:
+async def save_config(request: Request):
+    data = await request.json()
+    cfg = config()
+    old_provider = cfg.get('provider')
+    new_provider = data.get('provider', old_provider)
+    if new_provider and new_provider not in [p['id'] for p in models.catalog()['providers']]:
+        raise HTTPException(422, '未知供应商')
+    if new_provider != old_provider:
         models.store_profile(cfg)
-        cfg['api_key']=models.profiles(config).get(new_provider,{}).get('api_key','')
-    allowed=['matlab_path','toolbox_path','project_path','provider','base_url','model','api_key','timeout_seconds']
+        cfg['api_key'] = models.profiles(config).get(new_provider, {}).get('api_key', '')
+    allowed = ['matlab_path', 'toolbox_path', 'project_path', 'provider', 'base_url', 'model', 'api_key', 'timeout_seconds']
     for key in allowed:
-        if key in data and (key!='api_key' or data[key]):cfg[key]=data[key]
-    if data.get('clear_api_key'):cfg.pop('api_key',None)
-    models.validate_endpoint(cfg['provider'],str(cfg.get('base_url','')))
-    if not 30<=int(cfg.get('timeout_seconds',240))<=600:raise HTTPException(422,'超时范围30–600秒')
+        if key in data and (key != 'api_key' or data[key]):
+            cfg[key] = data[key]
+    if data.get('clear_api_key'):
+        cfg.pop('api_key', None)
+    if cfg.get('provider') and cfg.get('base_url'):
+        models.validate_endpoint(cfg['provider'], str(cfg.get('base_url', '')))
+    if not 30 <= int(cfg.get('timeout_seconds', 240)) <= 600:
+        raise HTTPException(422, '超时范围30–600秒')
     models.store_profile(cfg)
-    CONFIG.write_text(json.dumps(cfg,ensure_ascii=False,indent=2),encoding='utf-8');return {'saved':True}
+    CONFIG.write_text(json.dumps(cfg, ensure_ascii=False, indent=2), encoding='utf-8')
+    return {'saved': True}
+
+@app.get('/api/matlab/detect')
+def detect_matlab():
+    cfg = config()
+    candidates_m = [
+        cfg.get('matlab_path', ''),
+        r"D:\Program Files\MATLAB\R2024b\bin\matlab.exe",
+        r"D:\Program Files\MATLAB\R2024a\bin\matlab.exe",
+        r"C:\Program Files\MATLAB\R2024b\bin\matlab.exe",
+        r"C:\Program Files\MATLAB\R2024a\bin\matlab.exe",
+        r"C:\Program Files\MATLAB\R2023b\bin\matlab.exe",
+        r"C:\Program Files\MATLAB\R2023a\bin\matlab.exe",
+    ]
+    for d in [r"D:\Program Files\MATLAB", r"C:\Program Files\MATLAB"]:
+        try:
+            dp = Path(d)
+            if dp.is_dir():
+                for sub in dp.iterdir():
+                    exe = sub / 'bin' / 'matlab.exe'
+                    if exe.is_file() and str(exe) not in candidates_m:
+                        candidates_m.append(str(exe))
+        except Exception:
+            pass
+
+    candidates_tb = [
+        cfg.get('toolbox_path', ''),
+        r"D:\matlab-project&tool\at-matlab\at",
+        r"C:\at",
+        r"D:\at",
+        str(ROOT.parent / "at"),
+        str(ROOT / "at"),
+    ]
+
+    detected_matlab = []
+    for p in candidates_m:
+        if p and Path(p).is_file() and p not in detected_matlab:
+            detected_matlab.append(p)
+
+    detected_toolbox = []
+    for p in candidates_tb:
+        if p and Path(p).is_dir() and p not in detected_toolbox:
+            detected_toolbox.append(p)
+
+    return {
+        'detected_matlab': detected_matlab,
+        'detected_toolbox': detected_toolbox,
+        'current_matlab': cfg.get('matlab_path', ''),
+        'current_toolbox': cfg.get('toolbox_path', '')
+    }
+
+@app.post('/api/matlab/check')
+async def check_matlab(request: Request):
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    cfg = config()
+    m_path = data.get('matlab_path') or cfg.get('matlab_path', '')
+    tb_path = data.get('toolbox_path') or cfg.get('toolbox_path', '')
+
+    exe_p = Path(m_path) if m_path else None
+    tb_p = Path(tb_path) if tb_path else None
+
+    matlab_ok = bool(exe_p and exe_p.is_file())
+    ver_match = re.search(r'R202\d[ab]', m_path, re.I) if m_path else None
+    matlab_ver = ver_match.group(0).upper() if ver_match else ('可用' if matlab_ok else '未检测到')
+
+    kraken_ok = bool(tb_p and (tb_p / 'bin' / 'kraken.exe').is_file())
+    bellhop_ok = bool(tb_p and (tb_p / 'bin' / 'bellhop.exe').is_file())
+    field_ok = bool(tb_p and (tb_p / 'bin' / 'field.exe').is_file())
+    scooter_ok = bool(tb_p and (tb_p / 'bin' / 'scooter.exe').is_file())
+    bounce_ok = bool(tb_p and (tb_p / 'bin' / 'bounce.exe').is_file())
+    read_ok = bool(tb_p and (tb_p / 'ReadWrite' / 'read_modes.m').is_file())
+    shd_ok = bool(tb_p and (tb_p / 'ReadWrite' / 'read_shd.m').is_file())
+    env_ok = bool(tb_p and (tb_p / 'tests' / 'Munk' / 'MunkK.env').is_file())
+
+    components = [
+        {'id': 'matlab', 'name': 'MATLAB 核心引擎', 'path': m_path, 'ok': matlab_ok, 'desc': f'版本: {matlab_ver}' if matlab_ok else '可执行文件不存在'},
+        {'id': 'kraken', 'name': 'KRAKEN 简正波求解器', 'path': str(tb_p / 'bin' / 'kraken.exe') if tb_p else '', 'ok': kraken_ok, 'desc': 'KRAKEN / KRAKENC 二进制求解器'},
+        {'id': 'bellhop', 'name': 'BELLHOP 射线求解器', 'path': str(tb_p / 'bin' / 'bellhop.exe') if tb_p else '', 'ok': bellhop_ok, 'desc': '高斯光束与声线追踪求解器'},
+        {'id': 'field', 'name': 'FIELD 场分布合成器', 'path': str(tb_p / 'bin' / 'field.exe') if tb_p else '', 'ok': field_ok, 'desc': '声压场与传播损失合成'},
+        {'id': 'scooter', 'name': 'SCOOTER 快速场求解器', 'path': str(tb_p / 'bin' / 'scooter.exe') if tb_p else '', 'ok': scooter_ok, 'desc': 'FFP 快速场积分计算'},
+        {'id': 'readwrite', 'name': 'AT 数据读写库', 'path': str(tb_p / 'ReadWrite') if tb_p else '', 'ok': read_ok and shd_ok, 'desc': 'read_modes.m, read_shd.m 数据读取函数'},
+        {'id': 'testcases', 'name': '基准测试算例', 'path': str(tb_p / 'tests' / 'Munk') if tb_p else '', 'ok': env_ok, 'desc': 'Munk 深海 5000m 环境文件'}
+    ]
+
+    all_ok = matlab_ok and kraken_ok and field_ok and read_ok
+    return {
+        'ok': all_ok,
+        'matlab_version': matlab_ver,
+        'components': components,
+        'summary': 'MATLAB 与 Acoustics Toolbox 计算环境检测全部通过，可执行全套声学仿真。' if all_ok else '部分计算组件缺失，请检查路径配置。'
+    }
+
 @app.post('/api/environment/check')
 def check_environment():
-    cfg=config();tool=Path(cfg.get('toolbox_path','.'));prj=Path(cfg.get('project_path','.'))
-    return {'checks':[{'name':'MATLAB 可执行程序','ok':Path(cfg.get('matlab_path','')).is_file(),'detail':cfg.get('matlab_path','')},{'name':'KRAKEN / FIELD 求解器','ok':all((tool/'bin'/x).is_file() for x in ['kraken.exe','field.exe']),'detail':str(tool/'bin')},{'name':'Munk 成对输入','ok':all((tool/'tests/Munk'/x).is_file() for x in ['MunkK.env','MunkK.flp']),'detail':'5000 m 深海；50 Hz 原始示例'},{'name':'授权项目目录','ok':prj.is_dir(),'detail':str(prj)},{'name':'模型 API Key','ok':bool(cfg.get('api_key')),'detail':'已保存' if cfg.get('api_key') else '未配置；图谱浏览与模板仿真仍可用'}]}
+    cfg = config()
+    tool = Path(cfg.get('toolbox_path', '.'))
+    prj = Path(cfg.get('project_path', '.'))
+    return {
+        'checks': [
+            {'name': 'MATLAB 可执行程序', 'ok': Path(cfg.get('matlab_path', '')).is_file(), 'detail': cfg.get('matlab_path', '')},
+            {'name': 'KRAKEN / FIELD 求解器', 'ok': all((tool / 'bin' / x).is_file() for x in ['kraken.exe', 'field.exe']), 'detail': str(tool / 'bin')},
+            {'name': 'Munk 成对输入', 'ok': all((tool / 'tests/Munk' / x).is_file() for x in ['MunkK.env', 'MunkK.flp']), 'detail': '5000 m 深海；50 Hz 原始示例'},
+            {'name': '授权项目目录', 'ok': prj.is_dir(), 'detail': str(prj)},
+            {'name': '模型 API Key', 'ok': bool(cfg.get('api_key')), 'detail': '已保存' if cfg.get('api_key') else '未配置；图谱浏览与模板仿真仍可用'}
+        ]
+    }
 @app.get('/api/graph')
 def graph():return knowledge.graph_data()
 @app.get('/api/graph/path')

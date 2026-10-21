@@ -21,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import knowledge, models, ray_tracer, code_sandbox, simulation, science
+import knowledge, models, ray_tracer, code_sandbox, simulation, science, acoustic_cookbook
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=ROOT/'.local';LOCAL.mkdir(exist_ok=True)
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -801,25 +801,37 @@ async def chat(body:Chat):
         used=False
     else:
         tb_path = cfg.get('toolbox_path', r"D:\matlab-project&tool\at-matlab\at")
+        
+        # 方案 A: 动态基准 Cookbook 匹配
+        exemplar = acoustic_cookbook.match_cookbook_exemplar(body.message)
+        cookbook_inject = ""
+        if exemplar:
+            cookbook_inject = f"\n\n【针对本次任务的官方 Acoustics Toolbox 基准规范与物理典范 ({exemplar['title']})】：\n"
+            cookbook_inject += exemplar.get('physics_summary', '') + "\n"
+            if exemplar.get('matlab_bellhop_code'):
+                cookbook_inject += f"【官方 BELLHOP 规范参考代码】：\n```matlab\n{exemplar['matlab_bellhop_code']}\n```\n"
+            if exemplar.get('matlab_kraken_code'):
+                cookbook_inject += f"【官方 KRAKEN 规范参考代码】：\n```matlab\n{exemplar['matlab_kraken_code']}\n```\n"
+
+        # 方案 B: 四阶段重构思维链 (CoT) 协议
         sys_prompt = (
-            "你是现代海洋声学智能体助手。依据所附知识卡及 related_triples 图谱关系回答并引用编号。\n"
-            "你具备完备的海洋声学建模仿真与代码沙箱求解能力，包含：\n"
-            "1. 浅海/深海声线追踪仿真（run_ray_simulation 工具）：可精确计算声线传播轨迹、海面与海底反射次数，并输出轨迹图；\n"
-            "2. 通用声学代码沙箱（run_acoustic_code 工具）：当面对任意开放式声学任务（如 Pekeris 波导、声影区、反射系数、简正波截止频率、多途时延冲激响应等）时，可自主编写并执行 MATLAB 或 Python 仿真代码，自动生成图表并返回数据；\n"
-            "3. 理想深海简正波声场计算（run_ocean_simulation 工具）：调用本机 MATLAB KRAKEN 求解器计算 Munk 声场传播损失。\n"
-            "【极速执行准则】：\n"
-            "- 当用户要求仿真、计算或画图时，必须在第 1 轮直接调用 run_acoustic_code（若指定 MATLAB/AT 则选 matlab，其他可选 python）或 run_ray_simulation！严禁先调用 list_project_files 或 read_project_file 探测，一步到位写出完整可执行脚本。\n"
-            f"- 本机 Acoustics Toolbox (AT) 绝对路径为: {tb_path}。环境变量 AT_PATH 已设为该值，MATLAB 中变量 tb 已自动注入，无需寻找或搜索路径！\n"
-            "- 严禁在脚本中编写 dir('C:\\**') 或 dir('D:\\**') 全盘搜索！直接使用 tb 变量或 getenv('AT_PATH') 即可。\n"
-            "- 若使用 MATLAB + Acoustics Toolbox 仿真 Pekeris 波导或常规波导：\n"
-            "  * .env 环境文件格式要求（切勿遗漏 'CVW' 和网格数）：\n"
-            "    fid = fopen('pekeris.env', 'w');\n"
-            "    fprintf(fid, \"'Pekeris Waveguide'\\n%.1f\\n1\\n'CVW'\\n10000 0.0 %.1f\\n 0.0 %.1f 0 %.1f /\\n %.1f %.1f /\\n'A' 0.0\\n %.1f %.1f 0.0 %.1f 0.0 /\\n1400.0 20000.0\\n0.0\\n1\\n50.0 /\\n101\\n0.0 %.1f /\\n\", freq, H, c1, rho1, H, c1, H, c2, rho2, H);\n"
-            "    fclose(fid);\n"
-            "  * 执行 kraken 命令：system(['\"', fullfile(tb,'bin','kraken.exe'), '\" pekeris']);\n"
-            "  * 读取模态必须传入文件名与频率：clear read_modes_bin; Mods = read_modes('pekeris.mod', freq);\n"
-            "  * 严格传播模态满足 real(k) >= 2*pi*freq/c_bottom 且衰减系数 abs(imag(k)) < 1e-6；\n"
-            "  * 绘图后使用 saveas(gcf, 'pekeris_modes.png') 保存，并在最终回复中用工具返回的真实图片 URL（如 ray_plot_url 或 /outputs/*.png）通过 Markdown 语法 ![图表说明](真实URL) 插入展示，严密解析物理机制。\n"
+            "你是现代海洋声学顶尖智能体学者与仿真专家。依据所附知识库、图谱关系以及官方 Acoustics Toolbox (AT) 规范，严格遵循四阶段思维链 (CoT) 协议解答并执行仿真：\n\n"
+            "【阶段一：波导拓扑分类与边界条件形式化】：\n"
+            "- 准确识别波导几何与剖面特征（如表面声道正梯度混合层、浅海等速 Pekeris 波导、深海 Munk 声道轴）。\n"
+            "- 严格形式化上/下界面声学边界（海面压力释放 Dirichlet 边界 V=-1；海底声学半空间连续性条件及临界掠射角）。\n\n"
+            "【阶段二：算法与求解器选型准则】：\n"
+            "- 声线轨迹追踪、射线路径、表面声道捕获与泄漏：首选 BELLHOP（生成规范 .env，以 'R' 模式运行 bellhop.exe 生成 .ray 文件，并用 plotray 绘图）。\n"
+            "- 浅海简正波离散模态、本征深度函数、相速度、水平波数与截止频率：首选 KRAKEN（生成标准 .env，运行 kraken.exe 生成 .mod，用 read_modes 读取分析）。\n"
+            "- 全场声传播损失 (TL) 与声强云图：首选 KRAKEN + field.exe 或 BELLHOP 'C' 模式，使用 plotshd 并反转色标 (caxisrev)。\n\n"
+            "【阶段三：极速执行与出版级绘图要求】：\n"
+            f"- Acoustics Toolbox 根目录已就绪: {tb_path}，已注入变量 tb 与环境变量 AT_PATH。严禁全盘搜索！\n"
+            "- 当需要仿真计算时，必须在第 1 轮直接调用 run_acoustic_code（选择 matlab）一步到位执行完整仿真脚本！\n"
+            "- 绘图要求：必须绘制具有科研出版物质量的双栏或多子图图表，包含专业坐标轴单位、网格、边界界面标记线、声源位置、图例及关键物理注释，使用 saveas(gcf, 'xxx.png') 保存。\n\n"
+            "【阶段四：严谨理论归因与数学公式解析】：\n"
+            "- 仿真完成后，必须在最终回复中结合波动理论给出深入、严谨的物理机制分析，绝不可只发图不解释！\n"
+            "- 必须列出核心公式（如 Snell 临界角公式、波动方程特征色散方程、模态截止频率公式），并与仿真结果精确数值对齐！\n"
+            + cookbook_inject + "\n"
+            + "【相关知识库卡片】：\n"
             + json.dumps(evidence, ensure_ascii=False)
         )
         msgs=[{'role':'system','content':sys_prompt}]
@@ -849,7 +861,7 @@ async def chat(body:Chat):
                 'type': 'function',
                 'function': {
                     'name': 'run_acoustic_code',
-                    'description': f'通用海洋声学代码沙箱。支持动态生成并执行 Python 或 MATLAB/AT 仿真代码！Acoustics Toolbox (AT) 路径已配置为: {tb_path}，已添加到 MATLAB 路径并注入变量 tb 与环境变量 AT_PATH。可以直接使用 tb 调用 kraken.exe, field.exe, bellhop.exe 等，或直接使用 read_modes, read_shd 等函数。严禁在代码中写全盘搜索 dir("C:\\\\**")！',
+                    'description': f'通用海洋声学代码沙箱。支持动态生成并执行 Python 或 MATLAB/AT 仿真代码！Acoustics Toolbox (AT) 路径已配置为: {tb_path}，已添加到 MATLAB 路径并注入变量 tb 与环境变量 AT_PATH。可以直接使用 tb 调用 kraken.exe, field.exe, bellhop.exe 等，或直接使用 read_modes, read_shd, plotray, plotmode, plotshd 等函数。严禁在代码中写全盘搜索 dir("C:\\\\**")！',
                     'parameters': {
                         'type': 'object',
                         'properties': {
@@ -890,7 +902,9 @@ async def chat(body:Chat):
                     r=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=payload)
                     if r.status_code!=200:raise RuntimeError('模型接口返回 '+str(r.status_code))
                     result=r.json()['choices'][0]['message'];calls=result.get('tool_calls')
-                    if not calls:reply=result.get('content') or '模型未返回文字内容';break
+                    if not calls:
+                        reply=result.get('content') or '模型未返回文字内容'
+                        break
                     msgs.append(result)
                     has_successful_sim = False
                     for call in calls:
@@ -924,17 +938,39 @@ async def chat(body:Chat):
                     if has_successful_sim:
                         # 仿真已成功完成并生成数据，下一轮强制关闭工具调用，令模型直接输出图表解析与总结
                         tools = None
+                        img_note = "\n".join(f"- 图片地址: `{img}`" for img in last_generated_images)
+                        msgs.append({
+                            'role': 'user',
+                            'content': (
+                                "【仿真计算已成功完成并生成图表】\n"
+                                f"已生成的图像资源：\n{img_note}\n\n"
+                                "请根据阶段四【严谨理论归因与数学公式解析】的要求，提供完整的专业学术答复：\n"
+                                "1. 深入剖析本任务的物理机制（包含波动方程/Snell定律、反转深度/临界掠射角/模态截止判据、边界条件相移、能量捕获与泄漏机理）；\n"
+                                "2. 将理论解析公式与上述仿真结果进行精确量化对齐（列出关键数值对比）；\n"
+                                "3. 在回复正文中规范使用 Markdown 图片语法插入生成的图片：`![图表说明](图片真实URL)`；\n"
+                                "4. 严禁再次输出任何工具调用标记或重复执行脚本代码，直接输出条理清晰的学术总结！"
+                            )
+                        })
                 else:reply='已达到工具调用轮次上限。'
+
+            # 过滤与清理任何可能泄漏的 DSML 标签
+            if '<｜｜DSML｜｜' in reply or '<|DSML|' in reply:
+                reply = re.sub(r'<[|｜]{1,2}DSML[|｜]{1,2}[^>]*>', '', reply)
+                reply = re.sub(r'</[|｜]{1,2}DSML[|｜]{1,2}[^>]*>', '', reply)
+                reply = re.sub(r'parameter name="[^"]*"[^>]*>', '', reply)
+                reply = re.sub(r'invoke name="[^"]*"[^>]*>', '', reply)
+
             if last_generated_images:
                 for ph in ['(image_url_placeholder)', '(image_url)', '(placeholder)', '(url)']:
                     if ph in reply:
                         reply = reply.replace(ph, f"({last_generated_images[0]})")
-                if '![' not in reply:
-                    reply += "\n\n" + "\n".join(f"![声学仿真图表]({u})" for u in last_generated_images)
+                for img in last_generated_images:
+                    if img not in reply:
+                        reply += f"\n\n![声学仿真图表]({img})"
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
-    with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
-    return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
+        with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
+        return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
 
 if (ROOT/'dist').exists():app.mount('/',StaticFiles(directory=ROOT/'dist',html=True),name='frontend')
 if __name__=='__main__':

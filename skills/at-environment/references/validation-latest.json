@@ -752,6 +752,17 @@
       "z_m": 30,
       "range_m": "5-3400",
       "note": "AT tests/wedge（25 Hz，水 1500/底 1700/ρ1.5/0.5dB/λ，楔形 200→0 m），SimplePE vs RAM；大偏差集中在干涉零点。"
+    },
+    "bellhop3d_free_field": {
+      "median_dB": -0.009,
+      "p95_dB": 0.001,
+      "bearing_deg": 0,
+      "note": "AT Bellhop3DTests/free/freeBhat.env，5 Hz，源 3000 m，与解析 exp(ikr)/r 对照。"
+    },
+    "sparc_head": {
+      "peak_arrival_s": 0.112,
+      "expected_head_wave_s": 0.111,
+      "note": "AT tests/head，100 Hz，r=200 m z=50 m；首波为头部波（快于直达波 0.137 s），与理论一致。"
     }
   }
 }

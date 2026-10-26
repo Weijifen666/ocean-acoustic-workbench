@@ -365,7 +365,7 @@ def jobs():
 @app.get('/api/jobs/{id}')
 def details(id:str):
     if RESEARCH.get(id):return RESEARCH.details(id)
-    v=job(id);folder=run_dir(id);v['log']=(folder/'run.log').read_text(encoding='utf-8',errors='replace')[-50000:] if (folder/'run.log').exists() else '等待执行器领取任务…'
+    v=job(id);folder=run_dir(id);v['log']=task_files.read_log(folder/'run.log',50000) if (folder/'run.log').exists() else '等待执行器领取任务…'
     v['artifacts']=[p.name for p in folder.glob('*') if p.is_file()] if folder.exists() else []
     v['events']=STORE.events(id)
     if v['state']=='SUCCEEDED':v['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))

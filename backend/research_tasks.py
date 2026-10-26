@@ -154,4 +154,4 @@ class Engine:
             if self.lookup(identity)['state']!='CANCELLED':
                 if code!=0:self.update(identity,'FAILED','脚本超时' if timed_out else '脚本退出码 '+str(code))
                 elif self.stop.is_set():self.update(identity,'FAILED','对话已停止，脚本已结束，可继续整理研究报告')
-        return {**record,'id':identity,'error':('脚本执行失败，请查看日志并修正' if code else None),'log_tail':(folder/'run.log').read_text(encoding='utf-8',errors='replace')[-8000:]}
+        return {**record,'id':identity,'error':('脚本执行失败，请查看日志并修正' if code else None),'log_tail':task_files.read_log(folder/'run.log',8000)}

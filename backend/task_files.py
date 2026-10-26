@@ -25,3 +25,20 @@ def reveal(root,identity):
     if not target.is_dir():raise FileNotFoundError('任务文件夹尚未生成或已删除')
     os.startfile(str(target))
     return target
+
+def read_log(path,tail=None):
+    """Read a run log that may mix UTF-8 (Python) and GBK (MATLAB/Fortran) output."""
+    raw=Path(path).read_bytes()
+    if raw.startswith(b'\xef\xbb\xbf'):raw=raw[3:]
+    try:
+        text=raw.decode('utf-8')
+    except UnicodeDecodeError:
+        lines=[]
+        for line in raw.split(b'\n'):
+            try:lines.append(line.decode('utf-8'))
+            except UnicodeDecodeError:
+                try:lines.append(line.decode('gbk'))
+                except UnicodeDecodeError:lines.append(line.decode('utf-8',errors='replace'))
+        text='\n'.join(lines)
+    return text[-tail:] if tail else text
+

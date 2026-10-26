@@ -12,7 +12,7 @@ import subprocess
 import os
 import threading
 import time
-import agent_context, materials, ocean_data, dsh_bridge, context_budget
+import agent_context, materials, ocean_data, dsh_bridge, context_budget, task_files
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -105,7 +105,7 @@ class ResearchService:
     def details(self, identity):
         value = self.lookup(identity); folder = self.local/'runs'/identity
         value['artifacts'] = [p.name for p in folder.glob('*') if p.is_file()]
-        value['log'] = (folder/'run.log').read_text(encoding='utf-8',errors='replace')[-10000:] if (folder/'run.log').exists() else '等待运行脚本或整理报告。'
+        value['log'] = task_files.read_log(folder/'run.log',10000) if (folder/'run.log').exists() else '等待运行脚本或整理报告。'
         if value['state']=='SUCCEEDED' and (folder/'summary.json').is_file():value['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
         value['events'] = []
         return value

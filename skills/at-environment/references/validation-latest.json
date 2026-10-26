@@ -720,5 +720,30 @@
       }
     ],
     "note": "弹性介质由 KRAKEN 原生支持；KRAKEN 在弹性介质中不计衰减（ICE 用例 TL 偏低，见 TLslices runtests 注释）。"
+  },
+  "p3_2026_10_26_validation": {
+    "date": "2026-10-26",
+    "scope": "解析解自由场对照（BELLHOP/SCOOTER vs exp(ikr)/r）+ Pekeris 跨模型（KRAKEN vs KRAKENC）。",
+    "free_field_bellhop": {
+      "median_dB": 0.0,
+      "p95_dB": 0.001,
+      "max_dB": 3.762,
+      "slope_dB_per_decade": 19.44,
+      "note": "AT free/freePointB.env，5 Hz，源 3000 m，0.025–10 km"
+    },
+    "free_field_scooter": {
+      "median_dB": 0.0,
+      "p95_dB": 0.004,
+      "max_dB": 2.0,
+      "slope_dB_per_decade": 19.44,
+      "note": "AT free/freeSPoint.env"
+    },
+    "pekeris_kraken_vs_krakenc": {
+      "median_dB": 0.0,
+      "p95_dB": 0.0,
+      "max_dB": 0.0,
+      "points": 501,
+      "note": "AT TLslices/pekeris.env，10 Hz，5000 m 深水，200–220 km"
+    }
   }
 }

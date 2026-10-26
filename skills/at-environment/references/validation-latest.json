@@ -744,6 +744,14 @@
       "max_dB": 0.0,
       "points": 501,
       "note": "AT TLslices/pekeris.env，10 Hz，5000 m 深水，200–220 km"
+    },
+    "wedge_simplepe_vs_ram": {
+      "median_dB": 0.54,
+      "p95_dB": 4.47,
+      "max_dB": 17.24,
+      "z_m": 30,
+      "range_m": "5-3400",
+      "note": "AT tests/wedge（25 Hz，水 1500/底 1700/ρ1.5/0.5dB/λ，楔形 200→0 m），SimplePE vs RAM；大偏差集中在干涉零点。"
     }
   }
 }

@@ -1733,6 +1733,804 @@
       "source_claim_ids": [
         "K046"
       ]
+    },
+    {
+      "id": "wavenumber_integration",
+      "label": "波数积分方法",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "波数积分法把声场写成深度分离方程的谱积分（沿水平波数积分）。水声学中常称 FFP（快速场程序），早期用 FFT 计算谱积分。",
+      "key_points": [
+        "与简正波同源，但积分路径不同：波数积分直接数值求积分，简正波用复围线积分的留数之和。",
+        "水平分层介质中，声场 = 深度本征函数 × 水平传播因子的波数积分。"
+      ],
+      "references": [
+        {
+          "source_id": "S22",
+          "pdf_page": 2,
+          "locator": "PDF 第 2 页"
+        },
+        {
+          "source_id": "S22",
+          "pdf_page": 5,
+          "locator": "PDF 第 5 页"
+        }
+      ],
+      "formula": "p(r,z)=∫ g(k_r,z) H₀⁽¹⁾(k_r r) k_r dk_r",
+      "conditions": "距离无关（水平分层）时严格；距离相关需分段或与耦合/PE 结合。",
+      "misconception": "不要把波数积分当成简正波的替代品：两者数学基础相同，只是积分求法不同。",
+      "example": "SCOOTER 就是波数积分的 AT 实现。",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K047"
+      ]
+    },
+    {
+      "id": "depth_separated",
+      "label": "深度分离方程",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "对水平分层介质做水平方向的积分变换，把三维 Helmholtz 方程化为只含深度的常微分方程（深度分离方程）。",
+      "key_points": [
+        "深度分离方程的解给出各阶深度本征函数。",
+        "海面与海底边界条件决定本征函数的形式。"
+      ],
+      "references": [
+        {
+          "source_id": "S22",
+          "pdf_page": 5,
+          "locator": "PDF 第 5 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "水平分层假设：声速/密度只随深度变化。",
+      "misconception": "深度分离方程不是简正波独有，波数积分也用它。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K048"
+      ]
+    },
+    {
+      "id": "fft_spectral",
+      "label": "谱积分与 FFT",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "波数积分的谱积分可用 FFT 加速（FFP 名称由此而来）。等间隔波数采样会引入混叠，积分围线与分支割线影响泄漏/连续谱贡献。",
+      "key_points": [
+        "FFT 实现要求等间隔波数采样，存在混叠（aliasing）。",
+        "积分围线的选择决定哪些极点/分支被计入。"
+      ],
+      "references": [
+        {
+          "source_id": "S22",
+          "pdf_page": 53,
+          "locator": "PDF 第 53 页"
+        },
+        {
+          "source_id": "S22",
+          "pdf_page": 54,
+          "locator": "PDF 第 54 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "需要足够的波数采样与合适的围线。",
+      "misconception": "把 FFT 混叠当成物理泄漏。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K049"
+      ]
+    },
+    {
+      "id": "propagator_matrix",
+      "label": "传播函数矩阵 / 全局矩阵",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "分层介质中把每层的传播函数写成矩阵，层间连续条件拼成全局矩阵后求解；也可逐层递推。",
+      "key_points": [
+        "传播函数矩阵法逐层递推；全局矩阵法一次性求解全部层。",
+        "数值稳定性取决于矩阵条件数与层厚。"
+      ],
+      "references": [
+        {
+          "source_id": "S22",
+          "pdf_page": 19,
+          "locator": "PDF 第 19 页"
+        },
+        {
+          "source_id": "S22",
+          "pdf_page": 29,
+          "locator": "PDF 第 29 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "层数多或层很薄时需注意数值稳定性。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K050"
+      ]
+    },
+    {
+      "id": "scooter",
+      "label": "SCOOTER 工具",
+      "kind": "knowledge",
+      "chapter": "toolbox",
+      "color": "#ffcd73",
+      "overview": "SCOOTER 是 AT 的波数积分求解器：先算 Green 函数（.grn），再由 fieldsco/fields 转成声场；适合水平分层、距离无关环境。",
+      "key_points": [
+        "输入 ENV + FLP，输出 GRN/SHD。",
+        "与简正波同源，但直接数值积分，能处理连续谱与泄漏贡献。"
+      ],
+      "references": [
+        {
+          "source_id": "S20",
+          "locator": "at/scooter.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/free/freeSPoint.env"
+        }
+      ],
+      "formula": "",
+      "conditions": "距离无关；距离相关需分段或用 PE。",
+      "misconception": "不要把 SCOOTER 与 KRAKEN 的模态文件混用。",
+      "example": "SCOOTER 在自由场已验证 0.000 dB。",
+      "diagram": "",
+      "tags": [
+        "工具链"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K051"
+      ]
+    },
+    {
+      "id": "wave_equation",
+      "label": "波动方程",
+      "kind": "knowledge",
+      "chapter": "basics",
+      "color": "#68a8ff",
+      "overview": "波动方程描述声压随时间和空间的演化；对时间做频域变换后得到 Helmholtz 方程。",
+      "key_points": [
+        "线性波动方程是大多数传播模型的起点。",
+        "介质参数（声速、密度）进入方程系数。"
+      ],
+      "references": [
+        {
+          "source_id": "S21",
+          "pdf_page": 2,
+          "locator": "PDF 第 2 页"
+        },
+        {
+          "source_id": "S21",
+          "pdf_page": 3,
+          "locator": "PDF 第 3 页"
+        }
+      ],
+      "formula": "∇²p - (1/c²) ∂²p/∂t² = -s(t)δ(r)",
+      "conditions": "线性、无流、静态介质。",
+      "misconception": "不要把波动方程与 Helmholtz 方程混为一谈（后者是频域形式）。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K052"
+      ]
+    },
+    {
+      "id": "integral_transform",
+      "label": "积分变换",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "对水平方向做积分变换（Hankel/傅里叶），把二维/三维问题化为深度方向的一维问题；是波数积分与简正波共同的基础。",
+      "key_points": [
+        "积分变换把偏微分方程化为常微分方程。",
+        "逆变换给出声场的空间分布。"
+      ],
+      "references": [
+        {
+          "source_id": "S21",
+          "pdf_page": 21,
+          "locator": "PDF 第 21 页"
+        },
+        {
+          "source_id": "S21",
+          "pdf_page": 26,
+          "locator": "PDF 第 26 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "水平分层假设。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K053"
+      ]
+    },
+    {
+      "id": "image_method",
+      "label": "镜面法",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "镜面法用虚源代替边界反射，把总声场写成实源与虚源声场的叠加；适合简单平面边界。",
+      "key_points": [
+        "虚源数量随反射次数增加。",
+        "只对理想边界（压力释放/刚性）严格。"
+      ],
+      "references": [
+        {
+          "source_id": "S21",
+          "pdf_page": 2,
+          "locator": "PDF 第 2 页"
+        },
+        {
+          "source_id": "S21",
+          "pdf_page": 35,
+          "locator": "PDF 第 35 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "平面边界、理想反射条件。",
+      "misconception": "把镜面法用于粗糙或复杂边界。",
+      "example": "Lloyd 镜像就是镜面法的典型例子。",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K054"
+      ]
+    },
+    {
+      "id": "pekeris_waveguide",
+      "label": "Pekeris 波导",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "Pekeris 两层模型（均匀水层 + 均匀半空间底）是简正波方法的经典可解析算例，用于理解模态、截止频率与泄漏。",
+      "key_points": [
+        "两层模型可写出解析模态解。",
+        "是验证数值模型的常用基准。"
+      ],
+      "references": [
+        {
+          "source_id": "S21",
+          "pdf_page": 2,
+          "locator": "PDF 第 2 页"
+        },
+        {
+          "source_id": "S23",
+          "pdf_page": 2,
+          "locator": "PDF 第 2 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "两层均匀介质、平面边界。",
+      "misconception": "把 Pekeris 解当成任意海底的通用解。",
+      "example": "AT 的 tests/PekerisRD 就是它。",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K055"
+      ]
+    },
+    {
+      "id": "modal_orthogonality",
+      "label": "模态正交与完备",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "简正波本征函数在加权内积下正交；完备性保证任意源分布都能展开成模态之和。",
+      "key_points": [
+        "正交性用于求展开系数。",
+        "完备性保证模态展开的精度。"
+      ],
+      "references": [
+        {
+          "source_id": "S23",
+          "pdf_page": 4,
+          "locator": "PDF 第 4 页"
+        },
+        {
+          "source_id": "S23",
+          "pdf_page": 5,
+          "locator": "PDF 第 5 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "对应 Sturm-Liouville 型本征值问题。",
+      "misconception": "忽略权重函数（密度）的正交关系。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K056"
+      ]
+    },
+    {
+      "id": "contour_residue",
+      "label": "复围线积分与留数",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "简正波声场由波数积分经复围线变形得到：围线内极点的留数之和给出离散模态，分支割线对应连续谱。",
+      "key_points": [
+        "留数之和 = 离散模态贡献。",
+        "分支割线 = 连续谱/泄漏贡献。"
+      ],
+      "references": [
+        {
+          "source_id": "S23",
+          "pdf_page": 17,
+          "locator": "PDF 第 17 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "围线选择决定哪些极点被计入。",
+      "misconception": "把留数之和当成完整解（忽略连续谱）。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K057"
+      ]
+    },
+    {
+      "id": "wkb",
+      "label": "WKB 近似",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "WKB 近似用缓变介质中的局部波数描述垂向模态，适合高频、声速变化缓慢的情形。",
+      "key_points": [
+        "高频下模态可近似为局部驻波。",
+        "转折点附近 WKB 失效。"
+      ],
+      "references": [
+        {
+          "source_id": "S23",
+          "pdf_page": 24,
+          "locator": "PDF 第 24 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "高频、缓变剖面；转折点需特殊处理。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K058"
+      ]
+    },
+    {
+      "id": "sturm_liouville",
+      "label": "Sturm-Liouville 本征值",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "简正波方程是 Sturm-Liouville 型本征值问题，本征值（水平波数）与本征函数（垂向模态）成对出现。",
+      "key_points": [
+        "本征值决定相速度与衰减。",
+        "本征函数的正交性来自 Sturm-Liouville 理论。"
+      ],
+      "references": [
+        {
+          "source_id": "S23",
+          "pdf_page": 27,
+          "locator": "PDF 第 27 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "自伴算符 + 适当边界条件。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K059"
+      ]
+    },
+    {
+      "id": "perturbation",
+      "label": "微扰理论",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "当环境相对基准有小的变化时，可用微扰理论估计本征值与本征函数的变化，而不必重解本征值问题。",
+      "key_points": [
+        "一阶微扰给出本征值修正。",
+        "大扰动或模态交叉时微扰失效。"
+      ],
+      "references": [
+        {
+          "source_id": "S23",
+          "pdf_page": 31,
+          "locator": "PDF 第 31 页"
+        },
+        {
+          "source_id": "S23",
+          "pdf_page": 38,
+          "locator": "PDF 第 38 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "扰动足够小、模态不交叉。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K060"
+      ]
+    },
+    {
+      "id": "paraxial",
+      "label": "近轴近似",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "抛物方程的核心近似：假设声能主要沿近轴方向传播，忽略后向散射，把 Helmholtz 方程化为沿距离步进的抛物方程。",
+      "key_points": [
+        "近轴近似带来前向传播的单向方程。",
+        "大角度（宽角）需 Pade 等改进。"
+      ],
+      "references": [
+        {
+          "source_id": "S24",
+          "pdf_page": 4,
+          "locator": "PDF 第 4 页"
+        },
+        {
+          "source_id": "S24",
+          "pdf_page": 6,
+          "locator": "PDF 第 6 页"
+        }
+      ],
+      "formula": "∂ψ/∂r = (i/2k₀)(∂²ψ/∂z² + k₀²(n²-1))ψ",
+      "conditions": "近轴、前向传播；不处理后向散射与陡坡。",
+      "misconception": "把 PE 用于强后向散射或大角度问题。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K061"
+      ]
+    },
+    {
+      "id": "pade_wideangle",
+      "label": "Pade / 广角 PE",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "用 Pade 有理近似替代平方根算子，扩展 PE 的适用角度（广角 PE），常见于 RAM 与 Claerbout 型方程。",
+      "key_points": [
+        "Pade 阶数越高，适用角度越大。",
+        "高阶 Pade 增加计算量与稳定性要求。"
+      ],
+      "references": [
+        {
+          "source_id": "S24",
+          "pdf_page": 9,
+          "locator": "PDF 第 9 页"
+        },
+        {
+          "source_id": "S24",
+          "pdf_page": 27,
+          "locator": "PDF 第 27 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "近轴假设放宽到较大角度，但仍不处理后向散射。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K062"
+      ]
+    },
+    {
+      "id": "initial_field",
+      "label": "初始场 / 自起始场",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "PE 从初始场开始沿距离步进；初始场可由解析源（高斯/点源）给出，也可用自起始场（starter）从环境本征解构造。",
+      "key_points": [
+        "初始场选择影响近场结果。",
+        "自起始场可减小起始误差。"
+      ],
+      "references": [
+        {
+          "source_id": "S24",
+          "pdf_page": 17,
+          "locator": "PDF 第 17 页"
+        },
+        {
+          "source_id": "S24",
+          "pdf_page": 19,
+          "locator": "PDF 第 19 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "初始场需与频率、源深、环境匹配。",
+      "misconception": "",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K063"
+      ]
+    },
+    {
+      "id": "split_step",
+      "label": "分裂步进",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "分裂步进（split-step）把折射与衍射算子分步处理，是 FFT 型 PE 的常用数值方案；步长影响数值频散。",
+      "key_points": [
+        "步长过大引入数值频散。",
+        "FFT 型 PE 依赖等间隔深度网格。"
+      ],
+      "references": [
+        {
+          "source_id": "S24",
+          "pdf_page": 27,
+          "locator": "PDF 第 27 页"
+        },
+        {
+          "source_id": "S24",
+          "pdf_page": 28,
+          "locator": "PDF 第 28 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "步长与网格需满足采样要求。",
+      "misconception": "把数值频散误认为物理频散。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K064"
+      ]
+    },
+    {
+      "id": "absorbing_layer",
+      "label": "吸收层",
+      "kind": "knowledge",
+      "chapter": "methods",
+      "color": "#be9bff",
+      "overview": "在计算域边界加入人工吸收层（ sponge/perfectly matched 型），减少边界反射造成的假象。",
+      "key_points": [
+        "吸收层参数影响边界反射。",
+        "吸收层不是物理海底。"
+      ],
+      "references": [
+        {
+          "source_id": "S24",
+          "pdf_page": 16,
+          "locator": "PDF 第 16 页"
+        },
+        {
+          "source_id": "S24",
+          "pdf_page": 43,
+          "locator": "PDF 第 43 页"
+        }
+      ],
+      "formula": "",
+      "conditions": "吸收层需足够厚、衰减足够强。",
+      "misconception": "把吸收层当成真实海底损耗。",
+      "example": "",
+      "diagram": "",
+      "tags": [
+        "理论方法"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K065"
+      ]
+    },
+    {
+      "id": "krakenc",
+      "label": "KRAKENC 工具",
+      "kind": "knowledge",
+      "chapter": "toolbox",
+      "color": "#ffcd73",
+      "overview": "KRAKENC 是 AT 的复模态简正波求解器，可处理泄漏模态与弹性介质的复本征值问题。",
+      "key_points": [
+        "与 KRAKEN 同为简正波，但支持复本征值。",
+        "搜索范围影响泄漏模态的纳入。"
+      ],
+      "references": [
+        {
+          "source_id": "S20",
+          "locator": "at/krakenc.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/MunkLeaky/MunkKleaky.env"
+        }
+      ],
+      "formula": "",
+      "conditions": "复根搜索需给足相速范围。",
+      "misconception": "不要把 KRAKENC 当成 KRAKEN 的自动替代。",
+      "example": "Pekeris 上与 KRAKEN 差 0.000 dB。",
+      "diagram": "",
+      "tags": [
+        "工具链"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K066"
+      ]
+    },
+    {
+      "id": "sparc",
+      "label": "SPARC 工具",
+      "kind": "knowledge",
+      "chapter": "toolbox",
+      "color": "#ffcd73",
+      "overview": "SPARC 是 AT 的时域抛物方程模型，直接输出时间域脉冲响应；可观察头部波、多途与到达结构。",
+      "key_points": [
+        "输出时间轴，不是单频声场。",
+        "与频域模型对照需做傅里叶变换。"
+      ],
+      "references": [
+        {
+          "source_id": "S20",
+          "locator": "at/sparc.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/head/head.env"
+        }
+      ],
+      "formula": "",
+      "conditions": "时域步进需满足稳定性与色散要求。",
+      "misconception": "把时域输出当成多源深结果。",
+      "example": "head 测试头部波到达 0.112 s（理论 0.111 s）。",
+      "diagram": "",
+      "tags": [
+        "工具链"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K067"
+      ]
+    },
+    {
+      "id": "bellhop3d",
+      "label": "BELLHOP3D 工具",
+      "kind": "knowledge",
+      "chapter": "toolbox",
+      "color": "#ffcd73",
+      "overview": "BELLHOP3D 是 AT 的三维射线/波束模型，支持方位角、三维地形与三维声速场。",
+      "key_points": [
+        "输入含方位角（theta）与三维几何。",
+        "输出按 方位 × 深度 × 距离 组织。"
+      ],
+      "references": [
+        {
+          "source_id": "S20",
+          "locator": "at/bellhop3d.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/Bellhop3DTests/free/freeBhat.env"
+        }
+      ],
+      "formula": "",
+      "conditions": "三维几何与方位采样需足够密。",
+      "misconception": "把三维结果当成二维结果解释。",
+      "example": "自由场 3D 与解析解差 -0.009 dB。",
+      "diagram": "",
+      "tags": [
+        "工具链"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K068"
+      ]
+    },
+    {
+      "id": "krakel",
+      "label": "KRAKEL 工具",
+      "kind": "knowledge",
+      "chapter": "toolbox",
+      "color": "#ffcd73",
+      "overview": "KRAKEL 是 AT 的弹性模态模型（遗留独立求解器）。本机已编译 krakel.exe；弹性声场可用 MATLAB krakelM.m（V/R 边界）验证。",
+      "key_points": [
+        "Fortran krakel.exe 出模态；MATLAB krakelM.m 出弹性场。",
+        "krakelM 要求上下边界为 V 或 R。"
+      ],
+      "references": [
+        {
+          "source_id": "S20",
+          "locator": "at/krakel.m"
+        },
+        {
+          "source_id": "S20",
+          "locator": "at/tests/wedge/wedgeB.env"
+        }
+      ],
+      "formula": "",
+      "conditions": "krakelM 仅支持 V/R 边界；弹性场后处理需匹配版本。",
+      "misconception": "把 KRAKENC 的输出当 KRAKEL 用。",
+      "example": "Ahmad 弹性算例 MATLAB 路径中位 TL 62.1 dB。",
+      "diagram": "",
+      "tags": [
+        "工具链"
+      ],
+      "simulation": false,
+      "source_claim_ids": [
+        "K069"
+      ]
     }
   ],
   "edges": [
@@ -4026,6 +4824,546 @@
       "type": "prerequisite",
       "group": "prerequisite",
       "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "references": []
+    },
+    {
+      "id": "e127",
+      "source": "methods",
+      "target": "wavenumber_integration",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e128",
+      "source": "methods",
+      "target": "depth_separated",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e129",
+      "source": "methods",
+      "target": "fft_spectral",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e130",
+      "source": "methods",
+      "target": "propagator_matrix",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e131",
+      "source": "toolbox",
+      "target": "scooter",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e132",
+      "source": "basics",
+      "target": "wave_equation",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e133",
+      "source": "methods",
+      "target": "integral_transform",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e134",
+      "source": "methods",
+      "target": "image_method",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e135",
+      "source": "methods",
+      "target": "pekeris_waveguide",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e136",
+      "source": "methods",
+      "target": "modal_orthogonality",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e137",
+      "source": "methods",
+      "target": "contour_residue",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e138",
+      "source": "methods",
+      "target": "wkb",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e139",
+      "source": "methods",
+      "target": "sturm_liouville",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e140",
+      "source": "methods",
+      "target": "perturbation",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e141",
+      "source": "methods",
+      "target": "paraxial",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e142",
+      "source": "methods",
+      "target": "pade_wideangle",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e143",
+      "source": "methods",
+      "target": "initial_field",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e144",
+      "source": "methods",
+      "target": "split_step",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e145",
+      "source": "methods",
+      "target": "absorbing_layer",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e146",
+      "source": "toolbox",
+      "target": "krakenc",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e147",
+      "source": "toolbox",
+      "target": "sparc",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e148",
+      "source": "toolbox",
+      "target": "bellhop3d",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e149",
+      "source": "toolbox",
+      "target": "krakel",
+      "label": "包含知识点",
+      "type": "hierarchy",
+      "group": "hierarchy",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e150",
+      "source": "normal_mode_field",
+      "target": "wavenumber_integration",
+      "label": "同源方法（积分路径不同）",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e151",
+      "source": "wavenumber_integration",
+      "target": "scooter",
+      "label": "方法对应工具",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e152",
+      "source": "wavenumber_integration",
+      "target": "depth_separated",
+      "label": "使用深度分离方程",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e153",
+      "source": "depth_separated",
+      "target": "modal_orthogonality",
+      "label": "本征函数正交",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e154",
+      "source": "fft_spectral",
+      "target": "wavenumber_integration",
+      "label": "谱积分的 FFT 实现",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e155",
+      "source": "propagator_matrix",
+      "target": "wavenumber_integration",
+      "label": "分层递推求解",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e156",
+      "source": "wave_equation",
+      "target": "helmholtz",
+      "label": "频域变换",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e157",
+      "source": "integral_transform",
+      "target": "depth_separated",
+      "label": "化为深度方程",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e158",
+      "source": "image_method",
+      "target": "ray_method",
+      "label": "几何近似",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e159",
+      "source": "pekeris_waveguide",
+      "target": "normal_mode_field",
+      "label": "经典可解析算例",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e160",
+      "source": "modal_orthogonality",
+      "target": "modal_sum",
+      "label": "展开系数所需",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e161",
+      "source": "contour_residue",
+      "target": "normal_mode_field",
+      "label": "围线积分导出模态",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e162",
+      "source": "sturm_liouville",
+      "target": "modal_orthogonality",
+      "label": "正交性来源",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e163",
+      "source": "paraxial",
+      "target": "parabolic_equation",
+      "label": "核心近似",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e164",
+      "source": "pade_wideangle",
+      "target": "parabolic_equation",
+      "label": "扩展适用角度",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e165",
+      "source": "initial_field",
+      "target": "parabolic_equation",
+      "label": "步进起始条件",
+      "type": "prerequisite",
+      "group": "prerequisite",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e166",
+      "source": "split_step",
+      "target": "parabolic_equation",
+      "label": "数值方案",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e167",
+      "source": "absorbing_layer",
+      "target": "seabed",
+      "label": "边界处理",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e168",
+      "source": "krakenc",
+      "target": "normal_mode_field",
+      "label": "简正波工具",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e169",
+      "source": "sparc",
+      "target": "parabolic_equation",
+      "label": "时域 PE 工具",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e170",
+      "source": "bellhop3d",
+      "target": "ray_method",
+      "label": "三维射线工具",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e171",
+      "source": "krakel",
+      "target": "normal_mode_field",
+      "label": "弹性模态工具",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e172",
+      "source": "scooter",
+      "target": "env_file",
+      "label": "输入",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e173",
+      "source": "krakel",
+      "target": "seabed",
+      "label": "弹性介质",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e174",
+      "source": "wkb",
+      "target": "caustic_shadow",
+      "label": "高频近似与射线失效",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e175",
+      "source": "perturbation",
+      "target": "modal_orthogonality",
+      "label": "本征值微扰",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e176",
+      "source": "wave_equation",
+      "target": "sound_speed_profile",
+      "label": "声速进入波动方程",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e177",
+      "source": "integral_transform",
+      "target": "wavenumber_integration",
+      "label": "波数积分的变换基础",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e178",
+      "source": "paraxial",
+      "target": "ray_method",
+      "label": "都是前向近似",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e179",
+      "source": "initial_field",
+      "target": "source_depth",
+      "label": "初始场含源深信息",
+      "type": "related",
+      "group": "related",
+      "note": "",
+      "references": []
+    },
+    {
+      "id": "e180",
+      "source": "sturm_liouville",
+      "target": "normal_mode_field",
+      "label": "简正波的本征值问题",
+      "type": "related",
+      "group": "related",
+      "note": "",
       "references": []
     }
   ],

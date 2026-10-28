@@ -6,8 +6,8 @@ import QuestionSuggestions from './QuestionSuggestions';
 import {serializeChat} from './chatExport';
 import './dialogue-workbench.css';
 
-async function api(path,body){
- const response=await fetch('/api/research/'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+async function api(path,body,method){
+ const response=await fetch('/api/research/'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
  const value=await response.json();if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'请求失败，请检查服务连接');return value;
 }
 const labels={dsh:'DSH',codex:'Codex',api:'模型接口'};
@@ -43,8 +43,8 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
  async function stop(){try{await api('runs/'+run.id+'/stop',{});notify('正在停止 Agent；已启动的计算可在任务页取消')}catch(e){setError(e.message)}}
  function switchSession(next){localStorage.setItem('ocean-research-v07-session',next);setSession(next)}
  function newSession(){if(busy)return;switchSession(crypto.randomUUID());loadSessions()}
- async function renameSession(item){const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value});loadSessions()}catch(e){setError(e.message)}}
- async function removeSession(item){if(busy)return;if(!window.confirm('删除会话「'+(item.title||'未命名')+'」？该会话的聊天记录会从本机删除，任务与计算结果不受影响。'))return;try{await api('sessions/'+encodeURIComponent(item.id));const next=item.id===session?crypto.randomUUID():session;switchSession(next);loadSessions()}catch(e){setError(e.message)}}
+ async function renameSession(item){const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value},'PATCH');loadSessions()}catch(e){setError(e.message)}}
+ async function removeSession(item){if(busy)return;if(!window.confirm('删除会话「'+(item.title||'未命名')+'」？该会话的聊天记录会从本机删除，任务与计算结果不受影响。'))return;try{await api('sessions/'+encodeURIComponent(item.id),null,'DELETE');const next=item.id===session?crypto.randomUUID():session;switchSession(next);loadSessions()}catch(e){setError(e.message)}}
  function clear(){if(busy||loading||!messages.length)return;localStorage.setItem('ocean-research-v07-previous',session);setPrevious(session);switchSession(crypto.randomUUID());loadSessions()}
  function undo(){if(!previous||busy)return;const target=previous;setPrevious('');localStorage.removeItem('ocean-research-v07-previous');switchSession(target)}
  function exportChat(){const mime=format==='json'?'application/json':format==='md'?'text/markdown':'text/plain';const url=URL.createObjectURL(new Blob(['\ufeff',serializeChat(messages,format)],{type:mime+';charset=utf-8'}));const anchor=document.createElement('a');anchor.href=url;anchor.download='海洋声学对话-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+format;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}

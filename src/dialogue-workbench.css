@@ -14,3 +14,8 @@
 .sessions-item:hover .sessions-actions,.sessions-item.active .sessions-actions{display:flex}
 .sessions-actions button{background:none;border:0;padding:0;font-size:11px;color:var(--dialogue-accent);cursor:pointer}
 @media(max-width:1180px){.dialogue-layout{grid-template-columns:minmax(0,1fr) 270px}.dialogue-sessions{display:none}}
+.dialogue-layout{grid-template-columns:minmax(0,1fr) 270px}
+.dialogue-context{display:flex;flex-direction:column;gap:6px;max-height:calc(100dvh - 245px);overflow:auto}
+.sessions-block{border-top:1px solid var(--border);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;min-height:0}
+.sessions-block .sessions-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.sessions-block .sessions-list{max-height:34vh;overflow:auto;padding:0}

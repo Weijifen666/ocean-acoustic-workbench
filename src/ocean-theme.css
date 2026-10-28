@@ -469,7 +469,7 @@
   color: #8ba4b5;
 }
 .workbench-app .course-body {
-  height: calc(100dvh - 386px);
+  height: calc(100dvh - 300px);
   min-height: 350px;
 }.ocean-banner {
   position: relative;
@@ -671,7 +671,7 @@
     font-size: 11px;
   }
   .workbench-app .course-body {
-    height: calc(100dvh - 365px);
+    height: calc(100dvh - 300px);
     min-height: 430px;
   }  .workbench-app .page-title h1 {
     font-size: 22px;

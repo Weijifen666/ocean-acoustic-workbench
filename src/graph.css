@@ -1143,3 +1143,14 @@
 .public-source-table small { display: block; margin-top: 5px; color: #8295a1; }
 .public-source-table p { margin: 6px 0 0; line-height: 1.7; color: #69828f; }
 .public-ocean-resources .public-source-note { margin-bottom: 0; font-size: 11px; color: #8c805f; }
+/* 课程总览在固定高度的舞台内滚动，避免下方单元卡被裁切 */
+.course-overview {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 18px;
+  scrollbar-gutter: stable;
+}
+.course-overview::-webkit-scrollbar { width: 8px; }
+.course-overview::-webkit-scrollbar-thumb { background: #cfe0ea; border-radius: 4px; }
+.course-overview::-webkit-scrollbar-track { background: transparent; }

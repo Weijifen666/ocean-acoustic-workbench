@@ -16,10 +16,12 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
  const [previous,setPrevious]=useState(()=>localStorage.getItem('ocean-research-v07-previous')||'');
  const [backend,setBackend]=useState(()=>localStorage.getItem('ocean-research-v07-backend')||'dsh');
  const [rounds,setRounds]=useState(()=>localStorage.getItem('ocean-research-v07-rounds')||'0');
- const [text,setText]=useState(''),[messages,setMessages]=useState([]),[run,setRun]=useState(null),[loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(null),[format,setFormat]=useState('md'),[cap,setCap]=useState(null);
+ const [text,setText]=useState(''),[messages,setMessages]=useState([]),[run,setRun]=useState(null),[loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(null),[format,setFormat]=useState('md'),[cap,setCap]=useState(null),[sessions,setSessions]=useState([]);
  const lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false);
  const busy=submitting||run?.state==='running';
  function chooseBackend(value){setBackend(value);localStorage.setItem('ocean-research-v07-backend',value)}
+ const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
+ useEffect(()=>{loadSessions()},[]);
  useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');
   Promise.all([api('history?session='+encodeURIComponent(session)),api('active?session='+encodeURIComponent(session)),api('capabilities')]).then(([rows,current,capabilities])=>{if(!alive)return;setMessages(rows);setRun(current);setCap(capabilities);if(current?.state==='running'&&current.backend)chooseBackend(current.backend)}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
  },[session]);
@@ -36,16 +38,20 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
   const message=text;
   try{const result=await api('chat',{session,request_id:crypto.randomUUID(),message,backend,rounds:backend==='api'?Number(rounds):0});setRun({id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');localStorage.removeItem('ocean-research-v07-previous');setPrevious('')}
   catch(e){setError(e.message)}finally{sending.current=false;setSubmitting(false)}
+  loadSessions();
  }
  async function stop(){try{await api('runs/'+run.id+'/stop',{});notify('正在停止 Agent；已启动的计算可在任务页取消')}catch(e){setError(e.message)}}
  function switchSession(next){localStorage.setItem('ocean-research-v07-session',next);setSession(next)}
- function clear(){if(busy||loading||!messages.length)return;localStorage.setItem('ocean-research-v07-previous',session);setPrevious(session);switchSession(crypto.randomUUID())}
+ function newSession(){if(busy)return;switchSession(crypto.randomUUID());loadSessions()}
+ async function renameSession(item){const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value});loadSessions()}catch(e){setError(e.message)}}
+ async function removeSession(item){if(busy)return;if(!window.confirm('删除会话「'+(item.title||'未命名')+'」？该会话的聊天记录会从本机删除，任务与计算结果不受影响。'))return;try{await api('sessions/'+encodeURIComponent(item.id));const next=item.id===session?crypto.randomUUID():session;switchSession(next);loadSessions()}catch(e){setError(e.message)}}
+ function clear(){if(busy||loading||!messages.length)return;localStorage.setItem('ocean-research-v07-previous',session);setPrevious(session);switchSession(crypto.randomUUID());loadSessions()}
  function undo(){if(!previous||busy)return;const target=previous;setPrevious('');localStorage.removeItem('ocean-research-v07-previous');switchSession(target)}
  function exportChat(){const mime=format==='json'?'application/json':format==='md'?'text/markdown':'text/plain';const url=URL.createObjectURL(new Blob(['\ufeff',serializeChat(messages,format)],{type:mime+';charset=utf-8'}));const anchor=document.createElement('a');anchor.href=url;anchor.download='海洋声学对话-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+format;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
  async function copy(text){try{await navigator.clipboard.writeText(text);notify('消息已复制')}catch{notify('复制失败，请手动选择文字复制')}}
  return <div className="dialogue-workbench">
   <div className="dialogue-title"><div><span className="eyebrow">RESEARCH AGENT</span><h1>对话工作台</h1><p>围绕研究目标，加载技能、查阅资料、执行计算并核验结果。</p></div><span className="tag">Agent · 研究与执行</span></div>
-  <div className="dialogue-layout"><section className="panel dialogue-panel" aria-label="对话工作台">
+  <div className="dialogue-layout"><aside className="panel dialogue-sessions" aria-label="会话列表"><div className="sessions-head"><h3>对话</h3><button className="button" disabled={busy} onClick={newSession}>＋ 新对话</button></div><div className="sessions-list">{!sessions.length&&<p className="sessions-empty">还没有会话，发一条消息就会自动建一个。</p>}{sessions.map(item=><div key={item.id} className={'sessions-item'+(item.id===session?' active':'')} onClick={()=>{if(!busy&&item.id!==session)switchSession(item.id)}}><div className="sessions-title">{item.title||'未命名会话'}</div><div className="sessions-meta">{item.count} 条 · {(item.updated||'').replace('T',' ').slice(0,16)}</div><div className="sessions-actions"><button disabled={busy} onClick={e=>{e.stopPropagation();renameSession(item)}}>改名</button><button disabled={busy} onClick={e=>{e.stopPropagation();removeSession(item)}}>删除</button></div></div>)}</div></aside><section className="panel dialogue-panel" aria-label="对话工作台">
    <div className="dialogue-toolbar"><label>对话后端 <select aria-label="对话后端" disabled={busy} value={backend} onChange={e=>chooseBackend(e.target.value)}><option value="dsh">DSH · 完整 Agent</option><option value="codex">Codex · 本机 Agent</option><option value="api">现有模型接口</option></select></label><span role="status">{backend==='api'?(cap?.api_configured?'模型接口已配置':'请先配置模型 API Key'):status?.message||'正在检查本机 Agent…'}</span></div>
    {backend==='api'&&<div className="dialogue-toolbar"><label>工具轮数 <input aria-label="Agent工具轮数" type="number" min="0" max="1000" disabled={busy} value={rounds} onChange={e=>{setRounds(e.target.value);localStorage.setItem('ocean-research-v07-rounds',e.target.value)}}/></label><span>0 为不限；达到上限后汇总已有结果</span></div>}
    <div className="dialogue-toolbar"><span>{loading?'载入聊天…':`${messages.length} 条消息`}</span><div className="dialogue-actions"><select aria-label="聊天导出格式" value={format} onChange={e=>setFormat(e.target.value)}><option value="md">Markdown</option><option value="txt">TXT</option><option value="json">JSON</option></select><button className="button" disabled={busy||loading||!messages.length} onClick={exportChat}><Download size={14}/>导出聊天</button><button className="button" disabled={busy||loading||!messages.length} onClick={clear}><Trash2 size={14}/>清空聊天</button>{previous&&<button className="button" disabled={busy||loading} onClick={undo}><Undo2 size={14}/>撤销清空</button>}</div></div>

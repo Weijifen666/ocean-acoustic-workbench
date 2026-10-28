@@ -50,8 +50,33 @@ class ResearchService:
         with self.store.connection(immediate=True) as db:
             db.execute('CREATE TABLE IF NOT EXISTS research_jobs(id TEXT PRIMARY KEY,state TEXT,created TEXT,updated TEXT,plan TEXT,error TEXT)')
             db.execute('CREATE TABLE IF NOT EXISTS research_requests(id TEXT PRIMARY KEY,session TEXT,message_sha TEXT,state TEXT,reply TEXT,error TEXT,created TEXT)')
+            db.execute('CREATE TABLE IF NOT EXISTS session_titles(session TEXT PRIMARY KEY,title TEXT,updated TEXT)')
             db.execute("UPDATE research_jobs SET state='INTERRUPTED',error='研究执行器已重启，未自动重跑；请核对任务文件。' WHERE state='RUNNING'")
             db.execute("UPDATE research_requests SET state='failed',error='服务已重启，请核对已有任务后继续；未自动重放研究。' WHERE state='running'")
+
+    def sessions(self):
+        with self.store.connection() as db:
+            rows = db.execute("SELECT session,COUNT(*) AS count,MIN(created) AS created,MAX(created) AS updated FROM messages GROUP BY session ORDER BY updated DESC").fetchall()
+            titles = {row['session']: row['title'] for row in db.execute('SELECT session,title FROM session_titles').fetchall()}
+            out = []
+            for row in rows:
+                key = row['session'] or ''
+                if not key.startswith('research:'):continue
+                first = db.execute("SELECT text FROM messages WHERE session=? AND role='user' ORDER BY id LIMIT 1", (key,)).fetchone()
+                fallback = ' '.join((first['text'] or '').split())[:48] if first else '新对话'
+                out.append({'id':key[9:],'title':titles.get(key) or fallback or '新对话','count':row['count'],'created':row['created'],'updated':row['updated']})
+            return out
+
+    def rename_session(self, identity, title):
+        key = 'research:' + identity
+        with self.store.connection(immediate=True) as db:
+            db.execute('INSERT OR REPLACE INTO session_titles(session,title,updated) VALUES(?,?,?)', (key, title[:80], persistence.now()))
+
+    def delete_session(self, identity):
+        key = 'research:' + identity
+        with self.store.connection(immediate=True) as db:
+            db.execute('DELETE FROM messages WHERE session=?', (key,))
+            db.execute('DELETE FROM session_titles WHERE session=?', (key,))
 
     def get(self, identity):
         with self.store.connection() as db:
@@ -241,4 +266,14 @@ def router(service):
     def active(session:str):
         with service.store.connection() as db:row=db.execute('SELECT id FROM research_requests WHERE session=? ORDER BY created DESC LIMIT 1',(session,)).fetchone()
         return service.snapshot(row['id']) if row else None
+    @api.get('/api/research/sessions')
+    def sessions():return service.sessions()
+    @api.patch('/api/research/sessions/{identity}')
+    def rename_session(identity:str,body:dict):
+        title=str((body or {}).get('title') or '').strip()
+        if not title:raise HTTPException(422,'标题不能为空')
+        service.rename_session(identity,title);return {'ok':True}
+    @api.delete('/api/research/sessions/{identity}')
+    def delete_session(identity:str):
+        service.delete_session(identity);return {'ok':True}
     return api

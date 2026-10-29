@@ -48,7 +48,16 @@ def payload(toolbox, model, case):
         runner = 'run_model.py'
     else:
         quote = lambda value: value.replace("'", "''")
-        setup = f"addpath(genpath('{quote(tool.as_posix())}')); set(0,'DefaultFigureVisible','off');\n"
+        # 只加载与 E:\at\bin（2018 exe）配套的旧 MATLAB 代码：genpath 会把 matlab2026 也加进来，
+        # 那份读取器（.moA/新 .mod 格式）读不了 2018 版 .mod，故显式排除并把 ReadWrite 提到最前。
+        setup = (
+            f"at_root='{quote(tool.as_posix())}';"
+            "parts=strsplit(genpath(at_root),pathsep);"
+            "parts=parts(~contains(parts,'matlab2026'));"
+            "addpath(strjoin(parts,pathsep),'-begin');"
+            "addpath(fullfile(at_root,'ReadWrite'),'-begin');"
+            "set(0,'DefaultFigureVisible','off');\n"
+        )
         for suffix in ['.shd', '.shd.mat', '.grn', '.mod', '.prt']:
             output = recipe['base'] + suffix
             setup += f"if isfile('{output}'), delete('{output}'); end\n"

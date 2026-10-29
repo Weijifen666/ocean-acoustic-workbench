@@ -13,7 +13,14 @@ description: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV
 
 先明确物理问题、所需观测量、环境是否随距离变化和数据来源，再选择求解器。选型时先按水深（浅海/深海）× 频段（<500 Hz / >500 Hz）× 距离无关/变化（RI/RD）查 references/applicability.md 的适用性矩阵，再落到具体程序；矩阵是定性经验，收敛仍按专项 workflow 检查。用 list_at_examples 和 read_at_file 查最接近的本机算例，并按需读取 references/input-and-functions.md。索引中的签名只用于发现；使用某函数前读取其源码和测试调用。
 
-在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写运行脚本，再用 run_research_script 实际运行；保持工作目录为任务目录，MATLAB addpath(genpath(AT路径))。源文件保持只读。
+在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写运行脚本，再用 run_research_script 实际运行；保持工作目录为任务目录。MATLAB 路径必须固定为与 `bin`（2018 版 exe）配套的旧代码：`genpath(AT路径)` 会连带加入 `AT/matlab2026`（2026 版读取器，`.moA`/新 `.mod` 格式，读不了 2018 版 `.mod`），务必排除它并把 `AT/ReadWrite` 提到最前：
+
+```matlab
+parts = strsplit(genpath(AT), pathsep); parts = parts(~contains(parts,'matlab2026'));
+addpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-begin');
+```
+
+加载后先核对 `which('read_modes')` 指向 `AT/ReadWrite/read_modes.m`，`which('kraken.exe')` 指向 `AT/bin`。若要 `.moA`/新格式，必须同时换用 2026 编译的 exe 与 2026 读取器，不能混搭。源文件保持只读。
 
 先原样复现，再一次只改变明确的研究变量。当前表单无法表达多层、距离相关或特殊声道时，写独立 ENV/FLP 和脚本；不要为了适应表单擅自改研究问题。ENV 选项不能跨求解器直接照搬，读取该求解器的 tests 及 read_env/write_env 分支。
 

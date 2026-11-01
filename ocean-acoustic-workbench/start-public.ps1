@@ -33,7 +33,11 @@ function Get-PrivateHealth {
     return $null
 }
 function Get-GatewayHealth {
-    try { return Invoke-RestMethod 'http://127.0.0.1:8780/api/health' -Headers @{'x-ocean-gateway'=[string]$publicRuntime.gateway_secret} -TimeoutSec 5 } catch { return $null }
+    try {
+        $health = Invoke-RestMethod 'http://127.0.0.1:8780/api/health' -Headers @{'x-ocean-gateway'=[string]$publicRuntime.gateway_secret} -TimeoutSec 5
+        if ($health.version -eq '0.7.0' -and $health.public_mode -is [bool] -and $health.public_mode -eq $true) { return $health }
+    } catch {}
+    return $null
 }
 function Start-NodeProcess([string]$name, [string[]]$arguments) {
     $process = Start-Process -FilePath $pythonExe -ArgumentList $arguments -WorkingDirectory $appRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtimeRoot "$name.stdout.log") -RedirectStandardError (Join-Path $runtimeRoot "$name.stderr.log")
@@ -71,12 +75,13 @@ if (-not (Get-GatewayHealth)) {
     if (-not $gatewayHealth) { throw 'Public gateway startup timed out. Check gateway.stderr.log.' }
 }
 $bridgeEntry = Join-Path $appRoot 'backend/cloud_bridge.py'
-$bridgeCandidates = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.Name -match '^pythonw?\.exe$' -and $_.CommandLine -and $_.CommandLine.Contains($bridgeEntry) })
+$bridgeCandidates = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object { $_.Name -match '^pythonw?\.exe$' -and $_.CommandLine -and $_.CommandLine.IndexOf($bridgeEntry,[StringComparison]::OrdinalIgnoreCase) -ge 0 })
 # A Windows venv launcher and its real Python child are one logical service.
 $candidateIds = @($bridgeCandidates | ForEach-Object { $_.ProcessId })
 $existingBridge = @($bridgeCandidates | Where-Object { $candidateIds -notcontains $_.ParentProcessId })
 if ($existingBridge.Count -gt 1) { throw 'More than one bridge process exists for this app; inspect its saved PIDs before starting another.' }
-if ($existingBridge.Count -eq 0) { $null = Start-NodeProcess 'bridge' @('-u','"' + $bridgeEntry + '"') }
+$quotedBridgeEntry = '"' + $bridgeEntry + '"'
+if ($existingBridge.Count -eq 0) { $null = Start-NodeProcess 'bridge' @('-u',$quotedBridgeEntry) }
 Write-Host "Private backend: $privateUrl"
 Write-Host "Scoped gateway: http://127.0.0.1:8780"
 Write-Host "Public site: $($siteUri.GetLeftPart([UriPartial]::Authority))"

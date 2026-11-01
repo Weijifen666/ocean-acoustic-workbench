@@ -1,5 +1,5 @@
 import React from "react";
-import { guideImage } from "./SakanaGuide";
+import { guideImage } from "./OceanProfile";
 
 /** Original course artwork; not an official university platform. */
 export default function OceanBanner({

@@ -266,16 +266,16 @@ def parse_simulation_intent(text: str) -> dict | None:
 
 async def execute_simulation_and_wait(plan_data:dict, timeout:int=150)->dict:
     try:
-        p = Plan(**plan_data)
+        p = Plan(**{key: value for key, value in plan_data.items() if key in Plan.model_fields})
         p.checked()
     except Exception as e:
         return {'status': 'error', 'error': f'参数校验失败: {str(e)}'}
-    
+
     sub = submit(p, Request({"type": "http", "headers": []}))
     job_ids = sub.get('ids', [])
     if not job_ids:
         return {'status': 'error', 'error': '任务提交失败，未生成任务标识'}
-    
+
     start_t = time.time()
     results = []
     for jid in job_ids:
@@ -306,7 +306,7 @@ async def execute_simulation_and_wait(plan_data:dict, timeout:int=150)->dict:
 async def chat(body:Chat):
     cfg=config();evidence=search(body.message)
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
-    
+
     sim_intent = parse_simulation_intent(body.message)
     # 模式一：离线自然语言仿真（当未配置 API Key 时，基于声学意图规则解析器自动提取参数并执行仿真）
     if not cfg.get('api_key') and sim_intent:
@@ -318,13 +318,13 @@ async def chat(body:Chat):
                 results = summ.get('results', {})
                 up_rays = results.get('up', [])
                 down_rays = results.get('down', [])
-                
+
                 angles = sim_intent['angles_deg']
                 H = sim_intent['water_depth_m']
                 zs = sim_intent['source_depth_m']
                 c = sim_intent['sound_speed_mps']
                 rmax = sim_intent['range_max_km']
-                
+
                 lines = [
                     "### 🌊 浅海射线声学仿真已自动解析并执行完成",
                     "**任务拆解与工况参数**：",
@@ -337,7 +337,7 @@ async def chat(body:Chat):
                     "| 掠射角 $\\theta$ | $\\tan\\theta$ | 总反射次数 | 向上发射 (海面/海底) | 向下发射 (海面/海底) | 末次反射位置 | 距终点余量 | 终点深度 $z$ |",
                     "| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |"
                 ]
-                
+
                 for idx, ang in enumerate(angles):
                     u = up_rays[idx] if idx < len(up_rays) else {}
                     d = down_rays[idx] if idx < len(down_rays) else {}
@@ -349,7 +349,7 @@ async def chat(body:Chat):
                     margin = f"{u.get('margin_to_rmax_m', 0):.1f} m"
                     end_z = f"上{u.get('end_depth_m',0):.1f}m / 下{d.get('end_depth_m',0):.1f}m"
                     lines.append(f"| **{ang:g}°** | {tan_th:.5f} | **{tot} 次** | {u_sb} | {d_sb} | {last_r} | {margin} | {end_z} |")
-                
+
                 lines.extend([
                     "",
                     f"![浅海声线传播轨迹]({ray_res['ray_plot_url']})",
@@ -370,7 +370,7 @@ async def chat(body:Chat):
                 reply = f"❌ 射线仿真执行失败: {ray_res.get('error')}"
                 with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
                 return {'reply':reply,'model_used':False,'evidence_ids':[]}
-        
+
         elif sim_intent.get('type') == 'kraken':
             sim_res = await execute_simulation_and_wait(sim_intent)
             if sim_res.get('status') == 'success':
@@ -409,7 +409,7 @@ async def chat(body:Chat):
                 reply = '\n'.join(lines)
                 with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
                 return {'reply':reply,'model_used':False,'evidence_ids':[e['id'] for e in evidence]}
-    
+
     # 模式二：未配置 API Key 且非仿真指令，回退到知识卡检索
     if not cfg.get('api_key'):
         reply=('尚未配置模型 API Key。以下为课程知识卡检索，未调用大模型：\n\n'+'\n\n'.join(f"[{c['id']}] {c['text']}"+(f"\n公式：{c['formula']}" if c['formula'] else '')+f"\n适用条件：{c['conditions']}\n来源：{c['source_id']} "+(f"PDF 第 {c['pdf_page']} 页" if c.get('pdf_page') else c.get('locator','')) for c in evidence)) if evidence else '尚未配置模型 API Key，当前知识库没有找到匹配条目。请尝试声速剖面、源深、模态、传播损失等具体术语，或直接输入例如：“帮我仿真 50Hz 声源 1000m 的声场传播” 或 “用射线声学仿真浅海中的声线传播”。'
@@ -417,7 +417,7 @@ async def chat(body:Chat):
         used=False
     else:
         tb_path = cfg.get('toolbox_path', r"D:\matlab-project&tool\at-matlab\at")
-        
+
         # 方案 A: 动态基准 Cookbook 匹配
         exemplar = acoustic_cookbook.match_cookbook_exemplar(body.message)
         cookbook_inject = ""
@@ -452,7 +452,7 @@ async def chat(body:Chat):
         )
         msgs=[{'role':'system','content':sys_prompt}]
         for m in history(body.session)[-12:]:msgs.append({'role':m['role'],'content':m['text']})
-        
+
         tools = [
             {
                 'type': 'function',
@@ -585,8 +585,8 @@ async def chat(body:Chat):
                         reply += f"\n\n![声学仿真图表]({img})"
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
-        with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
-        return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
+    with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
+    return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
 
 
 def update(identity, state, error=None):

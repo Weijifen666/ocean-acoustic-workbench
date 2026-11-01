@@ -229,17 +229,17 @@ fprintf('Pekeris simulation completed. Saved pekeris_analysis.png\\n');
 def match_cookbook_exemplar(query: str) -> dict | None:
     """根据用户查询匹配最具针对性的声学仿真基准规范"""
     q = query.lower()
-    
+
     # 表面声道 / 混合层
     if any(k in q for k in COOKBOOK["surface_duct"]["keywords"]):
         return COOKBOOK["surface_duct"]
-        
+
     # Pekeris / 浅海波导模态 / 截止
     if any(k in q for k in COOKBOOK["pekeris_waveguide"]["keywords"]):
         return COOKBOOK["pekeris_waveguide"]
-        
+
     # Munk / 深海 SOFAR
     if any(k in q for k in COOKBOOK["munk_deep_ocean"]["keywords"]):
         return COOKBOOK["munk_deep_ocean"]
-        
+
     return None

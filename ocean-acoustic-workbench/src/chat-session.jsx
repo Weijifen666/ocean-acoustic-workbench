@@ -7,7 +7,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import "./chat-controls.css";
 import { readChatResponse } from "./chat-stream.mjs";
 
 const ChatContext = createContext(null);

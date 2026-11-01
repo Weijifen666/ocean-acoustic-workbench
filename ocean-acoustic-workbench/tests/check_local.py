@@ -1,4 +1,4 @@
-"""Integration checks against the running local app; no cloud API calls."""
+﻿"""Integration checks against the running local app; no cloud API calls."""
 import json, urllib.request, urllib.error, urllib.parse, io, zipfile, concurrent.futures
 BASE='http://127.0.0.1:8765/api'
 def request(path,body=None,headers=None):
@@ -9,11 +9,11 @@ def request(path,body=None,headers=None):
 def expect(path,status,body=None,headers=None):
     code,data=request(path,body,headers);assert code==status,(path,code,data[:300]);return data
 health=json.loads(expect('/health',200));assert health['matlab_available'] and health['solver_available']
-graph=json.loads(expect('/graph',200));assert len(graph['nodes'])==53 and len(graph['edges'])==126
+graph=json.loads(expect('/graph',200));assert len(graph['nodes'])==76 and len(graph['edges'])==180
 ids={n['id'] for n in graph['nodes']};assert all(e['source'] in ids and e['target'] in ids for e in graph['edges'])
-points=[n for n in graph['nodes'] if n['kind']=='knowledge'];assert len(points)==46
+points=[n for n in graph['nodes'] if n['kind']=='knowledge'];assert len(points)==69
 assert all(n['references'] and n['key_points'] and n['overview'] and n['images'] for n in points)
-hierarchy=[e for e in graph['edges'] if e['group']=='hierarchy'];assert len(hierarchy)==52
+hierarchy=[e for e in graph['edges'] if e['group']=='hierarchy'];assert len(hierarchy)==75
 assert all(sum(e['target']==n['id'] for e in hierarchy)==1 for n in graph['nodes'] if n['id']!='course')
 reachable={'acoustic_pressure'}
 for _ in points:
@@ -23,7 +23,7 @@ assert reachable=={n['id'] for n in points}
 path=json.loads(expect('/graph/path?source=sound_speed_profile&target=transmission_loss',200));assert path['nodes'][0]=='sound_speed_profile' and path['nodes'][-1]=='transmission_loss'
 assert all(next(e for e in graph['edges'] if e['id']==id)['group']=='related' for id in path['edges'])
 expect('/graph/path?source=invalid&target=transmission_loss',422)
-retrieved=json.loads(expect('/knowledge/search?q='+urllib.parse.quote('请解释 Munk 理想剖面，并说明适用条件'),200))
+retrieved=json.loads(expect('/knowledge/search?q='+urllib.parse.quote('璇疯В閲?Munk 鐞嗘兂鍓栭潰锛屽苟璇存槑閫傜敤鏉′欢'),200))
 assert retrieved[0]['node_id']=='munk_profile'
 assert {c['node_id'] for c in retrieved if c['node_id']} <= {'munk_profile','deep_sound_channel','env_file'}
 assert retrieved[0]['related_triples']
@@ -53,9 +53,9 @@ expect('/plans/preview',403,{}, {'Origin':'https://example.org'})
 p=json.loads(expect('/plans/preview',200,{'frequencies_hz':[50,100],'source_depths_m':[500,1000]}));assert p['case_count']==4
 cfg=json.loads(expect('/config',200));assert 'api_key' not in cfg
 if not cfg['api_key_set']:
-    reply=json.loads(expect('/chat',200,{'message':'声源深度','session':'integration-check','mode':'agent'}));assert reply['model_used'] is False and reply['evidence_ids']
+    reply=json.loads(expect('/chat',200,{'message':'澹版簮娣卞害','session':'integration-check','mode':'agent'}));assert reply['model_used'] is False and reply['evidence_ids']
 jobs=json.loads(expect('/jobs',200));done=[j for j in jobs if j['state']=='SUCCEEDED'];assert done
 id=done[0]['id'];detail=json.loads(expect('/jobs/'+id,200));assert detail['summary']['shape']==[detail['plan']['depth_points'],detail['plan']['range_points']]
 archive=zipfile.ZipFile(io.BytesIO(expect('/jobs/'+id+'/download',200)))
 assert {'result.json','case.env','case.flp','run.log','tl_map.png','tl_curve.png'}<=set(archive.namelist())
-print('PASS: 46 connected knowledge points, 126 typed relationships, association paths, concurrent PDF pages, code sources, 16 model presets, redacted profiles, provider-domain validation, project boundaries, invalid plans, cross-origin guard, no-key retrieval, real result and download')
+print('PASS: 69 connected knowledge points, 180 typed relationships, association paths, concurrent PDF pages, code sources, 16 model presets, redacted profiles, provider-domain validation, project boundaries, invalid plans, cross-origin guard, no-key retrieval, real result and download')

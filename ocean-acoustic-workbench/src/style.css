@@ -759,45 +759,14 @@ main {
   background: white;
   box-shadow: 0 1px 4px #172d3620;
   color: #187d85;
-}
-.chat-layout {
-  display: grid;
-  grid-template-columns: minmax(480px, 1fr) 280px;
-  gap: 18px;
-  height: calc(100vh - 209px);
-  min-height: 570px;
-}
-.chat-panel {
-  display: flex;
-  flex-direction: column;
-}
-.chat-scroll {
-  flex: 1;
-  overflow: auto;
-  padding: 24px 28px;
-}
-.chat-welcome {
-  max-width: 570px;
-  margin: 60px auto 25px;
-  text-align: center;
-}
-.welcome-logo {
+}.welcome-logo {
   display: inline-flex;
   padding: 15px;
   background: #edf7f7;
   color: #17828b;
   border-radius: 15px;
   margin-bottom: 19px;
-}
-.chat-welcome h2 {
-  font-size: 23px;
-  margin-bottom: 10px;
-}
-.chat-welcome p {
-  font-size: 11px;
-  color: #8da1ab;
-}
-.prompt-grid {
+}.prompt-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -885,48 +854,7 @@ main {
   align-items: center;
   font-size: 9px;
   color: #93a7af;
-}
-.chat-context {
-  padding: 0 20px;
-}
-.chat-context .panel-heading {
-  padding-left: 0;
-  padding-right: 0;
-}
-.context-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 22px 0;
-  border-bottom: 1px solid #edf1f3;
-  color: #64939b;
-  font-size: 11px;
-}
-.context-item div {
-  color: #55717d;
-}
-.context-item span {
-  display: block;
-  font-size: 9px;
-  color: #98aab3;
-  margin-top: 7px;
-}
-.context-note {
-  background: #f3f7f8;
-  padding: 15px;
-  border-radius: 6px;
-  margin: 23px 0 17px;
-  font-size: 10px;
-  color: #6e8a96;
-}
-.context-note strong {
-  font-size: 11px;
-  color: #506e7a;
-}
-.context-note p {
-  margin: 9px 0 0;
-}
-.thinking {
+}.thinking {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -1547,11 +1475,7 @@ td small {
   }
   .summary-chip {
     display: none;
-  }
-  .chat-layout {
-    grid-template-columns: 1fr 250px;
-  }
-  .simulation-layout {
+  }  .simulation-layout {
     grid-template-columns: minmax(400px, 1fr) 270px;
   }
   .header-status {
@@ -1620,14 +1544,7 @@ td small {
   }
   .graph-layout .knowledge-index {
     height: 650px;
-  }
-  .chat-layout {
-    grid-template-columns: 1fr;
-  }
-  .chat-context {
-    display: none;
-  }
-  .simulation-layout {
+  }  .simulation-layout {
     grid-template-columns: 1fr;
   }
   .plan-panel {
@@ -1709,18 +1626,7 @@ td small {
   }
   .graph-legend {
     gap: 10px;
-  }
-  .chat-layout {
-    height: calc(100vh - 260px);
-    min-height: 550px;
-  }
-  .chat-scroll {
-    padding: 19px 15px;
-  }
-  .chat-welcome {
-    margin-top: 20px;
-  }
-  .prompt-grid {
+  }  .prompt-grid {
     grid-template-columns: 1fr;
   }
   .composer {

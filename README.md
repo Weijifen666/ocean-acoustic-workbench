@@ -96,3 +96,14 @@ cd ocean-acoustic-workbench
 ## 自然语言仿真
 
 已整合自然语言仿真代理、声学基准 Cookbook、Python/MATLAB 脚本、解析射线、交互式 MATLAB 环境检测和图表放大。仿真对话接口为 `/api/simulation/chat`，与课程问答共享配置、任务和结果。
+
+## 两个开发分支的统一版本（2026-11-01）
+
+`feature/natural-language-agent` 与 `feature-research-agent` 已整合到同一个本地工作台，入口仍在 `ocean-acoustic-workbench/`。研究分支原来位于仓库根目录的文件已归入这个目录，不需要启动第二套应用。
+
+- **对话工作台**：切换研究代理、自然语言仿真和课程问答。
+- **共享配置与结果**：沿用同一份本地配置和数据库；研究任务、解析射线、动态 Python/MATLAB 脚本与固定模板仿真都在“任务与结果”中查看。
+- **研究功能**：保留九类模型资料、WOA18 海洋数据、研究技能、独立会话管理、项目文件与报告。
+- **启动**：按本地工作台 README 安装 Python 依赖，在该目录运行 `npm ci`、`npm run build`，然后运行 `start.ps1`。已有安装也需要更新依赖并重新构建。
+
+公网版本 `ocean-acoustic-public/` 保持独立；本次 Git 合并不自动发布线上网站，也不分发本机 MATLAB、Acoustics Toolbox、私有课件或模型密钥。

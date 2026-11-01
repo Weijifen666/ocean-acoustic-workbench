@@ -180,10 +180,10 @@ class KnowledgeTests(unittest.TestCase):
     def test_missing_index_status_and_citation_urls(self):
         with patch.object(knowledge, "CHUNKS", Path("__missing_test_index__")):
             status = knowledge.retrieval_status()
-        self.assertEqual(status["reviewed_cards"], 46)
+        self.assertEqual(status["reviewed_cards"], 69)
         self.assertEqual(status["source_chunks"], 0)
         self.assertFalse(status["index_ready"])
-        self.assertEqual(status["cards"], 46)
+        self.assertEqual(status["cards"], 69)
         self.assertEqual(status["indexed_pages"], 0)
         self.assertEqual(status["chunks"], 0)
         for citation in knowledge.citations_for(knowledge.retrieve("Munk 理想剖面")):

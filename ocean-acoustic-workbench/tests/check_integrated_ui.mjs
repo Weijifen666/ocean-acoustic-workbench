@@ -1,0 +1,21 @@
+import {build} from 'esbuild';
+import {mkdirSync} from 'node:fs';
+import {execFileSync} from 'node:child_process';
+import {resolve} from 'node:path';
+const root=resolve(import.meta.dirname,'..');
+const out=resolve(root,'.local/validation/integrated-ui.cjs');
+mkdirSync(resolve(root,'.local/validation'),{recursive:true});
+await build({stdin:{resolveDir:root,loader:'jsx',contents:`
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import assert from 'node:assert/strict';
+import IntegratedDialogue from './src/IntegratedDialogue';
+import {ChatProvider} from './src/chat-session';
+import {AccountProvider} from './src/account';
+globalThis.localStorage={getItem:()=>null,setItem:()=>{}};
+const html=renderToStaticMarkup(<ChatProvider><AccountProvider><IntegratedDialogue notify={()=>{}} openSettings={()=>{}}/></AccountProvider></ChatProvider>);
+for(const label of ['研究代理','自然语言仿真','课程问答','运行仿真']) assert(html.includes(label),label);
+assert(!html.includes('undefined'));
+console.log('PASS: unified research, natural-language simulation and course chat render together');
+`},bundle:true,platform:'node',format:'cjs',outfile:out,loader:{'.css':'empty','.png':'dataurl','.svg':'dataurl'},logLevel:'error'});
+process.stdout.write(execFileSync(process.execPath,[out],{encoding:'utf8'}));

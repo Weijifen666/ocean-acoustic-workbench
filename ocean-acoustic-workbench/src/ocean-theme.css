@@ -188,26 +188,7 @@
   --muted: #8199ab;
   border-color: #d7e5ed;
   border-radius: 5px;
-}
-.workbench-app .course-banner,
-.workbench-app .light .course-banner {
-  border-bottom: 1px solid #e0ebf1;
-  padding: 20px 23px;
-}
-.workbench-app .course-banner h1 {
-  color: #28536f;
-  font-size: 23px;
-}
-.workbench-app .course-banner p {
-  font-size: 13px;
-  line-height: 1.75;
-  color: #7e98ab;
-}
-.workbench-app .course-stats {
-  font-size: 12px;
-  color: #7896aa;
-}
-.workbench-app .course-tabs {
+}.workbench-app .course-tabs {
   background: #f6fafc;
   height: 45px;
 }
@@ -410,21 +391,7 @@
 }
 .workbench-app .case-list > div {
   font-size: 13px;
-}
-.workbench-app .exercise-heading strong {
-  font-size: 14px;
-}
-.workbench-app .exercise-question {
-  font-size: 14px;
-}
-.workbench-app .exercise-body p {
-  font-size: 12px;
-}
-.workbench-app .chat-welcome h2 {
-  font-size: 21px;
-  color: #315f7c;
-}
-.workbench-app .chat-welcome p,
+}.workbench-app .chat-welcome p,
 .workbench-app .prompt-grid button {
   font-size: 13px;
 }
@@ -437,14 +404,7 @@
   font-size: 14px;
   line-height: 1.8;
   color: #3c6680;
-}
-.workbench-app .context-item {
-  font-size: 13px;
-}
-.workbench-app .context-note {
-  font-size: 12px;
-}
-.workbench-app .model-panel-heading h2 {
+}.workbench-app .model-panel-heading h2 {
   font-size: 19px;
   color: #315d7b;
 }
@@ -509,15 +469,9 @@
   color: #8ba4b5;
 }
 .workbench-app .course-body {
-  height: calc(100dvh - 386px);
+  height: calc(100dvh - 300px);
   min-height: 350px;
-}
-.workbench-app .chat-layout {
-  height: calc(100dvh - 342px);
-  min-height: 430px;
-}
-
-.ocean-banner {
+}.ocean-banner {
   position: relative;
   height: 104px;
   display: flex;
@@ -629,11 +583,7 @@
   }
   .ocean-banner h2 {
     font-size: 21px;
-  }
-  .workbench-app .course-stats {
-    display: none;
-  }
-}
+  }}
 @media (max-width: 760px) {
   .workbench-app .sidebar {
     width: 240px;
@@ -698,18 +648,7 @@
     height: 90px;
     opacity: 0.24;
     margin: 0;
-  }
-  .workbench-app .course-banner,
-  .workbench-app .light .course-banner {
-    padding: 16px;
-  }
-  .workbench-app .course-banner h1 {
-    font-size: 21px;
-  }
-  .workbench-app .course-banner p {
-    font-size: 12px;
-  }
-  .workbench-app .course-tabs {
+  }  .workbench-app .course-tabs {
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -732,14 +671,9 @@
     font-size: 11px;
   }
   .workbench-app .course-body {
-    height: calc(100dvh - 365px);
+    height: calc(100dvh - 300px);
     min-height: 430px;
-  }
-  .workbench-app .chat-layout {
-    height: calc(100dvh - 350px);
-    min-height: 430px;
-  }
-  .workbench-app .page-title h1 {
+  }  .workbench-app .page-title h1 {
     font-size: 22px;
   }
   .workbench-app .page-title p {
@@ -821,69 +755,7 @@
 }
 .workbench-app[data-page="chat"] main {
   padding: 14px 25px 0;
-}
-.workbench-app[data-page="chat"] .chat-layout.agent-chat {
-  display: block;
-  height: calc(100dvh - 111px);
-  min-height: 300px;
-  width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-}
-.workbench-app[data-page="chat"] .agent-chat-panel {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  overflow: visible;
-}
-.agent-chat-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 11px 11px 15px;
-  color: #6c8b9e;
-  font-size: 13px;
-}
-.agent-chat-heading > span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-.agent-chat-heading small {
-  color: #9eb3c1;
-  font-size: 10px;
-  letter-spacing: 0.3px;
-}
-.workbench-app[data-page="chat"] .chat-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  padding: 25px 22px;
-  scrollbar-width: thin;
-  scrollbar-color: #ccdae4 transparent;
-}
-.workbench-app[data-page="chat"] .chat-welcome {
-  margin: 12vh auto 30px;
-  text-align: center;
-  max-width: 650px;
-}
-.workbench-app[data-page="chat"] .chat-welcome h2 {
-  font-size: 26px;
-  font-weight: 500;
-  color: #335d77;
-  margin-bottom: 15px;
-  letter-spacing: 0.3px;
-}
-.workbench-app[data-page="chat"] .chat-welcome p {
-  font-size: 13px;
-  color: #91a7b7;
-}
-.workbench-app[data-page="chat"] .prompt-grid {
+}.workbench-app[data-page="chat"] .prompt-grid {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -952,37 +824,10 @@
   background: transparent;
   box-shadow: none !important;
 }
-.workbench-app[data-page="chat"] .agent-composer .composer-controls {
-  margin-top: 8px;
-}
 @media (max-width: 760px) {
   .workbench-app[data-page="chat"] main {
     padding: 10px 10px 0;
-  }
-  .workbench-app[data-page="chat"] .chat-layout.agent-chat {
-    height: calc(100dvh - 101px);
-    min-height: 280px;
-  }
-  .agent-chat-heading {
-    padding: 11px 8px 10px;
-    font-size: 12px;
-  }
-  .agent-chat-heading small {
-    font-size: 9px;
-  }
-  .workbench-app[data-page="chat"] .chat-scroll {
-    padding: 24px 13px;
-  }
-  .workbench-app[data-page="chat"] .chat-welcome {
-    margin-top: 10vh;
-  }
-  .workbench-app[data-page="chat"] .chat-welcome h2 {
-    font-size: 23px;
-  }
-  .workbench-app[data-page="chat"] .chat-welcome p {
-    font-size: 12px;
-  }
-  .workbench-app[data-page="chat"] .prompt-grid button {
+  }  .workbench-app[data-page="chat"] .prompt-grid button {
     font-size: 10px;
   }
   .workbench-app[data-page="chat"] .message-text {
@@ -1000,14 +845,6 @@
     font-size: 13px;
   }
 }
-@media (max-height: 500px) {
-  .workbench-app[data-page="chat"] .chat-layout.agent-chat {
-    min-height: 0;
-  }
-  .workbench-app[data-page="chat"] .agent-composer textarea {
+@media (max-height: 500px) {  .workbench-app[data-page="chat"] .agent-composer textarea {
     height: 42px;
-  }
-  .workbench-app[data-page="chat"] .chat-welcome {
-    margin-top: 15px;
-  }
-}
+  }}

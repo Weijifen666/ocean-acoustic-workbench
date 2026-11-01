@@ -418,17 +418,7 @@
 }
 .answer-markdown.compact .answer-code code.hljs {
   font-size: 11px;
-}
-.mascot-message .answer-markdown p {
-  margin: 0 0 0.7em;
-}
-.mascot-message .rich-message p {
-  max-width: 100%;
-}
-.mascot-message .answer-identity p {
-  font-size: 10px;
-}
-.answer-image-reference {
+}.answer-image-reference {
   font-size: 12px;
   color: #536f81;
 }

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationEr
 from typing import Literal
 import httpx
 import knowledge, models, science, answer_policy, context_budget, public_ocean, persistence, simulation
+import research_api, project_browser, simulation_studio, task_files
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -21,7 +22,7 @@ def kbfile(name):return LOCAL/'kb'/name
 def claims():return knowledge.knowledge_cards()
 def sources():return json.loads(kbfile('source_registry.json').read_text(encoding='utf-8'))['sources']
 def job(id):
-    value=STORE.get(id)
+    value=STORE.get(id) or RESEARCH.get(id)
     if not value:raise HTTPException(404,'任务不存在')
     return value
 def run_dir(id):
@@ -103,18 +104,22 @@ def execute_job(case_job):
         executable=Path(cfg.get('matlab_path',''))
         if not executable.is_file():raise RuntimeError('MATLAB 路径不存在，请检查环境配置')
         toolbox=Path(cfg['toolbox_path'])
-        for name in ['kraken.exe','field.exe']:
+        for name in (simulation_studio.required(plan) if plan.get('studio') else ['kraken.exe','field.exe']):
             if not (toolbox/'bin'/name).is_file():raise RuntimeError('缺少 '+name)
-        case={**plan,'toolbox_path':str(toolbox),'template_env':str(toolbox/'tests/Munk/MunkK.env')}
-        (folder/'case.json').write_text(json.dumps(case,ensure_ascii=False),encoding='utf-8')
-        shutil.copy2(ROOT/'backend/matlab/run_ocean_case.m',folder/'run_ocean_case.m')
+        runner='run_studio_case' if plan.get('studio') else 'run_ocean_case'
+        if plan.get('studio'):simulation_studio.prepare_case(folder,plan,cfg,ROOT)
+        else:
+            case={**plan,'toolbox_path':str(toolbox),'template_env':str(toolbox/'tests/Munk/MunkK.env')}
+            (folder/'case.json').write_text(json.dumps(case,ensure_ascii=False),encoding='utf-8')
+            shutil.copy2(ROOT/'backend/matlab/run_ocean_case.m',folder/'run_ocean_case.m')
+        solver_start=time.monotonic()
         with (folder/'run.log').open('wb') as log:
-            log.write(('任务 '+id+'\nMATLAB 固定 Munk 模板；以下保留实际进程输出\n').encode());log.flush()
+            log.write(('任务 '+id+'\n'+('MATLAB KRAKEN / SCOOTER / BELLHOP；冻结环境见 case.json' if plan.get('studio') else 'MATLAB 固定 Munk 模板')+'\n以下保留实际进程输出\n').encode());log.flush()
             with STATELOCK:
                 if job(id)['state']!='RUNNING':return
                 if WORKER_STOP.is_set():
                     STORE.finish(id,'INTERRUPTED','服务停止，任务未启动。',owner=WORKER_OWNER);return
-                proc=subprocess.Popen([str(executable),'-wait','-noFigureWindows','-batch','run_ocean_case'],cwd=folder,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0,start_new_session=os.name!='nt')
+                proc=subprocess.Popen([str(executable),'-wait','-noFigureWindows','-batch',runner],cwd=folder,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0,start_new_session=os.name!='nt')
                 PROCESSES[id]=proc
             try:code=proc.wait(timeout=int(cfg.get('timeout_seconds',240)))
             except subprocess.TimeoutExpired:
@@ -127,7 +132,11 @@ def execute_job(case_job):
             STORE.finish(id,'INTERRUPTED','服务停止导致计算中断；未自动重跑。',owner=WORKER_OWNER);return
         if code!=0:raise RuntimeError('MATLAB 运行失败，退出码 '+str(code)+'；请查看日志')
         if not (folder/'result.json').exists():raise RuntimeError('缺少本次 result.json')
-        plot_result(folder,plan)
+        if plan.get('studio'):
+            data=json.loads((folder/'result.json').read_text(encoding='utf-8-sig'));data['solver_elapsed_seconds']=round(time.monotonic()-solver_start,3)
+            (folder/'result.json').write_text(json.dumps(data,ensure_ascii=False),encoding='utf-8')
+            simulation_studio.plot_result(folder)
+        else:plot_result(folder,plan)
         STORE.finish(id,'SUCCEEDED',owner=WORKER_OWNER)
     except Exception as exc:
         STORE.finish(id,'INTERRUPTED' if WORKER_STOP.is_set() else 'FAILED',str(exc)[:1000],owner=WORKER_OWNER)
@@ -150,12 +159,23 @@ def kill(id):
 @asynccontextmanager
 async def app_lifespan(application):
     start_executor()
+    RESEARCH.migrate()
     try:
         refresh_public_ocean_startup()
         yield
-    finally:stop_executor()
+    finally:
+        await RESEARCH.close()
+        stop_executor()
 
 app=FastAPI(title='海洋声学工作台',docs_url='/api/docs',lifespan=app_lifespan)
+RESEARCH=research_api.ResearchService(ROOT,LOCAL,STORE,config,lambda query:knowledge.retrieve(query))
+app.include_router(research_api.router(RESEARCH))
+app.include_router(simulation_studio.router(STORE,LOCAL,WORKER_WAKE))
+RESEARCH.fixed_schema=lambda:{'schema':simulation_studio.Plan.model_json_schema(),'solvers':['kraken','scooter','bellhop'],'templates':['munk_5000m','pekeris_100m','woa18','constant_5000m']}
+RESEARCH.fixed_preview=lambda plan:simulation_studio.preview(simulation_studio.Plan(**plan))
+RESEARCH.fixed_submit=lambda plan:simulation_studio.submit(simulation_studio.Plan(**plan),STORE,WORKER_WAKE)
+RESEARCH.fixed_details=lambda identity:details(identity)
+RESEARCH.fixed_batch=lambda identity:simulation_studio.batch_results(identity,STORE,LOCAL)
 
 def start_executor():
     global WORKER_THREAD,PAUSED
@@ -341,16 +361,42 @@ def compare_jobs(body:ComparisonRequest):
     return simulation.compare_cases(cases)
 @app.get('/api/jobs')
 def jobs():
-    return STORE.list()
+    return sorted(STORE.list()+RESEARCH.jobs(),key=lambda value:value['created'],reverse=True)[:100]
 @app.get('/api/jobs/{id}')
 def details(id:str):
-    v=job(id);folder=run_dir(id);v['log']=(folder/'run.log').read_text(encoding='utf-8',errors='replace')[-50000:] if (folder/'run.log').exists() else '等待执行器领取任务…'
+    if RESEARCH.get(id):return RESEARCH.details(id)
+    v=job(id);folder=run_dir(id);v['log']=task_files.read_log(folder/'run.log',50000) if (folder/'run.log').exists() else '等待执行器领取任务…'
     v['artifacts']=[p.name for p in folder.glob('*') if p.is_file()] if folder.exists() else []
     v['events']=STORE.events(id)
     if v['state']=='SUCCEEDED':v['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
     return v
+@app.delete('/api/jobs/{id}')
+def delete_task_files(id:str):
+    with STATELOCK,RESEARCH.lock:
+        value=job(id)
+        if value['state'] in persistence.ACTIVE or id in PROCESSES or id in RESEARCH.processes:raise HTTPException(409,'请先停止任务并确认计算进程结束')
+        if any(r['state']=='running' and any(t.get('arguments',{}).get('id')==id for t in r.get('trace',[])) for r in RESEARCH.runs.values()):raise HTTPException(409,'Agent 正在使用此任务，请先停止当前请求')
+        try:task_files.remove(LOCAL/'runs',id)
+        except (OSError,ValueError) as exc:raise HTTPException(409,'文件未成功删除，任务记录保留：'+str(exc)) from None
+        with connect() as db:
+            db.execute('DELETE FROM research_jobs WHERE id=?',(id,))
+            db.execute('DELETE FROM job_events WHERE job_id=?',(id,))
+            db.execute('DELETE FROM jobs WHERE id=?',(id,))
+    return {'id':id,'deleted':True,'files_deleted':True,'recoverable':False}
+
+@app.post('/api/jobs/{id}/open-folder')
+def open_task_folder(id:str):
+    job(id)
+    try:path=task_files.reveal(LOCAL/'runs',id)
+    except FileNotFoundError as exc:raise HTTPException(404,str(exc)) from None
+    except (OSError,ValueError) as exc:raise HTTPException(409,str(exc)) from None
+    return {'opened':True,'path':str(path)}
+
 @app.post('/api/jobs/{id}/cancel')
 def cancel(id:str):
+    if RESEARCH.get(id):
+        try:return RESEARCH.cancel(id)
+        except ValueError as error:raise HTTPException(409,str(error)) from None
     with STATELOCK:
         value=job(id)
         if value['state'] not in persistence.ACTIVE:raise HTTPException(409,'任务已结束')
@@ -391,12 +437,15 @@ def project_root():
     return path
 @app.get('/api/project/files')
 def files():
-    root=project_root();return {'root':str(root),'files':[{'path':str(p.relative_to(root)).replace('\\','/'),'size':p.stat().st_size} for p in root.rglob('*') if p.is_file() and p.suffix.lower() in ['.m','.env','.flp','.json','.txt'] and p.stat().st_size<1_000_000][:250]}
+    return project_browser.list_files(ROOT,project_root(),LOCAL,jobs())
 @app.get('/api/project/file')
 def read_file(path:str):
-    root=project_root();p=(root/path).resolve()
-    if not p.is_relative_to(root) or not p.is_file() or p.suffix.lower() not in ['.m','.env','.flp','.json','.txt']:raise HTTPException(403,'仅允许授权项目内的文本文件')
-    return {'path':path,'content':p.read_text(encoding='utf-8',errors='replace'),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+    return project_browser.read_file(ROOT,project_root(),LOCAL,path,job)
+
+@app.get('/api/project/content')
+def project_content(path:str):
+    file,_=project_browser.resolve_file(ROOT,project_root(),LOCAL,path,job)
+    return FileResponse(file)
 
 class Chat(BaseModel):
     message:str=Field(min_length=1,max_length=12000)

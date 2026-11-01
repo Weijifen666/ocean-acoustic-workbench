@@ -1,6 +1,8 @@
-# 海洋声学工作台 · v0.7
+# 海洋声学工作台 · v0.7（研究 Agent 开发分支）
 
-用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。React 网页、FastAPI 计算节点与云端 Worker 分工运行；实际仿真由获授权的 MATLAB R2024a 调用 AT KRAKEN / FIELD 完成。项目原创代码采用 MIT 许可证，外部教材、AT 与 MATLAB 保留各自权利和许可。
+用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。React 网页、FastAPI 计算节点与云端 Worker 分工运行；实际仿真由获授权的 MATLAB R2025b 调用 AT（KRAKEN / KRAKENC / SCOOTER / BELLHOP / BELLHOP3D / RAM / SPARC / KRAKEL）。项目原创代码采用 MIT 许可证，外部教材、AT 与 MATLAB 保留各自权利和许可。
+
+当前开发分支（feature/research-agent）在原 v0.7 之上新增：对话工作台研究 Agent（DSH / 本机 Codex / 模型 API 三种后端）、声场仿真的 9 类模型使用经验与算例覆盖、WOA18 温盐声速剖面读取、研究技能（11 个）与独立研究任务、以及「任务与结果」页的研究报告与产物。
 
 公开网页：[海洋声学工作台](https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site/)。云端页面、课程图谱、课程卡/公开海洋知识检索与模型连接不依赖维护者电脑；MATLAB 仿真和私有教材全文索引需要计算节点在线。
 
@@ -10,6 +12,9 @@
 
 - **知识图谱**：6 个课程单元、46 个知识点，53 个节点和 126 条有类型的关系。直接点击查看概念、公式、适用条件、图片和引用，无需调用大模型。课程层级、建议阅读顺序与概念关联分别展示，关系连接不等于物理因果。收藏和已读标记只表示浏览器中的操作记录。
 - **知识库与对话**：课程卡、术语别名、一跳关联、私有原页及公开网页共同提供证据。默认“资料 + 模型知识”（`general`）保留模型已有能力并单列未经资料核验的补充；“更多”可切换“仅依据资料”（`course`），普通空检索时明确缺口。未配置 API Key 时只显示检索证据，图谱和公开来源可直接阅读。
+- **对话工作台**：研究 Agent 支持 DSH / 本机 Codex / 模型 API 三种后端，加载研究技能、读取 WOA18 剖面、创建独立研究任务并实跑，保留工具调用记录与停止能力。
+- **声场仿真**：9 类模型使用经验（KRAKEN/KRAKENC/SCOOTER/BELLHOP/BELLHOP3D/RAM/SimplePE/SPARC/KRAKEL）与 31 个算例族的执行覆盖，附研究技能入口与手动经典算例。
+- **任务与结果**：仿真任务与研究任务统一列表，查看报告、图表、验证检查与产物文件，支持重跑与对比。
 - **输入预算**：4K、8K、16K、32K、64K、128K，自动 32K；服务端实际裁剪历史与资料，并记录估算输入、裁剪情况和供应商实际用量。这个输入预算不改变模型原生窗口或 KV cache，未返回的实际缓存用量保持未知。
 - **公开海洋资料**：30 篇 NOAA 正文与 9 条项目自写导读，共 39 个可检索来源、67 个片段。42 项登记中 3 项仅为动态入口，尚未读取实时值。图谱“学习资源”显示来源、机构、更新时间、取得时间和许可；中文导读不是官方译文。
 - **模型快切与小航**：主问答与原创海洋助手共用本人的对话、模型选择与知识范围，聊天内切换已配置供应商的模型并记录请求/响应标识。公网端使用真实 SSE 文本增量、停止与截断状态，支持分别保存的持久会话；本地聊天兼容常规完整响应。
@@ -37,6 +42,8 @@ S01、S07、S15、S17、S18五份授权PDF已处理1846页，1789页入库。v0.
 
 换电脑需要 Python 3.12+、Node.js 22.13+、获授权的 MATLAB、AT 与自己有权使用的课程资料。原始资料和安装包不随公开源码分发。
 
+声场计算依赖**外部** AT 工具箱（`toolbox_path`，含 `bin/` 与 MATLAB 封装）与 WOA18 海洋数据（`ocean_data_path`，含 `ssp/`、`terrain/` 结构），二者不随仓库分发，须在环境设置中指向本机目录。
+
 ```powershell
 python -m venv .venv
 ./.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
@@ -49,6 +56,8 @@ npm.cmd run build
 在环境设置中填写 MATLAB 可执行文件、AT 与授权项目目录，再检查环境。开发时分别运行 `backend/app.py` 和 `npm.cmd run dev`；本地 API 文档在 `/api/docs`。当前机器的启动器读取 `.local/runtime.json`，不修改系统 Python。
 
 AT 使用 MATLAB 搜索路径方式接入，不是 `.mltbx` 安装包。安装脚本将资源导入当前用户 `Documents/MATLAB/AcousticsToolbox/at`，为 `startup.m` 登记根目录、`bin`、`ReadWrite`、`Plot` 和 `Misc` 并保留备份。既有节点已验证相关函数位置；迁移后须重新检查自己的环境。
+
+AT 工具箱本身不随仓库分发，需自备官方发行版（本机配套副本在桌面 `AcousticsToolbox`，约 115 MB，已剔除 tests 的生成结果）。本机对 AT 的唯一改动：官方 2018 发行版缺 `krakel.exe`，已用 2026-10-22 源码重新编译（`Krakel/krakel.f90` 修正 4 处接口调用以匹配同版本 `misc`，物理逻辑未改）后放入 `bin/`；其余 11 个 exe 为官方原版。需要弹性模态时，把 `toolbox_path` 指向含该 `krakel.exe` 的 AT 目录即可。
 
 ## 真实计算与结果边界
 
@@ -96,6 +105,28 @@ SQLite持久保存任务、批次、状态事件、暂停状态和提交幂等�
 
 模型选择与配置入口参考 [WorkBuddy 官方说明](https://www.codebuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)，未复制其产品或角色。供应商缓存以 [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)和[百炼](https://help.aliyun.com/zh/model-studio/context-cache)官方文档为准，本项目不控制该缓存或保证命中。
 
+
+## 本机研究增强（feature/research-agent 开发分支）
+
+本分支在 v0.7 上移植模型 Skill、独立研究脚本执行和通用结果报告，尚未发布到 main。声场仿真页列出 9 类模型经验，8 类有基线创建配方；KRAKEL的 krakel.exe 已由官方源码编译并冒烟通过，弹性场后处理待验证。知识问答已替换为完整“对话工作台”，移除浮动课程助手；固定 Munk 队列与研究任务仍分别管理。
+
+研究 Agent 可使用完整 DSH Agent、本机已登录的 Codex，或当前配置的模型 API。DSH 通过 ACP 驱动并以 MCP 调用工作台工具，凭据仍由 DSH 管理。需已安装相应 CLI/桌面应用或配置模型 Key，并填写 MATLAB 与 AT 路径。脚本实际运行于本机授权目录，不是安全沙箱；仅用于自己的受信任研究任务，不向公共访客开放任意代码执行。
+
+新请求通过 /api/research/chat 提交，轮询 /api/research/runs/ID 获取实际进展；请求ID幂等，重复请求不重复启动计算。模型Skill创建输入、脚本和溯源，执行后核对输入版本、产物及报告；运行成功不等于收敛或物理精度已获证明。研究结果与固定模板在同一任务页展示，但使用独立research_jobs表，避免模板执行器误领取研究任务。停止回答和取消计算分别操作；重启后的未完成研究标为中断，不自动重跑。
+
+已迁入原对话的技能选择、可刷新问题库、公式渲染、工具进度、停止、聊天导出/清空/撤销与任务导入；补齐教材原页检索、WOA18 剖面读取及混合层/表面声道研究技能。现已完整迁入海洋地图和声场仿真表单；没有复制旧数据库、聊天历史或密钥；本机海洋数据通过私有目录映射读取，不随 Git 分发。Skill内的2026-10-22算例覆盖记录属于移植前的历史证据，不能当作本次移植重新执行。
+
+基础检查：`python -m unittest discover -s tests -p "test_*.py"`。会话归档、长历史、工具升级和RAM读取器回归位于 tests/check_codex_*.py 与 tests/check_ram_grid.py。真实声学链还需在具备MATLAB/AT的环境单独验证。
+
+
+DSH 本机兼容性与数据配置：已验证 DSH Desktop 0.12.1（Harness 0.2.1-rc.2），尚未验证其他版本及非 Windows 系统。安装位置可用 `OCEAN_DSH_EXECUTABLE` 覆盖，凭据根目录可用 `OCEAN_DSH_HOME` 覆盖；当前 ACP 默认模型为 deepseek-v4-flash，并非自动同步 Desktop 界面选择。提供商需有有效凭据与额度。
+
+WOA18 接口需要安装 requirements 中的 netCDF4 和 gsw，并在私有 `.local/config.json` 中设置 `ocean_data_path`，目录内保留 `ssp` 和 `terrain` 结构。Windows 的 NetCDF 库在本机无法打开中文路径，需使用英文路径的目录联接（Junction）；设置后重启服务。首次克隆者自行准备获授权数据，勿复制他人的私有配置。当前预览前端 5173，API 8766。
+
+本次完整替换的详细证据见仓库根目录 `docs/MIGRATION_RESEARCH_AGENT.md`。
+
+
+声场与环境完整迁移：声场页和结果页已独立封装，支持 KRAKEN/SCOOTER/BELLHOP、经典环境和 WOA18，以及扫描/对比/稳定性分析；海洋环境页支持地形地图缩放拖动选点、剖面导出与传入声场配置。新版扩展仿真 API 使用 `/api/simulation` 前缀，继续使用持久计算队列。六组真实运行记录见 `/api/validation/migration`，历史原平台报告另有标记。`node tests/check_simulation_page.mjs` 用于捕捉页面初次渲染崩溃；不能仅以生产构建通过代替此检查。
 
 ## 自然语言仿真
 

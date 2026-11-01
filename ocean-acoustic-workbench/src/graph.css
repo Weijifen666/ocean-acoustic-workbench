@@ -27,59 +27,7 @@
 .course-explorer button:focus-visible {
   outline: 2px solid #89c9ff;
   outline-offset: 3px;
-}
-.course-banner {
-  padding: 25px 30px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(110deg, #172f50, #101e35);
-  gap: 20px;
-}
-.light .course-banner {
-  background: linear-gradient(110deg, #e0edff, #f5f9ff);
-}
-.course-kicker {
-  color: #9fb9dc;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 11px;
-  letter-spacing: 2px;
-}
-.course-banner h1 {
-  font-size: 25px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  margin: 10px 0;
-}
-.course-banner p {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0;
-}
-.course-stats {
-  display: flex;
-  gap: 30px;
-}
-.course-stats div {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.course-stats strong {
-  font-size: 27px;
-  font-weight: 500;
-}
-.course-stats small {
-  font-size: 13px;
-  color: var(--muted);
-}
-.course-stats span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.course-tabs {
+}.course-tabs {
   height: 51px;
   padding: 0 25px;
   display: flex;
@@ -306,9 +254,11 @@
 .course-workspace {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 .graph-controlbar {
   min-height: 56px;
@@ -370,6 +320,7 @@
   position: relative;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   background:
     radial-gradient(ellipse at 50% 50%, #23385b50 0, transparent 70%),
     radial-gradient(#8dadd729 1px, transparent 1px);
@@ -380,111 +331,7 @@
 .light .graph-stage {
   background: radial-gradient(#8dadd74a 1px, transparent 1px);
   background-size: 25px 25px;
-}
-.course-universe {
-  height: 100%;
-  position: relative;
-  min-height: 490px;
-}
-.universe-links {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  inset: 0;
-}
-.universe-center {
-  position: absolute;
-  left: 50%;
-  top: 52%;
-  transform: translate(-50%, -50%);
-  width: 130px;
-  height: 130px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 10px;
-  color: #b5cfff;
-  border: 1px solid #8eadde4d;
-  background: radial-gradient(#38609b40, #18325250);
-  border-radius: 50%;
-  box-shadow: 0 0 45px #4c81cc28;
-}
-.universe-center strong {
-  font-size: 18px;
-  letter-spacing: 2px;
-}
-.universe-center small {
-  font-size: 10px;
-  color: var(--muted);
-}
-.chapter-planet {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  width: 128px;
-  height: 128px;
-  background: radial-gradient(
-    circle at 35% 25%,
-    color-mix(in srgb, var(--planet-color) 22%, var(--bg)),
-    var(--bg)
-  );
-  border: 1px solid color-mix(in srgb, var(--planet-color) 70%, transparent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 6px;
-  box-shadow:
-    0 0 25px color-mix(in srgb, var(--planet-color) 12%, transparent),
-    inset 0 0 20px color-mix(in srgb, var(--planet-color) 10%, transparent);
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-}
-.chapter-planet:hover {
-  transform: translate(-50%, -50%) scale(1.08);
-  box-shadow: 0 0 35px color-mix(in srgb, var(--planet-color) 30%, transparent);
-}
-.planet-orbit {
-  position: absolute;
-  inset: -7px;
-  border-radius: 50%;
-  border: 1px dashed color-mix(in srgb, var(--planet-color) 28%, transparent);
-}
-.planet-number {
-  font-size: 10px;
-  color: var(--planet-color);
-  letter-spacing: 2px;
-}
-.chapter-planet strong {
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--planet-color);
-}
-.planet-count {
-  font-size: 10px;
-  color: var(--muted);
-}
-.planet-progress {
-  font-size: 9px;
-  display: flex;
-  align-items: center;
-  color: var(--muted);
-  gap: 3px;
-}
-.universe-tip {
-  position: absolute;
-  bottom: 33px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 7px;
-  font-size: 10px;
-  color: var(--muted);
-}
-.graph-status-line {
+}.graph-status-line {
   position: absolute;
   bottom: 10px;
   left: 18px;
@@ -1205,41 +1052,17 @@
 .light .course-tabs button.active {
   color: #347ec6;
 }
-.light .course-kicker {
-  color: #6383a9;
-}
-.light .universe-center {
-  color: #426b9e;
-}
-.light .chapter-planet strong {
-  filter: brightness(0.67);
-}
-.light .planet-number {
-  filter: brightness(0.6);
-}
 @media (min-width: 1550px) {
   .course-body {
     height: 740px;
   }
   .course-directory {
     width: 238px;
-  }
-  .chapter-planet {
-    width: 145px;
-    height: 145px;
-  }
-  .knowledge-drawer {
+  }  .knowledge-drawer {
     width: 425px;
   }
 }
-@media (max-width: 1150px) {
-  .course-stats {
-    gap: 17px;
-  }
-  .course-banner {
-    padding: 22px;
-  }
-  .course-directory {
+@media (max-width: 1150px) {  .course-directory {
     width: 190px;
   }
   .graph-controlbar {
@@ -1248,19 +1071,7 @@
   }
   .graph-view-options {
     margin-left: auto;
-  }
-  .chapter-planet {
-    width: 110px;
-    height: 110px;
-  }
-  .chapter-planet strong {
-    font-size: 13px;
-  }
-  .universe-center {
-    width: 105px;
-    height: 105px;
-  }
-  .knowledge-drawer {
+  }  .knowledge-drawer {
     width: 350px;
     top: 173px;
   }
@@ -1277,39 +1088,9 @@
   .course-directory {
     width: 167px;
     padding: 12px 9px;
-  }
-  .course-stats {
-    display: none;
-  }
-  .course-banner h1 {
-    font-size: 22px;
-  }
-  .course-body {
+  }  .course-body {
     height: 690px;
-  }
-  .chapter-planet {
-    width: 91px;
-    height: 91px;
-    gap: 4px;
-  }
-  .chapter-planet strong {
-    font-size: 11px;
-  }
-  .planet-count,
-  .planet-progress {
-    font-size: 8px;
-  }
-  .universe-center {
-    width: 82px;
-    height: 82px;
-  }
-  .universe-center strong {
-    font-size: 13px;
-  }
-  .universe-center small {
-    font-size: 8px;
-  }
-  .knowledge-drawer {
+  }  .knowledge-drawer {
     width: min(395px, 100%);
   }
   .course-tabs {
@@ -1326,11 +1107,7 @@
   }
   .map-heading {
     flex-direction: column;
-  }
-  .universe-tip {
-    font-size: 8px;
-  }
-}
+  }}
 
 .course-explorer .legend-line {
   display: inline-block;
@@ -1350,13 +1127,7 @@
 }
 .knowledge-drawer {
   top: 187px;
-}
-
-.course-banner {
-  height: 136px;
-  min-height: 136px;
-}
-.knowledge-drawer,
+}.knowledge-drawer,
 .graph-fullscreen .knowledge-drawer {
   top: 187px;
 }
@@ -1372,3 +1143,14 @@
 .public-source-table small { display: block; margin-top: 5px; color: #8295a1; }
 .public-source-table p { margin: 6px 0 0; line-height: 1.7; color: #69828f; }
 .public-ocean-resources .public-source-note { margin-bottom: 0; font-size: 11px; color: #8c805f; }
+/* 课程总览在固定高度的舞台内滚动，避免下方单元卡被裁切 */
+.course-overview {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 18px;
+  scrollbar-gutter: stable;
+}
+.course-overview::-webkit-scrollbar { width: 8px; }
+.course-overview::-webkit-scrollbar-thumb { background: #cfe0ea; border-radius: 4px; }
+.course-overview::-webkit-scrollbar-track { background: transparent; }

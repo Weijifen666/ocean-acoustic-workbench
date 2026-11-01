@@ -138,12 +138,12 @@ class JobStore:
         with self.connection() as connection:
             return [self._decode(row) for row in connection.execute('SELECT * FROM jobs ORDER BY julianday(created) DESC,rowid DESC LIMIT ?',(limit,))]
 
-    def submit(self, plan, *, scope='local', idempotency_key=None):
+    def submit(self, plan, *, scope='local', idempotency_key=None, cases=None):
         if idempotency_key is not None and not re.fullmatch(r'[A-Za-z0-9_.:-]{8,128}',idempotency_key):
             raise StoreError('幂等标识须为 8–128 位字母、数字或 _ . : -。')
         if not isinstance(scope,str) or not scope or len(scope)>160:
             raise StoreError('无效任务命名空间')
-        canonical = json.dumps(plan,ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False)
+        canonical = json.dumps(plan if cases is None else {'plan':plan,'cases':cases},ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False)
         digest = hashlib.sha256(canonical.encode()).hexdigest()
         with self.connection(immediate=True) as connection:
             if idempotency_key:
@@ -158,12 +158,13 @@ class JobStore:
             if previous and not idempotency_key:
                 return {'ids':json.loads(previous['ids']),'batch_id':previous['batch_id'],'reused':True,'plan_sha256':digest}
             batch = uuid.uuid4().hex; ids=[]; created=now()
-            for frequency in plan['frequencies_hz']:
-                for depth in plan['source_depths_m']:
-                    job_id=uuid.uuid4().hex[:12];ids.append(job_id)
-                    case={**plan,'frequency_hz':frequency,'source_depth_m':depth}
-                    connection.execute('INSERT INTO jobs(id,state,created,updated,plan,error,batch_id) VALUES(?,?,?,?,?,NULL,?)',(job_id,'QUEUED',created,created,json.dumps(case,ensure_ascii=False),batch))
-                    connection.execute('INSERT INTO job_events(job_id,previous_state,state,created,note) VALUES(?,NULL,?,?,?)',(job_id,'QUEUED',created,'参数已校验，等待持久队列领取'))
+            expanded=cases if cases is not None else [{**plan,'frequency_hz':frequency,'source_depth_m':depth} for frequency in plan['frequencies_hz'] for depth in plan['source_depths_m']]
+            for original in expanded:
+                job_id=uuid.uuid4().hex[:12];ids.append(job_id)
+                case={**original}
+                if cases is not None:case['batch_id']=batch
+                connection.execute('INSERT INTO jobs(id,state,created,updated,plan,error,batch_id) VALUES(?,?,?,?,?,NULL,?)',(job_id,'QUEUED',created,created,json.dumps(case,ensure_ascii=False),batch))
+                connection.execute('INSERT INTO job_events(job_id,previous_state,state,created,note) VALUES(?,NULL,?,?,?)',(job_id,'QUEUED',created,'参数已校验，等待持久队列领取'))
             connection.execute('INSERT INTO submissions VALUES(?,?,?,?,?,?)',(batch,scope,idempotency_key,digest,json.dumps(ids),created))
             return {'ids':ids,'batch_id':batch,'reused':False,'plan_sha256':digest}
 

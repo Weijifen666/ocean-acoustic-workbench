@@ -40,7 +40,7 @@ async def execute(row,cloud,local):
  print('Cloud result could not be acknowledged:',row['id'],flush=True)
 async def main():
  tasks=set();seen_ok=False;last_request=0;poll_id=str(uuid.uuid4())
- async with httpx.AsyncClient(timeout=20,headers={'x-ocean-bridge':secret},trust_env=False,follow_redirects=False,proxy=outbound_proxy(runtime.get('outbound_proxy')),limits=httpx.Limits(max_keepalive_connections=0)) as cloud,httpx.AsyncClient(timeout=95,trust_env=False,follow_redirects=False) as local:
+ async with httpx.AsyncClient(timeout=20,headers={'x-ocean-bridge':secret,'User-Agent':'OceanAcousticWorkbench/0.7 (+https://github.com/Weijifen666/ocean-acoustic-workbench)'},trust_env=False,follow_redirects=False,proxy=outbound_proxy(runtime.get('outbound_proxy')),limits=httpx.Limits(max_keepalive_connections=0)) as cloud,httpx.AsyncClient(timeout=95,trust_env=False,follow_redirects=False) as local:
   while True:
    try:
     response=await cloud.post(site+'/_bridge/poll',json={'poll_id':poll_id})

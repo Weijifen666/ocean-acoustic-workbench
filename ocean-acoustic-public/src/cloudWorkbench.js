@@ -25,8 +25,8 @@ export function useWorkbenchCapabilities(initial) {
   return state;
 }
 
-export function researchRounds(value, maximum = 1000, fallback = 40) {
-  const max = Number.isInteger(maximum) && maximum > 0 ? maximum : 40;
+export function researchRounds(value, maximum = 1000, fallback = 0) {
+  const max = Number.isInteger(maximum) && maximum > 0 ? maximum : 1000;
   const requested = Number(value);
   return value !== '' && Number.isInteger(requested) && requested >= 0 && requested <= max ? requested : Math.min(max, fallback);
 }
@@ -39,10 +39,12 @@ export function contextBudgetChoices(advertised) {
 }
 
 export function normalizeResearchBudget(value, advertised) {
+  const choices = contextBudgetChoices(advertised);
+  const fallback = choices.includes('unlimited') ? 'unlimited' : 'auto';
   if (value === 'auto') return 'auto';
-  if (value === 'unlimited') return contextBudgetChoices(advertised).includes(value) ? value : 'auto';
+  if (value === 'unlimited') return choices.includes(value) ? value : 'auto';
   const number = Number(value);
-  return contextBudgetChoices(advertised).includes(number) ? number : 'auto';
+  return choices.includes(number) ? number : fallback;
 }
 
 // Only visible message text is available in the browser. The server accounts

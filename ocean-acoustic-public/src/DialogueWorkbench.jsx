@@ -40,9 +40,9 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
  const [session,setSession]=useState(()=>{let value=localStorage.getItem('ocean-cloud-research-v1-session');if(!value){value=crypto.randomUUID();localStorage.setItem('ocean-cloud-research-v1-session',value)}return value});
  const [previous,setPrevious]=useState(()=>localStorage.getItem('ocean-cloud-research-v1-previous')||'');
  const [backend,setBackend]=useState('api');
- const [rounds,setRounds]=useState('40');
+ const [rounds,setRounds]=useState(()=>String(researchRounds(localStorage.getItem('ocean-cloud-research-v2-rounds'))));
  const [sidebarShown,setSidebarShown]=useState(false);
- const [contextBudget,setContextBudget]=useState(()=>String(normalizeResearchBudget(localStorage.getItem('ocean-cloud-research-v1-context-budget')||'auto')));
+ const [contextBudget,setContextBudget]=useState(()=>String(normalizeResearchBudget(localStorage.getItem('ocean-cloud-research-v2-context-budget'))));
  const [text,setText]=useState(''),[messages,setMessages]=useState([]),[run,setRun]=useState(null),[loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(null),[format,setFormat]=useState('md'),[cap,setCap]=useState(null),[sessions,setSessions]=useState([]);
  const lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false);
  const budgetPaused=run?.recoverable===true&&run.error_code==='CONTEXT_BUDGET_EXCEEDED';
@@ -89,8 +89,8 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
    <div className="dialogue-auxiliary">
     <details className="dialogue-options"><summary>研究设置 <small>{rounds==='0'?'轮数不限':`${rounds} 轮`} · {contextBudget==='auto'?'自动 32K':contextBudget==='unlimited'?'应用预算不限':`${Number(contextBudget)/1024}K`}</small></summary>
    <div className="dialogue-toolbar"><label>对话后端 <select aria-label="对话后端" disabled={busy} value={backend} onChange={e=>chooseBackend(e.target.value)}><option value="api">模型 API · 云端研究 Agent</option><option value="dsh" disabled>DSH · 需要专属节点</option><option value="codex" disabled>Codex · 需要专属节点</option></select></label><span role="status">{backend==='api'?(cap?.api_configured?'模型接口已配置':'请先配置模型 API Key'):status?.message||'正在检查本机 Agent…'}</span></div>
-   {backend==='api'&&<div className="dialogue-toolbar"><label>工具轮数 <input aria-label="Agent工具轮数" type="number" min="0" max={cap?.max_rounds||1000} disabled={busy} value={rounds} onChange={e=>{setRounds(e.target.value);localStorage.setItem('ocean-cloud-research-v1-rounds',e.target.value)}}/></label><span>默认 {cap?.default_rounds||40} 轮；0 表示不限，达到设定轮数后汇总已有结果</span></div>}
-   <div className="dialogue-toolbar"><label>上下文预算 <select aria-label="研究上下文预算" disabled={busy} value={contextBudget} onChange={e=>{setContextBudget(e.target.value);localStorage.setItem('ocean-cloud-research-v1-context-budget',e.target.value)}}>{contextBudgetChoices(cap?.context_budgets).map(value=><option value={value} key={value}>{value==='auto'?'自动 · 32K':value==='unlimited'?'不限 · 由模型接口限制':`${value/1024}K`}</option>)}</select></label><span>可见文字 UTF-8 保守估算 {estimateVisibleResearchInput(messages,text).toLocaleString()}；完整输入还含系统、资料和工具结果。</span></div>
+   {backend==='api'&&<div className="dialogue-toolbar"><label>工具轮数 <input aria-label="Agent工具轮数" type="number" min="0" max={cap?.max_rounds||1000} disabled={busy} value={rounds} onChange={e=>{setRounds(e.target.value);localStorage.setItem('ocean-cloud-research-v2-rounds',e.target.value)}}/></label><span>默认 {(cap?.default_rounds??0)===0?'不限（0）':`${cap.default_rounds} 轮`}；可自定轮数，0 表示不限，达到设定轮数后汇总已有结果</span></div>}
+   <div className="dialogue-toolbar"><label>上下文预算 <select aria-label="研究上下文预算" disabled={busy} value={contextBudget} onChange={e=>{setContextBudget(e.target.value);localStorage.setItem('ocean-cloud-research-v2-context-budget',e.target.value)}}>{contextBudgetChoices(cap?.context_budgets).map(value=><option value={value} key={value}>{value==='auto'?'自动 · 32K':value==='unlimited'?'不限 · 由模型接口限制':`${value/1024}K`}</option>)}</select></label><span>可见文字 UTF-8 保守估算 {estimateVisibleResearchInput(messages,text).toLocaleString()}；完整输入还含系统、资料和工具结果。</span></div>
    <ResearchContextStatus context={run?.context}/>
     </details>
     <details className="dialogue-chat-management"><summary>聊天管理</summary>

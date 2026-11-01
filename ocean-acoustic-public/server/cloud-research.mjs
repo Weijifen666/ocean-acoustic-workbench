@@ -214,7 +214,7 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
   if(path==='/api/model-workflows')return json(catalog.modelWorkflows());
   if(path==='/api/project/files')return json(catalog.listProjectFiles({source:url.searchParams.get('source'),query:url.searchParams.get('q')}));
   if(path==='/api/project/file')return json(catalog.readProjectFile(url.searchParams.get('path')));
-  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,job_artifact_listing:true,job_export:true,job_export_mode:'authenticated_download_on_click',max_rounds:1000,default_rounds:40,execution_mode:'poll_steps',context_budgets:['auto',...CONTEXT_BUDGETS,'unlimited'],context_policy:'deterministic_tool_projection_and_complete_rounds'});
+  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,job_artifact_listing:true,job_export:true,job_export_mode:'authenticated_download_on_click',max_rounds:1000,default_rounds:0,default_context_budget:'unlimited',execution_mode:'poll_steps',context_budgets:['auto',...CONTEXT_BUDGETS,'unlimited'],context_policy:'deterministic_tool_projection_and_complete_rounds'});
   if(path.endsWith('/dsh/status')||path.endsWith('/codex/status'))return json({available:false,message:'公网研究使用模型API；桌面Agent需要专属执行环境，当前没有接入。'});
   if(path==='/api/research/history')return json((await getSession(env,owner,url.searchParams.get('session')))?.data.messages||[]);
   if(path==='/api/research/active') {
@@ -241,8 +241,8 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    const body=JSON.parse(raw);if(!body||typeof body!=='object'||Array.isArray(body)||typeof body.message!=='string')throw problem('研究请求须为包含文字问题的JSON对象');const question=body.message;
    if(!idPattern.test(body.session||'')||!idPattern.test(body.request_id||'')||!question.trim()||question.length>12000)throw problem('研究请求参数无效');
    if(body.backend!=='api')throw problem('公网尚未接入桌面DSH/Codex执行环境，请选择模型API',503);
-   const limit=body.rounds??40;if(!Number.isInteger(limit)||limit<0||limit>1000)throw problem('工具轮数须为0–1000的整数');
-   const requestedBudget=body.context_budget===undefined?'auto':body.context_budget;resolveBudget(requestedBudget);
+   const limit=body.rounds??0;if(!Number.isInteger(limit)||limit<0||limit>1000)throw problem('工具轮数须为0–1000的整数');
+   const requestedBudget=body.context_budget===undefined?'unlimited':body.context_budget;resolveBudget(requestedBudget);
    const fingerprint=await digest(JSON.stringify({session:body.session,question,limit,...(requestedBudget==='auto'?{}:{context_budget:requestedBudget})})),prior=await one(env,'SELECT * FROM cloud_research_runs WHERE visitor_id=? AND request_key=?',owner,body.request_id);
    if(prior) {if(prior.payload_hash!==fingerprint)throw problem('同一请求标识不能用于不同问题',409);return json({id:prior.id,state:prior.state,reused:true});}
    if(await one(env,"SELECT id FROM cloud_research_runs WHERE visitor_id=? AND state='running'",owner))throw problem('你还有研究请求正在运行，请先停止或完成它',409);

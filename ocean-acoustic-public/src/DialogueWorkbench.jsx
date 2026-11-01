@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Waves,ArrowUp,BookOpen,Download,Trash2,Undo2,Copy,Loader2,Square,Settings2,FlaskConical,X} from 'lucide-react';
 import ChatMessage from './ChatMessage';
+import JobExports from './JobExports';
 import ModelSkillPicker from './ModelSkillPicker';
 import QuestionSuggestions from './QuestionSuggestions';
 import {serializeChat} from './chatExport';
@@ -58,7 +59,7 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
   const poll=async()=>{if(pending)return;pending=true;try{const current=await advanceResearchRun(run.id,cap?.execution_mode);if(!alive)return;setRun(current);setError(current.error||'');if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(alive){setMessages(rows);loadSessions()}}}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
   const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
  },[run?.id,run?.state,session,cap?.execution_mode,budgetPaused]);
- useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial]);
+ useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial&&!run?.exports?.length)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial,run?.exports?.length]);
  async function send(){if(sending.current||busy||loading||!text.trim()||!cap?.api_configured)return;
   if(backend==='api'&&(!Number.isInteger(Number(rounds))||Number(rounds)<0||Number(rounds)>(cap?.max_rounds||1000)||rounds==='')){setError('工具轮数请填 0–'+(cap?.max_rounds||1000)+' 的整数，0 表示不限');return}
   sending.current=true;setSubmitting(true);setError('');follow.current=true;
@@ -101,8 +102,9 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
    <ResearchBudgetRecovery run={run} busy={busy} onResume={resume}/>
    <div className="dialogue-messages" role="log" aria-label="聊天记录" ref={scroll} onScroll={e=>{const el=e.currentTarget;follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<100}}>
     {!loading&&!messages.length&&<div className="dialogue-welcome"><Waves size={36}/><h2>从一个声学问题开始</h2><p>从资料与真实环境数据开始，区分研究计划、已执行工具和待验证结论。</p><QuestionSuggestions mode="agent" onSelect={setText}/></div>}
-    {messages.map((row,i)=><article className={'dialogue-message '+row.role} key={row.id||i}><div className="dialogue-avatar">{row.role==='user'?'我':<Waves size={17}/>}</div><div className="dialogue-content"><div className="dialogue-message-label">{row.role==='user'?'你':'海洋声学 Agent'}<button aria-label={'复制第'+(i+1)+'条消息'} title="复制消息" onClick={()=>copy(row.text)}><Copy size={14}/></button></div>{row.role==='user'?<div className="dialogue-user-text">{row.text}</div>:<ChatMessage text={row.text}/>}</div></article>)}
+    {messages.map((row,i)=><article className={'dialogue-message '+row.role} key={row.id||i}><div className="dialogue-avatar">{row.role==='user'?'我':<Waves size={17}/>}</div><div className="dialogue-content"><div className="dialogue-message-label">{row.role==='user'?'你':'海洋声学 Agent'}<button aria-label={'复制第'+(i+1)+'条消息'} title="复制消息" onClick={()=>copy(row.text)}><Copy size={14}/></button></div>{row.role==='user'?<div className="dialogue-user-text">{row.text}</div>:<><ChatMessage text={row.text}/><JobExports items={row.exports}/></>}</div></article>)}
     {busy&&run?.partial&&<article className="dialogue-message"><div className="dialogue-avatar"><Waves size={17}/></div><div className="dialogue-content"><div className="dialogue-message-label">{labels[run.backend||backend]} · 正在回答</div><ChatMessage text={run.partial}/></div></article>}
+    {run?.state!=='done'&&run?.exports?.length>0&&<JobExports items={run.exports}/>}
    </div>
    {run?.trace?.length>0&&<details className="dialogue-trace"><summary>实际工具调用 · {run.trace.length} 次</summary><div>{run.trace.map((item,i)=><details key={i}><summary>{i+1}. {item.tool} · {item.status}</summary><pre>{JSON.stringify(item.arguments,null,2)}</pre></details>)}</div></details>}
    {busy&&<div className="dialogue-runtime" role="status"><Loader2 size={16} className="spin"/>{labels[run?.backend||backend]} · {run?.stage||'正在提交'}{run?.elapsed_seconds!=null&&` · ${run.elapsed_seconds} 秒`}{run?.model&&` · ${run.model}`}<button className="button" disabled={!run?.id} onClick={stop}><Square size={13}/>停止当前请求</button></div>}

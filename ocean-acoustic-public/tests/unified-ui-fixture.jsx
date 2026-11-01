@@ -7,6 +7,7 @@ import Jobs from '../src/StudioResults';
 import {publicCapabilities,researchRounds,contextBudgetChoices,normalizeResearchBudget,estimateVisibleResearchInput,researchContextNotes} from '../src/cloudWorkbench';
 import {projectCategory, projectCategories} from '../src/projectFiles';
 import ChatMessage from '../src/ChatMessage';
+import JobExports,{safeJobExport} from '../src/JobExports';
 
 globalThis.localStorage = {getItem: () => null, setItem() {}, removeItem() {}};
 const noOp = () => {};
@@ -71,6 +72,21 @@ assert.equal(renderToStaticMarkup(<ResearchBudgetRecovery run={{id:'same-run',re
 const math = renderToStaticMarkup(<ChatMessage text={'\\[TL=-20\\log_{10}|p|\\]'} />);
 assert.match(math, /class="katex/);
 assert.doesNotMatch(math, /katex-error/);
+
+const jobExport={id:'abcdef123456',state:'RUNNING',artifact_count:3,artifacts:[{name:'result.json',url:'/api/jobs/abcdef123456/artifact/result.json'},{name:'tl_map.png',url:'/api/jobs/abcdef123456/artifact/tl_map.png'}],download:{url:'/api/jobs/abcdef123456/download',filename:'untrusted-name.html'},download_on_click:true,archive_created:false,partial:false,scope:'existing_task_files'};
+const attachments=renderToStaticMarkup(<JobExports items={[jobExport]}/>);
+assert.match(attachments,/下载任务与结果包/);
+assert.match(attachments,/href="\/api\/jobs\/abcdef123456\/download" download="ocean-abcdef123456.zip" rel="noopener noreferrer"/);
+assert.match(attachments,/输出文件（3）/);
+assert.match(attachments,/<details class="job-export-files">/);
+assert.match(attachments,/任务尚未结束，当前产物可能不完整/);
+assert.doesNotMatch(attachments,/untrusted-name|已生成/);
+assert.equal(safeJobExport({...jobExport,id:'../../secret'}),null);
+assert.equal(safeJobExport({...jobExport,id:123456789012}),null);
+assert.equal(renderToStaticMarkup(<JobExports items={[{id:jobExport.id,download:{url:'https://untrusted.example/export.zip'},artifacts:[{name:'../secret',url:'/api/jobs/abcdef123456/artifact/../secret'},{name:'result.json',url:'/api/jobs/999999999999/artifact/result.json'},{name:'private.txt',url:'//untrusted.example/private.txt'}]}]}/>),'');
+const failedAttachments=renderToStaticMarkup(<JobExports items={[{...jobExport,state:'FAILED'}]}/>);
+assert.match(failedAttachments,/失败/);
+assert.match(failedAttachments,/下载任务与结果包/);
 
 const simulation = renderToStaticMarkup(<Simulation onAsk={noOp} capabilities={publicCapabilities}/>);
 assert.match(simulation, /模型与使用经验/);

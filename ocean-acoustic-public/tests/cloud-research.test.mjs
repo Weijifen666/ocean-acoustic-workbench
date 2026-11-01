@@ -326,3 +326,85 @@ test('unlimited public research is persisted and sends accumulated necessary con
   assert.equal(JSON.parse(JSON.stringify(final.data.context)).budget_tokens,null);
  }finally{s.sqlite.close();}
 });
+
+test('owned result exports register real artifact links in run and history without fetching ZIP bytes or recomputing',async()=>{
+ const job='aabbccddeeff',names=['result.json','summary.json','tl_map.png','curve.csv','case.env'];
+ const calls=[toolCall('list_job_artifacts',{id:job,limit:2},'owned-file-list'),toolCall('export_job_results',{id:job},'owned-export-once'),toolCall('export_job_results',{id:job},'owned-export-repeat')];
+ const sentinel='BINARY_OR_PRIVATE_DATA_MUST_NOT_ENTER_MODEL_CONTEXT';
+ const s=harness([provider('',calls),provider('已登记本人任务的现有下载入口；ZIP在点击时生成，本轮没有重算或创建新文件。')],
+  {onNode:async(record,index,value)=>Response.json({...value,artifacts:names,private_path:'C:/private/task-output',unrequested_binary:sentinel})});
+ try{
+  const cookie=await visitor(s),foreign=await visitor(s,false),id=await start(s,cookie,chatBody({message:'列出并导出本人已有任务文件，不要重新计算。'}));
+  const first=await step(s,cookie,id);assert.equal(first.data.state,'running');assert.equal(first.data.trace.length,3);assert.ok(first.data.trace.every(t=>t.state==='done'));
+  assert.deepEqual(s.nodeRequests.map(r=>[r.method,r.path]),Array(3).fill(['GET','/api/jobs/'+job]));
+  assert.equal(s.submissions.size,0);assert.equal(first.data.exports.length,1,'Repeated exports of the same job are deduplicated');
+  const metadata=first.data.exports[0];
+  assert.equal(metadata.id,job);assert.equal(metadata.state,'SUCCEEDED');assert.equal(metadata.artifact_count,names.length);
+  assert.deepEqual(metadata.artifacts,names.map(name=>({name,url:`/api/jobs/${job}/artifact/${name}`})));
+  assert.equal(metadata.next_offset,null);assert.deepEqual(metadata.download,{url:`/api/jobs/${job}/download`,filename:`ocean-${job}.zip`});
+  assert.equal(metadata.download_on_click,true);assert.equal(metadata.archive_created,false);assert.equal(metadata.partial,false);assert.equal(metadata.scope,'existing_task_files');
+  const checkpoint=await stored(s,id),listed=JSON.parse(checkpoint.data.messages.find(m=>m.tool_call_id==='owned-file-list').content);
+  assert.deepEqual(listed.artifacts,names.slice(0,2).map(name=>({name,url:`/api/jobs/${job}/artifact/${name}`})));assert.equal(listed.next_offset,2);
+  assert.deepEqual(checkpoint.data.exports,[metadata]);assert.ok(!JSON.stringify(checkpoint.data.messages).includes(sentinel));assert.ok(!JSON.stringify(checkpoint.data.messages).includes('C:/private/'));
+  const final=await step(s,cookie,id);assert.equal(final.data.state,'done');assert.deepEqual(final.data.exports,[metadata]);
+  const history=await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);
+  assert.deepEqual(history.data.at(-1).exports,[metadata]);
+  assert.equal((await get(s,foreign,id)).r.status,404);assert.deepEqual((await s.call('/api/research/history?session=session-research-0001','GET',undefined,foreign)).data,[]);
+  assert.equal(s.nodeRequests.length,3);assert.equal(s.providerRequests.length,2);
+  for(const request of s.providerRequests){assert.ok(!JSON.stringify(request.body).includes(sentinel));completeToolGroups(request.body.messages);}
+ }finally{s.sqlite.close();}
+});
+
+test('artifact listing paginates actual names and rejects malformed IDs and page controls before node access',async()=>{
+ const job='aabbccddeeff',names=Array.from({length:45},(_,i)=>`field_${String(i).padStart(2,'0')}.csv`);
+ const invalid=[{id:'../config.json'},{id:job+'%2fresult.json'},{id:job,offset:-1},{id:job,offset:1.5},{id:job,limit:0},{id:job,limit:101},{id:job,limit:'40'}];
+ const s=harness([provider('',[toolCall('list_job_artifacts',{id:job},'page-first'),toolCall('list_job_artifacts',{id:job,offset:40,limit:5},'page-last')]),provider('',invalid.map((args,i)=>toolCall('list_job_artifacts',args,'invalid-files-'+i)))],
+  {onNode:async(record,index,value)=>Response.json({...value,artifacts:names})});
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie);
+  const first=await step(s,cookie,id);assert.ok(first.data.trace.every(t=>t.state==='done'));
+  let tools=(await stored(s,id)).data.messages.filter(m=>m.role==='tool').map(m=>JSON.parse(m.content));
+  assert.equal(tools[0].artifacts.length,40);assert.equal(tools[0].next_offset,40);assert.equal(tools[0].artifact_count,45);
+  assert.deepEqual(tools[1].artifacts.map(a=>a.name),names.slice(40));assert.equal(tools[1].next_offset,null);
+  const second=await step(s,cookie,id);assert.ok(second.data.trace.slice(-invalid.length).every(t=>t.state==='failed'));
+  assert.equal(s.nodeRequests.length,2,'Malformed names and paging values must fail before requesting private task details');
+  tools=(await stored(s,id)).data.messages.filter(m=>m.role==='tool').slice(-invalid.length).map(m=>JSON.parse(m.content));
+  assert.ok(tools.every(r=>typeof r.error==='string'));assert.equal(s.submissions.size,0);assert.deepEqual(second.data.exports||[],[]);
+ }finally{s.sqlite.close();}
+});
+
+test('unsafe artifact names never become hrefs and existing active task files are honestly marked partial',async()=>{
+ const job='aabbccddeeff',unsafe=['.','../config.json','case..env','folder/result.csv','folder\\result.csv','result%2fsecret.csv','中文.csv'];
+ const s=harness([provider('',[toolCall('list_job_artifacts',{id:job},'mixed-file-names'),toolCall('export_job_results',{id:job},'partial-active-export')])],
+  {onNode:async(record,index,value)=>Response.json({...value,state:'RUNNING',artifacts:['run.log',...unsafe]})});
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie),response=await step(s,cookie,id);
+  assert.ok(response.data.trace.every(t=>t.state==='done'));
+  const outputs=(await stored(s,id)).data.messages.filter(m=>m.role==='tool').map(m=>JSON.parse(m.content));
+  for(const output of outputs){
+   assert.deepEqual(output.artifacts,[{name:'run.log',url:`/api/jobs/${job}/artifact/run.log`}]);
+   const unavailable=(output.unavailable_names||[]).map(value=>typeof value==='string'?value:value.name);
+   for(const name of unsafe)assert.ok(unavailable.includes(name),'Explain why the actual name has no direct download: '+name);
+   assert.equal(output.state,'RUNNING');
+  }
+  assert.equal(outputs[1].partial,true);
+  assert.equal(response.data.exports[0].archive_created,false);assert.equal(response.data.exports[0].download_on_click,true);
+  assert.ok(s.nodeRequests.every(r=>r.method==='GET'&&r.path==='/api/jobs/'+job));assert.equal(s.submissions.size,0);
+ }finally{s.sqlite.close();}
+});
+
+test('offline, foreign, missing and empty jobs never produce invented exports or trigger downloads',async()=>{
+ const job='aabbccddeeff';
+ for(const kind of ['offline','foreign','missing','empty']){
+  const s=harness([provider('',[toolCall('export_job_results',{id:job},'unavailable-export')])],{online:kind!=='offline',onNode:async(record,index,value)=>
+   ['foreign','missing'].includes(kind)?Response.json({detail:kind==='foreign'?'任务不存在或不属于当前访客':'任务不存在'},{status:404}):Response.json({...value,artifacts:[]})});
+  try{
+   const cookie=await visitor(s),id=await start(s,cookie),response=await step(s,cookie,id);
+   assert.equal(response.data.trace[0].state,'failed',kind);
+   const result=JSON.parse((await stored(s,id)).data.messages.find(m=>m.role==='tool').content);
+   assert.equal(typeof result.error,'string',kind);assert.equal(result.download,undefined);assert.equal(result.artifacts,undefined);
+   assert.deepEqual(response.data.exports||[],[]);assert.equal(s.submissions.size,0);
+   assert.equal(s.nodeRequests.length,kind==='offline'?0:1);assert.ok(s.nodeRequests.every(r=>r.method==='GET'&&r.path==='/api/jobs/'+job));
+  }finally{s.sqlite.close();}
+ }
+});

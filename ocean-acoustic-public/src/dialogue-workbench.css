@@ -113,3 +113,16 @@
   .dialogue-composer textarea { height:48px; min-height:40px; max-height:15dvh; }
   .dialogue-composer { padding-top:6px; padding-bottom:6px; }
 }
+
+/* Result links stay inside the answer scroll area; file lists scroll alone. */
+.dialogue-workbench .job-exports { display:grid; gap:10px; min-width:0; margin:12px 0; }
+.dialogue-workbench .job-export-card { min-width:0; padding:12px; border:1px solid var(--dialogue-border,#d5e4e7); border-radius:10px; background:var(--dialogue-soft,#f3f9fa); }
+.dialogue-workbench .job-export-heading { display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px 14px; font-size:12px; }
+.dialogue-workbench .job-export-heading>span { color:var(--dialogue-muted,#647d85); }
+.dialogue-workbench .job-export-download { display:inline-flex; align-items:center; gap:6px; margin-top:9px; font-size:13px; font-weight:600; }
+.dialogue-workbench .job-export-note,.dialogue-workbench .job-export-files p { margin:7px 0 0; color:var(--dialogue-muted,#647d85); font-size:11px; line-height:1.65; }
+.dialogue-workbench .job-export-files { margin-top:8px; }
+.dialogue-workbench .job-export-files>summary { padding:4px 0; font-size:12px; cursor:pointer; }
+.dialogue-workbench .job-export-files>ul { max-height:160px; overflow:auto; overscroll-behavior:contain; list-style:none; padding:0 4px; margin:7px 0 0; }
+.dialogue-workbench .job-export-files li a { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:12px; }
+.dialogue-workbench .job-export-files li span { overflow-wrap:anywhere; min-width:0; }

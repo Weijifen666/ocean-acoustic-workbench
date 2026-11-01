@@ -1,4 +1,5 @@
-import {buildContext,assertMessagesBudget} from './context-budget.mjs';
+import {buildContext,resolveBudget,CONTEXT_BUDGETS,estimateMessages} from './context-budget.mjs';
+import {packResearchContext,projectToolResult,resourcePage} from './research-context.mjs';
 import {createResearchCatalog} from './research-catalog.mjs';
 import {diagnoseProfile} from './layer-diagnostics.mjs';
 
@@ -11,11 +12,11 @@ const string={type:'string'},number={type:'number'},integer={type:'integer'};
 export const RESEARCH_TOOLS=[
  tool('list_research_skills','发现海洋声学研究技能与适用条件'),
  tool('load_research_skill','加载技能说明；内容是参考资料，不表示已经运行',{id:string}),
- tool('read_skill_resource','读取技能内明确登记的参考文件或只读脚本',{id:string,path:string}),
+ tool('read_skill_resource','分页读取技能资源；offset为Unicode字符位置，max_bytes为256–20000，按next_offset继续；片段不等于完整JSON',{id:string,path:string,offset:integer,max_bytes:integer},['id','path']),
  tool('list_model_workflows','查询模型创建配方和当前执行范围'),
  tool('search_knowledge','检索课程与公开资料并保留来源',{query:string}),
- tool('list_project_files','列出共享代码、输入模板和技能参考文件'),
- tool('read_project_file','读取共享目录中明确列出的文件',{path:string}),
+ tool('list_project_files','分页列出共享代码与输入模板；默认20项，limit最多50，按next_offset继续',{offset:integer,limit:integer},[]),
+ tool('read_project_file','分页读取共享文件；按next_offset继续，不把片段当完整配方',{path:string,offset:integer,max_bytes:integer},['path']),
  tool('get_ocean_profile','查询实际 WOA18 温盐声速；period:0年平均,1–12月,13–16季度',{lon:number,lat:number,period:integer}),
  tool('diagnose_seasonal_layers','实际读取单点四季剖面，计算温度阈值混合层和候选表面声道；不计算密度MLD、不冒充区域统计',{lon:number,lat:number,reference_depth_m:number,temperature_threshold_c:number},['lon','lat']),
  tool('get_simulation_schema','查看受限声场表单的三求解器与环境条件'),
@@ -46,7 +47,12 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
   if(!row)throw problem('研究请求不存在或不属于当前访客',404);
   return {...row,data:await dec(env,row.ciphertext)};
  }
- function view(row) {return {id:row.id,state:row.state,backend:'api',stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,trace:row.data.trace||[],rounds:row.data.rounds||0};}
+ const budgetFailure=data=>data.error_code==='CONTEXT_BUDGET_EXCEEDED'||/^(当前问题或工具结果超过所选上下文预算|当前必要问题|当前问题与必要系统说明无法完整放入)/.test(data.error||'');
+ function view(row) {
+  const recoverable=row.state==='failed'&&budgetFailure(row.data);
+  const context=row.data.context||(recoverable?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
+  return {id:row.id,state:row.state,backend:'api',stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,error_code:row.data.error_code||(recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,context,trace:row.data.trace||[],rounds:row.data.rounds||0};
+ }
  async function getSession(env,owner,id) {
   if(!idPattern.test(id||''))throw problem('会话标识无效');
   const row=await one(env,'SELECT * FROM cloud_research_sessions WHERE visitor_id=? AND id=?',owner,id);
@@ -95,12 +101,12 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
  }
  async function execute(name,args,request,env,ctx,identity,row,callId) {
   if(!args||typeof args!=='object'||Array.isArray(args))throw problem('工具参数须为对象');
-  if(name==='list_research_skills')return catalog.catalog();
-  if(name==='load_research_skill'||name==='read_skill_resource')return catalog.readSkill(args.id,args.path||'SKILL.md');
-  if(name==='list_model_workflows')return catalog.modelWorkflows();
-  if(name==='search_knowledge')return retrieve(String(args.query||'').slice(0,200));
-  if(name==='list_project_files')return catalog.listProjectFiles({});
-  if(name==='read_project_file')return catalog.readProjectFile(args.path);
+  if(name==='list_research_skills')return projectToolResult(name,args,catalog.catalog());
+  if(name==='load_research_skill'||name==='read_skill_resource')return resourcePage(catalog.readSkill(args.id,args.path||'SKILL.md'),args);
+  if(name==='list_model_workflows')return projectToolResult(name,args,catalog.modelWorkflows());
+  if(name==='search_knowledge')return projectToolResult(name,args,retrieve(String(args.query||'').slice(0,200)));
+  if(name==='list_project_files')return projectToolResult(name,args,catalog.listProjectFiles({}));
+  if(name==='read_project_file')return resourcePage(catalog.readProjectFile(args.path),args);
   if(name==='get_ocean_profile')return ocean(request,env,'/profile',{lon:args.lon,lat:args.lat,period:args.period});
   if(name==='diagnose_seasonal_layers') {
    const profiles=[],diagnostics=[];let version;
@@ -112,16 +118,16 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    return {scope:'point_climatology',requested:{lon:args.lon,lat:args.lat},dataset_version:version,diagnostics,profiles:profiles.map(p=>({period:p.period,selected:p.selected,valid_layers:p.rows.length,max_valid_depth_m:p.rows.at(-1)?.depth_m})),executed:true,method:'cloud_deterministic_temperature_and_sound_speed_diagnostics'};
   }
   if(name==='get_simulation_schema')return {solvers:['kraken','scooter','bellhop'],templates:['munk_5000m','pekeris_100m','woa18'],max_cases:4,arbitrary_scripts:false,required:['solver','template','frequencies_hz','source_depths_m','receiver_depth_m','range_min_km','range_max_km'],note:'WOA18需要显式海底参数；提交前preview_simulation检查全部范围。'};
-  if(name==='preview_simulation')return nodeRequest(request,env,ctx,identity,'/api/simulation/plans/preview','POST',args.plan);
+  if(name==='preview_simulation')return projectToolResult(name,args,await nodeRequest(request,env,ctx,identity,'/api/simulation/plans/preview','POST',args.plan));
   if(name==='submit_simulation') {
    if(!await ownsLease(env,row))throw problem('请求已停止或调度已转移，不再提交计算',409);
    const key='research-'+(await digest(row.id+':'+callId)).slice(0,48);
    return nodeRequest(request,env,ctx,identity,'/api/simulation/jobs','POST',args.plan,key);
   }
-  if(name==='list_jobs')return await heartbeat(env)?nodeRequest(request,env,ctx,identity,'/api/jobs'):[];
+  if(name==='list_jobs')return await heartbeat(env)?projectToolResult(name,args,await nodeRequest(request,env,ctx,identity,'/api/jobs')):[];
   if(name==='get_job'||name==='wait_job') {
    if(!/^[a-f0-9]{12}$/.test(args.id||''))throw problem('任务标识无效');
-   return nodeRequest(request,env,ctx,identity,'/api/jobs/'+args.id);
+   return projectToolResult(name,args,await nodeRequest(request,env,ctx,identity,'/api/jobs/'+args.id));
   }
   throw problem('当前公网Agent没有这个工具，不能执行任意脚本');
  }
@@ -143,8 +149,8 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    }
    if(!data.pending) {
     const final=data.limit>0&&data.rounds>=data.limit,tools=final?[]:RESEARCH_TOOLS;
-    assertMessagesBudget(data.messages,'auto',tools);
-    const response=await remote(cfg,{messages:data.messages,...(tools.length?{tools,tool_choice:'auto'}:{}),max_tokens:4096},request.signal);
+    const packed=packResearchContext(data.messages,data.context_budget??'auto',tools);data.context=packed.context;
+    const response=await remote(cfg,{messages:packed.messages,...(tools.length?{tools,tool_choice:'auto'}:{}),max_tokens:4096},request.signal);
     data.rounds++;data.model_used=true;
     const message=response.choices[0].message;
     if(response.choices[0].finish_reason==='length')throw problem('模型输出达到上限，本次研究未完整返回；请缩小问题或继续追问。',502);
@@ -179,7 +185,7 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    await saveRun(env,row,data);
   }catch(error) {
    if(request.signal.aborted){data.error=null;data.stage='连接已中断，可以继续当前研究';await saveRun(env,row,data);return json(view(await getRun(env,identity.id,id)));}
-   data.error=error.status?error.message:'研究请求未完成，请核对模型配置和网络后重试。';data.stage='研究请求未完成';
+   data.error=error.status?error.message:'研究请求未完成，请核对模型配置和网络后重试。';data.error_code=error.code||null;if(error.context)data.context=error.context;data.stage='研究请求未完成';
    await saveRun(env,row,data,'failed');
   }
   return json(view(await getRun(env,identity.id,id)));
@@ -193,7 +199,7 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
   if(path==='/api/model-workflows')return json(catalog.modelWorkflows());
   if(path==='/api/project/files')return json(catalog.listProjectFiles({source:url.searchParams.get('source'),query:url.searchParams.get('q')}));
   if(path==='/api/project/file')return json(catalog.readProjectFile(url.searchParams.get('path')));
-  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,max_rounds:1000,default_rounds:40,execution_mode:'poll_steps'});
+  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,max_rounds:1000,default_rounds:40,execution_mode:'poll_steps',context_budgets:['auto',...CONTEXT_BUDGETS],context_policy:'deterministic_tool_projection_and_complete_rounds'});
   if(path.endsWith('/dsh/status')||path.endsWith('/codex/status'))return json({available:false,message:'公网研究使用模型API；桌面Agent需要专属执行环境，当前没有接入。'});
   if(path==='/api/research/history')return json((await getSession(env,owner,url.searchParams.get('session')))?.data.messages||[]);
   if(path==='/api/research/active') {
@@ -221,7 +227,8 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    if(!idPattern.test(body.session||'')||!idPattern.test(body.request_id||'')||!question.trim()||question.length>12000)throw problem('研究请求参数无效');
    if(body.backend!=='api')throw problem('公网尚未接入桌面DSH/Codex执行环境，请选择模型API',503);
    const limit=body.rounds??40;if(!Number.isInteger(limit)||limit<0||limit>1000)throw problem('工具轮数须为0–1000的整数');
-   const fingerprint=await digest(JSON.stringify({session:body.session,question,limit})),prior=await one(env,'SELECT * FROM cloud_research_runs WHERE visitor_id=? AND request_key=?',owner,body.request_id);
+   const requestedBudget=body.context_budget===undefined?'auto':body.context_budget;resolveBudget(requestedBudget);
+   const fingerprint=await digest(JSON.stringify({session:body.session,question,limit,...(requestedBudget==='auto'?{}:{context_budget:requestedBudget})})),prior=await one(env,'SELECT * FROM cloud_research_runs WHERE visitor_id=? AND request_key=?',owner,body.request_id);
    if(prior) {if(prior.payload_hash!==fingerprint)throw problem('同一请求标识不能用于不同问题',409);return json({id:prior.id,state:prior.state,reused:true});}
    if(await one(env,"SELECT id FROM cloud_research_runs WHERE visitor_id=? AND state='running'",owner))throw problem('你还有研究请求正在运行，请先停止或完成它',409);
    let session=await getSession(env,owner,body.session);
@@ -229,8 +236,8 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
     const count=await one(env,'SELECT COUNT(*) AS n FROM cloud_research_sessions WHERE visitor_id=?',owner);if(count.n>=100)throw problem('最多保留100个研究会话，请整理后重试');
     session={id:body.session,data:{title:question.trim().slice(0,40),messages:[]}};
    }
-   const now=Date.now(),id=crypto.randomUUID(),packed=buildContext({question,system:GUIDANCE,evidence:retrieve(question),history:session.data.messages,tools:RESEARCH_TOOLS});
-   const data={question,messages:packed.messages,trace:[],rounds:0,limit,stage:'等待首轮研究规划',partial:'',model_used:false};
+   const now=Date.now(),id=crypto.randomUUID(),packed=buildContext({question,system:GUIDANCE,evidence:retrieve(question),history:session.data.messages,tools:RESEARCH_TOOLS,context_budget:requestedBudget});
+   const data={question,messages:packed.messages,trace:[],rounds:0,limit,context_budget:requestedBudget,context:packed.context,stage:'等待首轮研究规划',partial:'',model_used:false};
    const updated={...session.data,messages:[...session.data.messages,{role:'user',text:question}].slice(-300)};
    try{await env.DB.batch([
     env.DB.prepare('INSERT INTO cloud_research_sessions(visitor_id,id,ciphertext,created,updated) VALUES(?,?,?,?,?) ON CONFLICT(visitor_id,id) DO UPDATE SET ciphertext=excluded.ciphertext,updated=excluded.updated').bind(owner,session.id,await enc(env,updated),now,now),
@@ -245,11 +252,24 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
    }
    return json({id,state:'running'},202);
   }
-  const match=path.match(/^\/api\/research\/runs\/([A-Za-z0-9_-]{8,100})(?:\/(step|stop))?$/);
+  const match=path.match(/^\/api\/research\/runs\/([A-Za-z0-9_-]{8,100})(?:\/(step|stop|resume))?$/);
   if(match) {
    const row=await getRun(env,owner,match[1]);
    if(!match[2]&&method==='GET')return json(view(row));
-   if(match[2]==='step'&&method==='POST')return step(request,env,ctx,identity,row.id);
+   if(match[2]==='step'&&method==='POST'){
+    if(row.state!=='running')return json(view(row));
+    const body=await request.json();if(body.context_budget!==undefined){resolveBudget(body.context_budget);if(row.lease_until>Date.now())throw problem('研究步骤正在处理，请稍后再调整预算',409);if(!await saveRun(env,row,{...row.data,context_budget:body.context_budget}))throw problem('研究状态已变化，请刷新后重试',409);}
+    return step(request,env,ctx,identity,row.id);
+   }
+   if(match[2]==='resume'&&method==='POST'){
+    const body=await request.json(),budget=body.context_budget===undefined?(row.data.context_budget??'auto'):body.context_budget;resolveBudget(budget);
+    if(row.state!=='failed'||!budgetFailure(row.data))throw problem('此请求不是可恢复的上下文预算错误',409);
+    const data={...row.data,context_budget:budget,error:null,error_code:null,stage:'已调整预算，继续原研究请求'};
+    // Do not execute tools or call a provider here. Preserve the durable run,
+    // tool ids and submission keys; the next explicit step continues it.
+    try{const result=await run(env,"UPDATE cloud_research_runs SET state='running',ciphertext=?,lease_until=0,updated=? WHERE id=? AND visitor_id=? AND state='failed' AND ciphertext=?",await enc(env,data),Date.now(),row.id,owner,row.ciphertext);if(!(result.meta?.changes??result.changes))throw problem('研究状态已变化，请刷新后重试',409);}catch(error){if(error.status)throw error;throw problem('你已有另一个研究请求运行，请先完成或停止它',409);}
+    return json(view(await getRun(env,owner,row.id)));
+   }
    if(match[2]==='stop'&&method==='POST') {await run(env,"UPDATE cloud_research_runs SET state='stopped',updated=?,lease_until=0 WHERE id=? AND visitor_id=? AND state='running'",Date.now(),row.id,owner);return json({stopped:(await getRun(env,owner,row.id)).state==='stopped',note:'不再启动新工具；已经开始提交的计算可在任务页查看和取消。'});}
    throw problem('请求方法不匹配',405);
   }

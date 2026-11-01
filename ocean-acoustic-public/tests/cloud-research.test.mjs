@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {setup,decrypt} from './test-support.mjs';
+import {setup,decrypt,encrypt} from './test-support.mjs';
+import {assertMessagesBudget} from '../server/context-budget.mjs';
 
 const assets=JSON.parse(readFileSync(new URL('../data/research-assets.json',import.meta.url),'utf8'));
 const cfg={provider:'DeepSeek',base_url:'https://api.deepseek.com',model:'deepseek-flash',api_key:'TEST-ONLY-RESEARCH-VISITOR-KEY'};
@@ -44,9 +45,19 @@ function harness(replies=[],options={}){
 }
 async function visitor(s,key=true){const a=await s.call('/api/config');if(key)assert.equal((await s.call('/api/config','PUT',cfg,a.cookie)).r.status,200);return a.cookie;}
 async function start(s,cookie,body=chatBody()){const r=await s.call('/api/research/chat','POST',body,cookie);assert.equal(r.r.status,202,JSON.stringify(r.data));return r.data.id;}
-const step=(s,cookie,id)=>s.call(`/api/research/runs/${id}/step`,'POST',{},cookie);
+const step=(s,cookie,id,body={})=>s.call(`/api/research/runs/${id}/step`,'POST',body,cookie);
 const get=(s,cookie,id)=>s.call(`/api/research/runs/${id}`,'GET',undefined,cookie);
 async function stored(s,id){const row=s.sqlite.prepare('SELECT * FROM cloud_research_runs WHERE id=?').get(id);return {...row,data:await decrypt(row.ciphertext,s.env.GATEWAY_SECRET)};}
+function completeToolGroups(messages){
+ for(let i=0;i<messages.length;i++){
+  const message=messages[i];
+  assert.notEqual(message.role,'tool','A tool result must follow its retained assistant tool_calls group');
+  if(!message.tool_calls?.length)continue;
+  const expected=message.tool_calls.map(call=>call.id),actual=[];
+  while(messages[i+1]?.role==='tool')actual.push(messages[++i].tool_call_id);
+  assert.equal(new Set(expected).size,expected.length);assert.deepEqual(actual.sort(),[...expected].sort(),'Keep or drop assistant calls and all corresponding observations as a whole');
+ }
+}
 
 test('no-key research and all GET polling remain free and never start computation',async()=>{
  const s=harness(),cookie=await visitor(s,false),id=await start(s,cookie,{...chatBody(),api_key:cfg.api_key});
@@ -88,7 +99,7 @@ test('persistent request keys and concurrent chat POSTs create one question and 
 
 test('foreign visitors cannot read, step, stop, rename or delete another visitor research',async()=>{
  const s=harness(),a=await visitor(s),b=await visitor(s,false),id=await start(s,a);
- for(const [path,method,body] of [[`/api/research/runs/${id}`,'GET'],[`/api/research/runs/${id}/step`,'POST',{}],[`/api/research/runs/${id}/stop`,'POST',{}],['/api/research/sessions/session-research-0001','DELETE'],['/api/research/sessions/session-research-0001','PATCH',{title:'foreign'}]])assert.equal((await s.call(path,method,body,b)).r.status,404,path);
+ for(const [path,method,body] of [[`/api/research/runs/${id}`,'GET'],[`/api/research/runs/${id}/step`,'POST',{}],[`/api/research/runs/${id}/stop`,'POST',{}],[`/api/research/runs/${id}/resume`,'POST',{context_budget:65536}],['/api/research/sessions/session-research-0001','DELETE'],['/api/research/sessions/session-research-0001','PATCH',{title:'foreign'}]])assert.equal((await s.call(path,method,body,b)).r.status,404,path);
  assert.deepEqual((await s.call('/api/research/history?session=session-research-0001','GET',undefined,b)).data,[]);
  assert.equal((await s.call('/api/research/sessions/session-research-0001','DELETE',undefined,a)).r.status,409);
  assert.equal((await s.call('/api/research/sessions/session-research-0001','PATCH',{title:'while busy'},a)).r.status,409);
@@ -147,4 +158,142 @@ test('logged-in identity sends its server-derived node cookie and never forwards
  assert.equal(s.nodeRequests.length,1);assert.match(s.nodeRequests[0].headers.cookie,/^ocean_visitor=[a-f0-9]{64}$/);
  assert.notEqual(s.nodeRequests[0].headers.cookie,'ocean_visitor='+'A'.repeat(64));
  assert.equal(s.nodeRequests[0].headers['oai-authenticated-user-id'],undefined);assert.equal(s.nodeRequests[0].headers.authorization,undefined);s.sqlite.close();
+});
+
+test('a large registered Skill result cannot strand the next real research round at the default 32K budget',async()=>{
+ const resource=assets.resources['at-environment/references/casebook.json'];
+ assert.ok(Buffer.byteLength(JSON.stringify(resource),'utf8')>100000,'Use the actual large published resource, not a mocked loop state');
+ const question='请读取 AT 算例目录，说明模型适用范围；保留这条原始问题🌊，不要把历史记录当成新的物理验证。';
+ const s=harness([provider('',[toolCall('read_skill_resource',{id:'at-environment',path:'references/casebook.json'},'large-casebook-read')]),provider('已读取目录；历史模型经验不表示本次已经完成计算。')]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:question}));
+  const observed=await step(s,cookie,id);assert.equal(observed.data.state,'running');assert.equal(observed.data.trace[0].state,'done');
+  const checkpoint=await stored(s,id);assert.equal(checkpoint.lease_until,0);assert.equal(checkpoint.data.rounds,1);
+  assert.equal(checkpoint.data.messages.find(m=>m.role==='user').content,question);
+  const continued=await step(s,cookie,id);
+  assert.equal(continued.data.state,'done',JSON.stringify({state:continued.data.state,error:continued.data.error,rounds:continued.data.rounds,provider_requests:s.providerRequests.length}));
+  assert.equal(s.providerRequests.length,2);assert.equal(s.nodeRequests.length,0);
+  const second=s.providerRequests[1].body;
+  assert.equal(second.messages.find(m=>m.role==='user').content,question);
+  completeToolGroups(second.messages);
+  assert.doesNotThrow(()=>assertMessagesBudget(second.messages,'auto',second.tools||[]));
+ }finally{s.sqlite.close();}
+});
+
+test('research context_budget is honored before sending a complete original question and rejects invalid controls',async()=>{
+ const question='原问题开始🌊\n'+'海'.repeat(10000)+'\n原问题结束✅';
+ const s=harness([provider('只回答提供的问题，不产生新物理数值。')]);
+ try{
+  const cookie=await visitor(s);
+  const tooSmall=await s.call('/api/research/chat','POST',chatBody({message:question,context_budget:16384}),cookie);
+  assert.equal(tooSmall.r.status,422);assert.equal(s.providerRequests.length,0);
+  const id=await start(s,cookie,chatBody({message:question,context_budget:65536}));
+  assert.equal((await stored(s,id)).data.context_budget,65536);
+  const answer=await step(s,cookie,id);assert.equal(answer.data.state,'done',JSON.stringify(answer.data));
+  assert.equal(s.providerRequests.length,1);
+  const sent=s.providerRequests[0].body;
+  assert.equal(sent.messages.find(m=>m.role==='user').content,question);
+  assert.doesNotThrow(()=>assertMessagesBudget(sent.messages,65536,sent.tools||[]));
+  for(const [index,budget] of ['65536',true,null,0,8192.5,1048576].entries()){
+   const invalid=await s.call('/api/research/chat','POST',chatBody({request_id:'invalid-budget-request-'+index,context_budget:budget}),cookie);
+   assert.equal(invalid.r.status,422,JSON.stringify({budget,result:invalid.data}));
+  }
+  assert.equal(s.providerRequests.length,1);assert.equal(s.nodeRequests.length,0);
+ }finally{s.sqlite.close();}
+});
+
+test('multi-round registered observations fit the selected budget without orphaning tool groups or calling a summary model',async()=>{
+ const question='对照创建流程与算例目录，指出执行范围；只引用实际返回的资料，不添加未计算的物理结果。';
+ const s=harness([
+  provider('',[toolCall('read_skill_resource',{id:'at-environment',path:'references/casebook-summary.json'},'casebook-summary-read'),toolCall('get_simulation_schema',{},'fixed-schema-read')]),
+  provider('',[toolCall('read_skill_resource',{id:'at-environment',path:'references/creation-workflows.json'},'workflow-read')]),
+  provider('这是资料范围说明，尚未执行仿真。'),
+ ]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:question,context_budget:32768}));
+  const first=await step(s,cookie,id);assert.equal(first.data.state,'running');assert.equal(first.data.trace.length,2);
+  const second=await step(s,cookie,id);assert.equal(second.data.state,'running',JSON.stringify(second.data));assert.equal(second.data.trace.length,3);
+  const final=await step(s,cookie,id);assert.equal(final.data.state,'done',JSON.stringify(final.data));
+  assert.equal(s.providerRequests.length,3,'Only the three explicitly requested planning rounds may call the fake provider');
+  for(const request of s.providerRequests){
+   const {messages,tools=[]}=request.body;
+   assert.equal(messages.find(m=>m.role==='user').content,question);completeToolGroups(messages);
+   assert.doesNotThrow(()=>assertMessagesBudget(messages,32768,tools));
+  }
+  assert.equal(s.submissions.size,0);assert.equal(s.nodeRequests.length,0);
+ }finally{s.sqlite.close();}
+});
+
+test('running step budget changes are explicit, validated, persisted and never applied by GET polling',async()=>{
+ const question='保持这条原始问题🌊；先读取固定表单，再解释所用条件。';
+ const s=harness([provider('',[toolCall('get_simulation_schema',{},'budget-change-schema')]),provider('只说明已返回的条件。')]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:question,context_budget:32768}));
+  for(const budget of ['65536',true,0,1048576]){
+   const invalid=await step(s,cookie,id,{context_budget:budget});assert.equal(invalid.r.status,422,JSON.stringify(invalid.data));
+  }
+  assert.equal(s.providerRequests.length,0);assert.equal((await stored(s,id)).data.context_budget,32768);
+  const first=await step(s,cookie,id,{context_budget:65536});assert.equal(first.data.state,'running',JSON.stringify(first.data));
+  assert.equal((await stored(s,id)).data.context_budget,65536);
+  await s.call(`/api/research/runs/${id}?context_budget=131072`,'GET',undefined,cookie);
+  assert.equal((await stored(s,id)).data.context_budget,65536);assert.equal(s.providerRequests.length,1);
+  assert.equal((await step(s,cookie,id)).data.state,'done');assert.equal(s.providerRequests.length,2);
+  for(const request of s.providerRequests){assert.equal(request.body.messages.find(m=>m.role==='user').content,question);completeToolGroups(request.body.messages);assert.doesNotThrow(()=>assertMessagesBudget(request.body.messages,65536,request.body.tools||[]));}
+ }finally{s.sqlite.close();}
+});
+
+test('an existing ContextBudget-failed run resumes in place without resubmitting its completed compute tool',async()=>{
+ // The large numerical payload is explicitly a protocol fixture, not a claim
+ // about an ocean location or a real solver result. Preserve its supplied
+ // masked surface and known scalar values; never replace them with guesses.
+ const observation=id=>({id,state:'SUCCEEDED',summary:{solver:'kraken',frequency_hz:50,source_depth_m:50,
+  water_depth_m:100,mode_count:4,tl_min_db:70.125,tl_max_db:70.125,physical_accuracy_proven:false},
+  result:{shape:[51,51],tl_db:Array.from({length:51},(_,y)=>Array(51).fill(y===0?null:70.125))},
+  log:'TEST-ONLY ORIGINAL OBSERVATION; not a physical measurement.\n'.repeat(600)});
+ const s=harness([
+  provider('',[toolCall('submit_simulation',{plan},'one-existing-compute')]),
+  init=>{const messages=JSON.parse(init.body).messages,receipt=JSON.parse(messages.findLast(m=>m.role==='tool').content);return provider('',[toolCall('get_job',{id:receipt.ids[0]},'inspect-existing-compute')]);},
+  provider('已有任务结果已读取；没有再次提交计算，也没有宣称物理精度已验证。'),
+ ],{onNode:async(record,index,value)=>record.method==='GET'&&record.path.startsWith('/api/jobs/')?Response.json(observation(value.id)):undefined});
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({context_budget:32768,message:'运行已给定的计划后只检查同一个任务，保留原始问题与已生成的任务标识。'}));
+  assert.equal((await step(s,cookie,id)).data.state,'running');assert.equal(s.submissions.size,1);
+  assert.equal((await step(s,cookie,id)).data.state,'running');assert.equal(s.providerRequests.length,2);
+  const checkpoint=await stored(s,id),createdReceipt=[...s.submissions.values()][0];
+  assert.equal(checkpoint.data.trace.length,2);assert.equal(checkpoint.lease_until,0);
+  // Reproduce the durable record produced by the deployed pre-fix loop: it
+  // saved the real trace/messages but only stored this error text, no new
+  // error_code. Recovery must support these existing records after deployment.
+  const legacy={...checkpoint.data,error:'当前问题或工具结果超过所选上下文预算，请调大预算或缩小读取范围后重试；未自动调用模型压缩。',stage:'研究请求未完成'};
+  delete legacy.error_code;
+  s.sqlite.prepare("UPDATE cloud_research_runs SET state='failed',lease_until=0,ciphertext=? WHERE id=?").run(await encrypt(legacy,s.env.GATEWAY_SECRET),id);
+  const failed=await get(s,cookie,id);assert.equal(failed.data.state,'failed');assert.equal(failed.data.recoverable,true);assert.equal(s.providerRequests.length,2);
+  assert.equal((await step(s,cookie,id,{context_budget:65536})).data.state,'failed','Ordinary step/poll must not silently recover a failed paid run');
+  assert.equal(s.providerRequests.length,2);
+  const resume=await s.call(`/api/research/runs/${id}/resume`,'POST',{context_budget:65536},cookie);
+  assert.equal(resume.r.status,200,JSON.stringify(resume.data));assert.equal(resume.data.state,'running');assert.equal(resume.data.id,id);
+  assert.equal(s.providerRequests.length,2,'Explicit resume changes persistent scheduling state without charging a model request');
+  const resumed=await step(s,cookie,id);
+  assert.equal(resumed.data.state,'done',JSON.stringify(resumed.data));assert.equal(resumed.data.id,id);
+  assert.equal(s.providerRequests.length,3);assert.equal(s.submissions.size,1);
+  assert.equal(s.nodeRequests.filter(r=>r.path==='/api/simulation/jobs').length,1);
+  assert.deepEqual([...s.submissions.values()][0].ids,createdReceipt.ids);
+  const final=await stored(s,id);assert.equal(final.data.context_budget,65536);assert.equal(final.data.trace.length,2);
+  const sent=s.providerRequests[2].body;
+  completeToolGroups(sent.messages);assert.doesNotThrow(()=>assertMessagesBudget(sent.messages,65536,sent.tools||[]));
+  assert.equal(sent.messages.find(m=>m.role==='user').content,checkpoint.data.question);
+  const latest=sent.messages.find(m=>m.role==='tool'&&m.tool_call_id==='inspect-existing-compute');
+  assert.ok(latest,'Retain the completed job observation, paired with its original tool call');
+  assert.ok(latest.content.includes(createdReceipt.ids[0]));assert.ok(latest.content.includes('SUCCEEDED'));
+  const parse=JSON.parse(latest.content);
+  function suppliedScalars(value){
+   if(!value||typeof value!=='object')return;
+   for(const [key,entry]of Object.entries(value)){
+    if(key in observation(createdReceipt.ids[0]).summary&&typeof entry==='number')assert.equal(entry,observation(createdReceipt.ids[0]).summary[key],key);
+    if(key==='physical_accuracy_proven')assert.equal(entry,false);
+    if(key!=='tl_db')suppliedScalars(entry);
+   }
+  }
+  suppliedScalars(parse);
+ }finally{s.sqlite.close();}
 });

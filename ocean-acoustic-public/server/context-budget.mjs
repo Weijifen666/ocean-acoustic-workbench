@@ -20,7 +20,7 @@ const canonical=value=>JSON.stringify(clean(value));
 export function estimateMessages(messages,tools=[]){
  // UTF-8 byte counts conservatively bound textual tokenization. Message and
  // tool framing is estimated separately; actual provider usage is distinct.
- return 32+messages.reduce((sum,m)=>sum+32+encoder.encode(String(m.content||'')).length+(m.tool_calls?encoder.encode(canonical(m.tool_calls)).length:0),0)+(tools.length?encoder.encode(canonical(tools)).length+64:0);
+ return 32+messages.reduce((sum,m)=>sum+32+encoder.encode(String(m.content||'')).length+encoder.encode(String(m.reasoning_content||'')).length+(m.tool_calls?encoder.encode(canonical(m.tool_calls)).length:0),0)+(tools.length?encoder.encode(canonical(tools)).length+64:0);
 }
 export function assertMessagesBudget(messages,budget='auto',tools=[]){
  const resolved=resolveBudget(budget),count=estimateMessages(messages,tools);

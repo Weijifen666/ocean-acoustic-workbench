@@ -31,6 +31,46 @@ export function researchRounds(value, maximum = 1000, fallback = 40) {
   return value !== '' && Number.isInteger(requested) && requested >= 0 && requested <= max ? requested : Math.min(max, fallback);
 }
 
+export const researchContextBudgets = Object.freeze([4096,8192,16384,32768,65536,131072]);
+
+export function contextBudgetChoices(advertised) {
+  const values = Array.isArray(advertised) ? advertised.map(value => Number(value?.value ?? value)) : researchContextBudgets;
+  return ['auto', ...researchContextBudgets.filter(value => values.includes(value))];
+}
+
+export function normalizeResearchBudget(value, advertised) {
+  if (value === 'auto') return 'auto';
+  const number = Number(value);
+  return contextBudgetChoices(advertised).includes(number) ? number : 'auto';
+}
+
+// Only visible message text is available in the browser. The server accounts
+// for system instructions, evidence, tool schemas and retained tool results.
+export function estimateVisibleResearchInput(messages = [], question = '') {
+  const encoder = new TextEncoder();
+  const texts = messages.map(row => String(row.text ?? row.content ?? ''));
+  if (question) texts.push(question);
+  return 32 + texts.reduce((sum,text) => sum + 32 + encoder.encode(text).length, 0);
+}
+
+export function researchContextNotes(context = {}) {
+  const notes = [];
+  const counts = [
+    [context.compacted_tool_messages ?? context.compressed_tool_messages, '条工具历史已压缩'],
+    [context.dropped_tool_messages ?? context.omitted_tool_messages, '条工具历史已省略'],
+    [context.dropped_history_messages, '条较早对话未发送'],
+    [context.dropped_evidence_count, '条候选资料未发送'],
+  ];
+  for (const [count,label] of counts) if (Number.isFinite(count) && count > 0) notes.push(`${count} ${label}`);
+  if (context.evidence_truncated) notes.push('资料摘录已缩短');
+  for (const source of [context.notes,context.warnings]) {
+    for (const note of Array.isArray(source) ? source : typeof source === 'string' ? [source] : []) {
+      if (typeof note === 'string' && note.trim()) notes.push(note);
+    }
+  }
+  return [...new Set(notes)];
+}
+
 export function simulationNodeMessage(capabilities) {
   return capabilities.node_online
     ? '计算节点已连接；参数检查后提交，实际结果以任务记录为准。'

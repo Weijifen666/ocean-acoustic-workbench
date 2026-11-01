@@ -5,15 +5,33 @@ import ModelSkillPicker from './ModelSkillPicker';
 import QuestionSuggestions from './QuestionSuggestions';
 import {serializeChat} from './chatExport';
 import './dialogue-workbench.css';
-import {researchRounds} from './cloudWorkbench';
+import {researchRounds,contextBudgetChoices,normalizeResearchBudget,estimateVisibleResearchInput,researchContextNotes} from './cloudWorkbench';
 
 async function api(path,body,method){
  const response=await fetch('/api/research/'+path,{method:method||(body?'POST':'GET'),headers:{'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
- const value=await response.json();if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'请求失败，请检查服务连接');return value;
+ const value=await response.json();if(!response.ok)throw Object.assign(Error(typeof value.detail==='string'?value.detail:'请求失败，请检查服务连接'),{code:value.error_code||value.code,context:value.context,recoverable:value.recoverable});return value;
 }
 export async function advanceResearchRun(identity,executionMode){
- if(executionMode==='poll_steps')await api('runs/'+identity+'/step',{});
+ if(executionMode==='poll_steps'){
+  try{await api('runs/'+identity+'/step',{})}
+  catch(error){if(error.code!=='CONTEXT_BUDGET_EXCEEDED')throw error}
+ }
  return api('runs/'+identity);
+}
+export async function resumeResearchRun(identity,contextBudget,advertised){
+ return api('runs/'+identity+'/resume',{context_budget:normalizeResearchBudget(contextBudget,advertised)});
+}
+export async function startResearchRun({session,request_id,message,rounds,contextBudget},capabilities){
+ return api('chat',{session,request_id,message,backend:'api',rounds:researchRounds(rounds,capabilities?.max_rounds),context_budget:normalizeResearchBudget(contextBudget,capabilities?.context_budgets)});
+}
+export function ResearchContextStatus({context}){
+ if(!context)return null;
+ const notes=researchContextNotes(context);
+ return <div className="dialogue-toolbar" role="status" aria-label="研究上下文用量"><div>服务端输入估算：{Number.isFinite(context.estimated_input_tokens)?context.estimated_input_tokens.toLocaleString():'尚未提供'} / 预算 {Number.isFinite(context.budget_tokens)?context.budget_tokens.toLocaleString():'尚未提供'} tokens<br/><small>UTF-8 字节保守估算，不等于供应商实际 token 或模型原生窗口。{notes.length?notes.join('；')+'。':'工具历史的保留与省略以服务端记录为准。'}</small></div></div>;
+}
+export function ResearchBudgetRecovery({run,busy,onResume}){
+ if(!run?.id||run.recoverable!==true||run.error_code!=='CONTEXT_BUDGET_EXCEEDED')return null;
+ return <div className="dialogue-error" role="status"><p>本次请求因上下文预算不足暂停。调整上方预算后可继续同一个研究请求与已提交任务；历史保留情况见上方说明，不会重新发送问题。</p><button className="button primary" disabled={busy} onClick={onResume}>调整预算并继续</button></div>;
 }
 const labels={dsh:'DSH',codex:'Codex',api:'模型接口'};
 export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
@@ -21,31 +39,34 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
  const [previous,setPrevious]=useState(()=>localStorage.getItem('ocean-cloud-research-v1-previous')||'');
  const [backend,setBackend]=useState('api');
  const [rounds,setRounds]=useState('40');
+ const [contextBudget,setContextBudget]=useState(()=>String(normalizeResearchBudget(localStorage.getItem('ocean-cloud-research-v1-context-budget')||'auto')));
  const [text,setText]=useState(''),[messages,setMessages]=useState([]),[run,setRun]=useState(null),[loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(null),[format,setFormat]=useState('md'),[cap,setCap]=useState(null),[sessions,setSessions]=useState([]);
  const lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false);
- const busy=submitting||run?.state==='running';
+ const budgetPaused=run?.recoverable===true&&run.error_code==='CONTEXT_BUDGET_EXCEEDED';
+ const busy=submitting||(run?.state==='running'&&!budgetPaused);
  function chooseBackend(value){setBackend(value);localStorage.setItem('ocean-cloud-research-v1-backend',value)}
  const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
  useEffect(()=>{loadSessions()},[]);
  useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');
-  Promise.all([api('history?session='+encodeURIComponent(session)),api('active?session='+encodeURIComponent(session)),api('capabilities')]).then(([rows,current,capabilities])=>{if(!alive)return;setMessages(rows);setRun(current);setCap(capabilities);setRounds(old=>String(researchRounds(old,capabilities.max_rounds)));if(current?.state==='running'&&current.backend==='api')chooseBackend('api')}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
+  Promise.all([api('history?session='+encodeURIComponent(session)),api('active?session='+encodeURIComponent(session)),api('capabilities')]).then(([rows,current,capabilities])=>{if(!alive)return;setMessages(rows);setRun(current);setError(current?.error||'');setCap(capabilities);setContextBudget(old=>String(normalizeResearchBudget(old,capabilities.context_budgets)));setRounds(old=>String(researchRounds(old,capabilities.max_rounds)));if(current?.state==='running'&&current.backend==='api')chooseBackend('api')}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
  },[session]);
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
  useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);follow.current=true}},[draft]);
- useEffect(()=>{if(run?.state!=='running')return;let alive=true,pending=false;
+ useEffect(()=>{if(run?.state!=='running'||budgetPaused)return;let alive=true,pending=false;
   const poll=async()=>{if(pending)return;pending=true;try{const current=await advanceResearchRun(run.id,cap?.execution_mode);if(!alive)return;setRun(current);setError(current.error||'');if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(alive){setMessages(rows);loadSessions()}}}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
   const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
- },[run?.id,run?.state,session,cap?.execution_mode]);
+ },[run?.id,run?.state,session,cap?.execution_mode,budgetPaused]);
  useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial]);
  async function send(){if(sending.current||busy||loading||!text.trim()||!cap?.api_configured)return;
   if(backend==='api'&&(!Number.isInteger(Number(rounds))||Number(rounds)<0||Number(rounds)>(cap?.max_rounds||1000)||rounds==='')){setError('工具轮数请填 0–'+(cap?.max_rounds||1000)+' 的整数，0 表示不限');return}
   sending.current=true;setSubmitting(true);setError('');follow.current=true;
   const message=text;
-  try{const result=await api('chat',{session,request_id:crypto.randomUUID(),message,backend:'api',rounds:researchRounds(rounds,cap?.max_rounds)});setRun({id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');localStorage.removeItem('ocean-cloud-research-v1-previous');setPrevious('')}
+  try{const result=await startResearchRun({session,request_id:crypto.randomUUID(),message,rounds,contextBudget},cap);setRun({...result,id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');localStorage.removeItem('ocean-cloud-research-v1-previous');setPrevious('')}
   catch(e){setError(e.message)}finally{sending.current=false;setSubmitting(false)}
   loadSessions();
  }
  async function stop(){try{await api('runs/'+run.id+'/stop',{});notify('正在停止 Agent；已启动的计算可在任务页取消')}catch(e){setError(e.message)}}
+ async function resume(){if(sending.current||busy||loading||!run?.recoverable)return;sending.current=true;setSubmitting(true);setError('');try{const result=await resumeResearchRun(run.id,contextBudget,cap?.context_budgets);setRun(old=>({...old,...result,id:old.id,state:result.state||'running',recoverable:result.recoverable===true,error:result.error||'',error_code:result.error_code||null}));follow.current=true}catch(e){setError(e.message);if(e.context)setRun(old=>({...old,context:e.context,error_code:e.code||old.error_code,recoverable:e.recoverable??old.recoverable}))}finally{sending.current=false;setSubmitting(false)}}
  function switchSession(next){localStorage.setItem('ocean-cloud-research-v1-session',next);setSession(next)}
  function newSession(){if(busy)return;switchSession(crypto.randomUUID());loadSessions()}
  async function renameSession(item){const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value},'PATCH');loadSessions()}catch(e){setError(e.message)}}
@@ -59,6 +80,9 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
   <div className="dialogue-layout"><section className="panel dialogue-panel" aria-label="对话工作台">
    <div className="dialogue-toolbar"><label>对话后端 <select aria-label="对话后端" disabled={busy} value={backend} onChange={e=>chooseBackend(e.target.value)}><option value="api">模型 API · 云端研究 Agent</option><option value="dsh" disabled>DSH · 需要专属节点</option><option value="codex" disabled>Codex · 需要专属节点</option></select></label><span role="status">{backend==='api'?(cap?.api_configured?'模型接口已配置':'请先配置模型 API Key'):status?.message||'正在检查本机 Agent…'}</span></div>
    {backend==='api'&&<div className="dialogue-toolbar"><label>工具轮数 <input aria-label="Agent工具轮数" type="number" min="0" max={cap?.max_rounds||1000} disabled={busy} value={rounds} onChange={e=>{setRounds(e.target.value);localStorage.setItem('ocean-cloud-research-v1-rounds',e.target.value)}}/></label><span>默认 {cap?.default_rounds||40} 轮；0 表示不限，达到设定轮数后汇总已有结果</span></div>}
+   <div className="dialogue-toolbar"><label>上下文预算 <select aria-label="研究上下文预算" disabled={busy} value={contextBudget} onChange={e=>{setContextBudget(e.target.value);localStorage.setItem('ocean-cloud-research-v1-context-budget',e.target.value)}}>{contextBudgetChoices(cap?.context_budgets).map(value=><option value={value} key={value}>{value==='auto'?'自动 · 32K':`${value/1024}K`}</option>)}</select></label><span>可见文字 UTF-8 保守估算 {estimateVisibleResearchInput(messages,text).toLocaleString()}；完整输入还含系统、资料和工具结果。</span></div>
+   <ResearchContextStatus context={run?.context}/>
+   <ResearchBudgetRecovery run={run} busy={busy} onResume={resume}/>
    <div className="dialogue-toolbar"><span>{loading?'载入聊天…':`${messages.length} 条消息`}</span><div className="dialogue-actions"><select aria-label="聊天导出格式" value={format} onChange={e=>setFormat(e.target.value)}><option value="md">Markdown</option><option value="txt">TXT</option><option value="json">JSON</option></select><button className="button" disabled={busy||loading||!messages.length} onClick={exportChat}><Download size={14}/>导出聊天</button><button className="button" disabled={busy||loading||!messages.length} onClick={clear}><Trash2 size={14}/>清空聊天</button>{previous&&<button className="button" disabled={busy||loading} onClick={undo}><Undo2 size={14}/>撤销清空</button>}</div></div>
    <ModelSkillPicker disabled={busy} onSelect={setText}/>
    <div className="dialogue-messages" role="log" aria-label="聊天记录" ref={scroll} onScroll={e=>{const el=e.currentTarget;follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<100}}>

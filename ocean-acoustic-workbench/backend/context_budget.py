@@ -32,7 +32,7 @@ def _bytes(text):return len(str(text).encode('utf-8',errors='replace'))
 
 def estimate_messages(messages,tools=None):
     tools=tools or []
-    return 32+sum(32+_bytes(message.get('content') or '')+(_bytes(_canonical(message['tool_calls'])) if message.get('tool_calls') else 0) for message in messages)+(_bytes(_canonical(tools))+64 if tools else 0)
+    return 32+sum(32+_bytes(message.get('content') or '')+_bytes(message.get('reasoning_content') or '')+(_bytes(_canonical(message['tool_calls'])) if message.get('tool_calls') else 0) for message in messages)+(_bytes(_canonical(tools))+64 if tools else 0)
 
 def assert_messages_budget(messages,budget='auto',tools=None):
     resolved=resolve_budget(budget);count=estimate_messages(messages,tools)

@@ -235,6 +235,6 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     },{signal:request.signal,onCancel:()=>chats.abandon(token,'cancelled')}));
    }
    try{return finish(json(await execute(null,request.signal)))}catch(error){await chats.abandon(token,error.code==='CANCELLED'?'cancelled':'failed');throw error}
-  }catch(e){const msg=String(e.message||'').slice(0,220);const status=[400,403,404,405,409,413,422,429,502,503,504].includes(e.status)?e.status:msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{})},status))}
+  }catch(e){const msg=String(e.message||'').slice(0,220);const status=[400,403,404,405,409,413,422,429,502,503,504].includes(e.status)?e.status:msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{}),...(e.context?{context:e.context}:{})},status))}
  };
 }

@@ -1,9 +1,19 @@
 """Outbound HTTPS bridge; only the scoped public gateway can receive cloud requests."""
 import asyncio,json,time,hashlib,base64,os,uuid
 from pathlib import Path
+from urllib.parse import urlsplit
 import httpx
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-ROOT=Path(__file__).resolve().parents[1];STATE=ROOT/'.local/public-runtime.json'
+def outbound_proxy(value):
+ """An optional administrator-configured loopback proxy; never trust env proxies."""
+ if value is None or value=='':return None
+ try:
+  if not isinstance(value,str):raise ValueError()
+  parsed=urlsplit(value)
+  if parsed.scheme!='http' or parsed.hostname not in ('127.0.0.1','localhost') or parsed.username or parsed.password or parsed.path not in ('','/') or parsed.query or parsed.fragment or not parsed.port or not 1<=parsed.port<=65535:raise ValueError()
+ except (ValueError,TypeError):raise ValueError('outbound_proxy must be an explicit loopback HTTP origin') from None
+ return f'http://{parsed.hostname}:{parsed.port}'
+ROOT=Path(__file__).resolve().parents[1];STATE=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local'))).expanduser().resolve()/'public-runtime.json'
 runtime=json.loads(STATE.read_text(encoding='utf-8'));secret=runtime['gateway_secret'];site=runtime['site_origin'];cipher=AESGCM(hashlib.sha256(secret.encode()).digest())
 def encrypt(value):
  iv=os.urandom(12);return base64.b64encode(iv+cipher.encrypt(iv,json.dumps(value,ensure_ascii=False).encode(),None)).decode()
@@ -30,7 +40,7 @@ async def execute(row,cloud,local):
  print('Cloud result could not be acknowledged:',row['id'],flush=True)
 async def main():
  tasks=set();seen_ok=False;last_request=0;poll_id=str(uuid.uuid4())
- async with httpx.AsyncClient(timeout=20,headers={'x-ocean-bridge':secret},trust_env=False,limits=httpx.Limits(max_keepalive_connections=0)) as cloud,httpx.AsyncClient(timeout=95,trust_env=False,follow_redirects=False) as local:
+ async with httpx.AsyncClient(timeout=20,headers={'x-ocean-bridge':secret},trust_env=False,follow_redirects=False,proxy=outbound_proxy(runtime.get('outbound_proxy')),limits=httpx.Limits(max_keepalive_connections=0)) as cloud,httpx.AsyncClient(timeout=95,trust_env=False,follow_redirects=False) as local:
   while True:
    try:
     response=await cloud.post(site+'/_bridge/poll',json={'poll_id':poll_id})

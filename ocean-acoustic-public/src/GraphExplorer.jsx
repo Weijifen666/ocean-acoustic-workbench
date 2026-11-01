@@ -588,10 +588,12 @@ export default function GraphExplorer({
                     </div>
                   </>
                 )}
-                <div className="graph-status-line">
-                  <i />
-                  拖动节点或画布 · 滚轮缩放 · 点击节点查阅图文
-                </div>
+                {view !== "overview" && (
+                  <div className="graph-status-line">
+                    <i />
+                    拖动节点或画布 · 滚轮缩放 · 点击节点查阅图文
+                  </div>
+                )}
               </div>
               {view !== "overview" && (
                 <div className="relation-legend">

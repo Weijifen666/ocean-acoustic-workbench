@@ -1,4 +1,5 @@
-import {sqliteTable,text,integer,index,uniqueIndex} from 'drizzle-orm/sqlite-core';
+import {sqliteTable,text,integer,index,uniqueIndex,primaryKey} from 'drizzle-orm/sqlite-core';
+import {sql} from 'drizzle-orm';
 export const requests=sqliteTable('bridge_requests',{
  id:text('id').primaryKey(),created:integer('created').notNull(),state:text('state').notNull(),payload:text('payload').notNull()
 },t=>[index('bridge_requests_state_created').on(t.state,t.created)]);
@@ -39,3 +40,15 @@ export const workspaceArtifacts=sqliteTable('research_workspace_artifacts',{
  id:text('id').primaryKey(),workspace_id:text('workspace_id').notNull(),author_id:text('author_id').notNull(),ciphertext:text('ciphertext').notNull(),
  created:integer('created').notNull(),updated:integer('updated').notNull()
 },t=>[index('research_artifacts_workspace_created').on(t.workspace_id,t.created)]);
+
+export const researchSessions=sqliteTable('cloud_research_sessions',{
+ visitor_id:text('visitor_id').notNull(),id:text('id').notNull(),ciphertext:text('ciphertext').notNull(),
+ created:integer('created').notNull(),updated:integer('updated').notNull()
+},t=>[primaryKey({columns:[t.visitor_id,t.id]})]);
+export const researchRuns=sqliteTable('cloud_research_runs',{
+ id:text('id').primaryKey(),visitor_id:text('visitor_id').notNull(),session_id:text('session_id').notNull(),
+ request_key:text('request_key').notNull(),payload_hash:text('payload_hash').notNull(),state:text('state').notNull(),
+ lease_until:integer('lease_until').notNull().default(0),ciphertext:text('ciphertext').notNull(),
+ created:integer('created').notNull(),updated:integer('updated').notNull()
+},t=>[uniqueIndex('research_owner_request').on(t.visitor_id,t.request_key),index('research_owner_session').on(t.visitor_id,t.session_id,t.created),
+ uniqueIndex('research_owner_active').on(t.visitor_id).where(sql`${t.state} = 'running'`)]);

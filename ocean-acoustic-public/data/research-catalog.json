@@ -1,0 +1,342 @@
+{
+  "skills": [
+    {
+      "id": "at-environment",
+      "name": "AT 环境构造与算例复现",
+      "description": "查阅模型、tests 调用证据及 ENV/FLP，形成可复核的环境与验证计划。",
+      "prompt": "请载入 at-environment 技能，依据已收录的 AT tests 对应算例规划研究任务。我的目标是：",
+      "read_only": true,
+      "resource_count": 13,
+      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
+      "resources": [
+        {
+          "path": "references/applicability.md",
+          "sha256": "9332ed23487847eecde8d983d0de29b12891b50734a35bda3668aebd4910ae2f",
+          "size": 3833
+        },
+        {
+          "path": "references/casebook-summary.json",
+          "sha256": "8a3c3f5860f71390293440686d2bf60c18abef8dae783cc26ccc4d33629dbacf",
+          "size": 11688
+        },
+        {
+          "path": "references/casebook.json",
+          "sha256": "66157ca0edc68f39174138b26ebf013298dbf56c6eca6e3738d796923a650c3b",
+          "size": 135956
+        },
+        {
+          "path": "references/creation-workflows.json",
+          "sha256": "5f223c770fdb21552e191278e1c607c0aa2fe63790f756ef52aec28ce3e6dffc",
+          "size": 9470
+        },
+        {
+          "path": "references/input-and-functions.md",
+          "sha256": "7ec85aa2b6687e6f2c4a01378eb517b552251a06736093e40be23ac00cfdcbdd",
+          "size": 2735
+        },
+        {
+          "path": "references/models.json",
+          "sha256": "6badc34fecec3430fef6275881d1380891ee073d431335ce330e04df72e3b704",
+          "size": 34494
+        },
+        {
+          "path": "references/ram-and-pe.md",
+          "sha256": "c33fac5c6f5ca7ad2c12128a6a6575bd219ad991c83dddaec4e5b79a5d8d1e94",
+          "size": 4498
+        },
+        {
+          "path": "references/validation-latest.json",
+          "sha256": "70450acd527c2fad47a5ca3ff46fb144a32fe17bb9754576295ae859d643f32a",
+          "size": 22510
+        },
+        {
+          "path": "references/validation.md",
+          "sha256": "0b6830740b064b2193a3623ed7247602717eb7489379473aadfd78f9d4d113e5",
+          "size": 2523
+        },
+        {
+          "path": "scripts/read_ram_grid.py",
+          "sha256": "7674c0825f0b2d6683a64d15a2661159e363c01a14be94ff0679d043793abb1c",
+          "size": 4717
+        },
+        {
+          "path": "scripts/run_ram_workflow.py",
+          "sha256": "fab2261b63472f63b240fad04715ffbecc13afab4ac5c004958bfe2d7039c80e",
+          "size": 1420
+        },
+        {
+          "path": "scripts/summarize_model.m",
+          "sha256": "d99c9b526dab0b301b42385acad389045f7eb7763f31e0f9ccd1f329ff5dae64",
+          "size": 1974
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
+          "size": 4437
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "seasonal-layer-diagnostics",
+      "name": "混合层的季节变化",
+      "description": "按温度与位密度阈值诊断混合层，保留缺测、参考深度和空间尺度差异。",
+      "prompt": "请载入 seasonal-layer-diagnostics 技能，先读取 120°E、20°N 的 WOA18 四季剖面，说明判据与缺测，再规划混合层季节诊断。单点气候态不得代替区域或瞬时观测。",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
+      "resources": [
+        {
+          "path": "scripts/analyze_profiles.py",
+          "sha256": "eda419991ab450de86e420da1dc0abf5ec294287aacd080def12421b66406720",
+          "size": 6364
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
+          "size": 2535
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "surface-duct-investigation",
+      "name": "表面声道与传播研究",
+      "description": "先诊断近表层声速结构，再按频率、边界与几何选择传播计算。",
+      "prompt": "请载入 surface-duct-investigation 技能，读取 120°E、20°N 的 WOA18 四季近表层剖面，区分混合层与声道候选结构；先完成环境诊断，传播验证前列出缺失条件与节点能力。",
+      "read_only": true,
+      "resource_count": 1,
+      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
+      "resources": [
+        {
+          "path": "SKILL.md",
+          "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
+          "size": 2309
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-kraken",
+      "name": "KRAKEN 模型构造",
+      "model": "kraken",
+      "description": "固化 KRAKEN 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-kraken 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "5bf99aa4ba200d94370ddd1f57f258bdd5bf34b4c5c7f8bcb45d5290260a266c",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "e1d4ecc1dbc62ead70748fb10c47a1934b87fb11089a993848db1eb361805660",
+          "size": 2599
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "5bf99aa4ba200d94370ddd1f57f258bdd5bf34b4c5c7f8bcb45d5290260a266c",
+          "size": 1822
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-krakenc",
+      "name": "KRAKENC 模型构造",
+      "model": "krakenc",
+      "description": "固化 KRAKENC 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-krakenc 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "d4735d26eeae8594158acfff6b3596054a7a088104772ea37de506a42b4fdb93",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "c8e100be1486efb98c0f6e1797c940d3f1dd0dc022d03897fd8149f779f41deb",
+          "size": 2376
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "d4735d26eeae8594158acfff6b3596054a7a088104772ea37de506a42b4fdb93",
+          "size": 1831
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-scooter",
+      "name": "SCOOTER 模型构造",
+      "model": "scooter",
+      "description": "固化 SCOOTER 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-scooter 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "02be4c9e0e006c0ab7905f2ec22209d4f6b3424ded212785a763b81f1fef6c68",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "da3501883925f1a666258c794e8d2523518d7dd08eaa7f779f5ac7171ab261ee",
+          "size": 2265
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "02be4c9e0e006c0ab7905f2ec22209d4f6b3424ded212785a763b81f1fef6c68",
+          "size": 1827
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-bellhop",
+      "name": "BELLHOP 模型构造",
+      "model": "bellhop",
+      "description": "固化 BELLHOP 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-bellhop 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "f651cf78ee0d33a0a101a2fc2f5acd861d8afdb6db39549e7f986303f6d23bce",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "09e8e865983cc08849f6a99b097aac3567a5dbbb2415fc94c329fbc635211c68",
+          "size": 2156
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "f651cf78ee0d33a0a101a2fc2f5acd861d8afdb6db39549e7f986303f6d23bce",
+          "size": 1826
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-ram",
+      "name": "RAM 模型构造",
+      "model": "ram",
+      "description": "固化 RAM 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-ram 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "75a4adc3cc4187bb3c07d9bb496f980018a33e5fad36604bad4fb79332ec0c7c",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "702ca1f347242971f0a2353cbaa9c2ff97d66c26cf68cd6ec1e212a7ef103a07",
+          "size": 2247
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "75a4adc3cc4187bb3c07d9bb496f980018a33e5fad36604bad4fb79332ec0c7c",
+          "size": 1800
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-simplepe",
+      "name": "SimplePE 模型构造",
+      "model": "simplepe",
+      "description": "固化 SimplePE 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-simplepe 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "4f9fbbf1ee192f141e68baedabebf061f356810019baacc02784b6bfebc6f490",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "dad1fac01633bc583dce7c8e8dca31a7e036a6dabf126dace378e0dd6d1742bd",
+          "size": 1893
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "4f9fbbf1ee192f141e68baedabebf061f356810019baacc02784b6bfebc6f490",
+          "size": 1828
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-sparc",
+      "name": "SPARC 模型构造",
+      "model": "sparc",
+      "description": "固化 SPARC 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-sparc 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "6a549c956e41595c51fc8b955e91dd14468f80feefb1e7c2be688c5740592c6a",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "3890e07986b6d7242ff287ecedae7b716e96f36d120a973804fda36637c186af",
+          "size": 1910
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "6a549c956e41595c51fc8b955e91dd14468f80feefb1e7c2be688c5740592c6a",
+          "size": 1810
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-bellhop3d",
+      "name": "BELLHOP3D 模型构造",
+      "model": "bellhop3d",
+      "description": "固化 BELLHOP3D 的适用条件、输入、执行与检查流程；公共站提供只读配方。",
+      "prompt": "请载入 at-bellhop3d 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "27059083f3375ca9cbd04b87db56bc74c7fa54779b4002d701c6fdb752e301f8",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "c67e61dfab2c72785efc240d74ae816ed87d186af83e756a067e5a792366fce9",
+          "size": 1891
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "27059083f3375ca9cbd04b87db56bc74c7fa54779b4002d701c6fdb752e301f8",
+          "size": 1849
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    },
+    {
+      "id": "at-krakel",
+      "name": "KRAKEL 模型构造",
+      "model": "krakel",
+      "description": "历史记录中曾编译并冒烟运行 KRAKEL，但弹性场后处理与收敛尚未核验；公共站不开放基线创建。",
+      "prompt": "请载入 at-krakel 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
+      "read_only": true,
+      "resource_count": 2,
+      "sha256": "f7c56761d204dca5f3088a1dce436539cd08012494388124a1d71e3bbf545bb4",
+      "resources": [
+        {
+          "path": "references/workflow.md",
+          "sha256": "f57b2f9d536c034d459445536f6214f140f6eee5c2547af7e7379c10ea02d176",
+          "size": 1490
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "f7c56761d204dca5f3088a1dce436539cd08012494388124a1d71e3bbf545bb4",
+          "size": 1806
+        }
+      ],
+      "runtime_available": false,
+      "scope": "public_read_only"
+    }
+  ],
+  "scope": "public_read_only",
+  "note": "公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。",
+  "history_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。"
+}

@@ -1,13 +1,22 @@
 """Visitor-scoped public gateway. Administrative localhost API is never tunneled."""
-import json,secrets,time,sqlite3,asyncio,re,hashlib
+import json,secrets,time,sqlite3,asyncio,re,hashlib,os,math
 from contextlib import contextmanager,closing
 from pathlib import Path
+from urllib.parse import urlsplit
 import httpx
 from fastapi import FastAPI,Request,HTTPException
 from fastapi.responses import JSONResponse,Response
 import knowledge,models
-ROOT=Path(__file__).resolve().parents[1];LOCAL=ROOT/'.local';STATE=LOCAL/'public-runtime.json';DB=LOCAL/'public-visitors.sqlite3'
-runtime=json.loads(STATE.read_text(encoding='utf-8'));SECRET=runtime['gateway_secret'];ORIGIN=runtime['site_origin'];PRIVATE='http://127.0.0.1:8765'
+def private_url(value):
+ """Only an explicit loopback HTTP origin may receive node requests."""
+ try:
+  if not isinstance(value,str):raise ValueError()
+  parsed=urlsplit(value)
+  if parsed.scheme!='http' or parsed.hostname not in ('127.0.0.1','localhost') or parsed.username or parsed.password or parsed.path not in ('','/') or parsed.query or parsed.fragment or not parsed.port or not 1<=parsed.port<=65535:raise ValueError()
+ except (ValueError,TypeError):raise ValueError('OCEAN_PRIVATE_URL must be a loopback HTTP origin with a valid explicit port') from None
+ return f'http://{parsed.hostname}:{parsed.port}'
+ROOT=Path(__file__).resolve().parents[1];LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local'))).expanduser().resolve();STATE=LOCAL/'public-runtime.json';DB=LOCAL/'public-visitors.sqlite3'
+runtime=json.loads(STATE.read_text(encoding='utf-8'));SECRET=runtime['gateway_secret'];ORIGIN=runtime['site_origin'];PRIVATE=private_url(os.environ.get('OCEAN_PRIVATE_URL','http://127.0.0.1:8765'))
 @contextmanager
 def connect():
  c=sqlite3.connect(DB,timeout=15);c.row_factory=sqlite3.Row;c.execute('PRAGMA busy_timeout=15000')
@@ -24,7 +33,12 @@ def public(cfg):return {k:v for k,v in cfg.items() if k!='api_key'}|{'api_key_se
 @app.middleware('http')
 async def protect(request,call_next):
  if not secrets.compare_digest(request.headers.get('x-ocean-gateway',''),SECRET):return JSONResponse({'detail':'此接口仅接受已发布网站的连接'},403)
- if int(request.headers.get('content-length','0') or '0')>65536:return JSONResponse({'detail':'请求内容过长'},413)
+ try:length=int(request.headers.get('content-length','0') or '0')
+ except ValueError:return JSONResponse({'detail':'请求长度无效'},422)
+ if length<0:return JSONResponse({'detail':'请求长度无效'},422)
+ if length>65536 or len(await request.body())>65536:return JSONResponse({'detail':'请求内容过长'},413)
+ raw_path=request.scope.get('raw_path',b'').decode('ascii',errors='replace').lower()
+ if any(value in raw_path for value in ('%2e','%2f','%5c','%00','\\','//')) or any(part in ('.','..') for part in request.url.path.split('/')):return JSONResponse({'detail':'请求路径无效'},403)
  if request.method not in ['GET','HEAD'] and request.headers.get('origin') not in [ORIGIN]:return JSONResponse({'detail':'请求来源不匹配'},403)
  visitor=request.cookies.get('ocean_visitor','');fresh=False
  with connect() as db:
@@ -46,7 +60,7 @@ async def upstream(request,path=None,body=None):
  headers={'Content-Type':'application/json','X-Ocean-Submission-Scope':submission_identity(request.state.visitor,key)[0]}
  if key:
   headers['Idempotency-Key']=submission_identity(request.state.visitor,key)[1]
- async with httpx.AsyncClient(timeout=100) as client:
+ async with httpx.AsyncClient(timeout=100,trust_env=False,follow_redirects=False) as client:
   response=await client.request(request.method,PRIVATE+(path or request.url.path),params=request.query_params,content=json.dumps(body,ensure_ascii=False).encode() if body is not None else await request.body(),headers=headers)
  headers={k:v for k,v in response.headers.items() if k.lower() in ['content-type','content-disposition']}
  return Response(response.content,status_code=response.status_code,headers=headers)
@@ -57,17 +71,31 @@ def submission_identity(visitor,key):
 def valid_submission_ids(values,count=None):
  return isinstance(values,list) and 1<=len(values)<=4 and (count is None or len(values)==count) and all(isinstance(value,str) and re.fullmatch(r'[a-f0-9]{12}',value) for value in values) and len(set(values))==len(values)
 
-def local_submission_receipt(visitor,key,fingerprint,count):
+def local_submission_receipt(visitor,key,fingerprint,count,studio_plan=None):
  """Read only the fixed node DB and this visitor's server-derived identity.
 
  A gateway pending row is not proof that MATLAB jobs were accepted. Conversely,
  a transport failure after the node commit must not lose the visitor's jobs.
  """
  scope,mapped_key=submission_identity(visitor,key);path=(LOCAL/'workbench.sqlite3').resolve()
+ if studio_plan is not None:scope='studio:'+scope
  try:
   with closing(sqlite3.connect(path.as_uri()+'?mode=ro',uri=True,timeout=15)) as db:
    db.row_factory=sqlite3.Row;db.execute('PRAGMA busy_timeout=15000')
    row=db.execute('SELECT batch_id,plan_sha256,ids FROM submissions WHERE scope=? AND idempotency_key=?',(scope,mapped_key)).fetchone()
+   if row and studio_plan is not None:
+    try:ids=json.loads(row['ids'])
+    except (ValueError,TypeError):raise HTTPException(503,'节点提交记录暂不可核验，请管理员检查。') from None
+    if not valid_submission_ids(ids,count):raise HTTPException(503,'节点任务标识暂不可核验，请管理员检查。')
+    cases=[]
+    for identity in ids:
+     job=db.execute('SELECT batch_id,plan FROM jobs WHERE id=?',(identity,)).fetchone()
+     try:case=json.loads(job['plan']) if job else None
+     except (ValueError,TypeError):case=None
+     if not isinstance(case,dict) or job['batch_id']!=row['batch_id'] or case.get('batch_id')!=row['batch_id'] or case.get('studio') is not True:raise HTTPException(503,'节点冻结参数暂不可核验，请管理员检查。')
+     cases.append({k:v for k,v in case.items() if k!='batch_id'})
+    canonical=json.dumps({'plan':studio_plan,'cases':cases},ensure_ascii=False,sort_keys=True,separators=(',',':'),allow_nan=False)
+    fingerprint=hashlib.sha256(canonical.encode()).hexdigest()
  except (OSError,sqlite3.Error):raise HTTPException(503,'暂时无法核实节点提交记录；原请求标识已保留，请稍后重试，不会盲目重复提交。') from None
  if not row:return None
  if row['plan_sha256']!=fingerprint:raise HTTPException(409,'节点已有同一请求标识的不同参数，不能复用')
@@ -85,7 +113,7 @@ def save_submission_receipt(visitor,key,data):
   if key:db.execute('UPDATE public_submissions SET response=? WHERE visitor=? AND request_key=?',(json.dumps(data),visitor,key))
 @app.get('/api/health')
 async def health(request:Request):
- async with httpx.AsyncClient(timeout=5) as c:r=await c.get(PRIVATE+'/api/health')
+ async with httpx.AsyncClient(timeout=5,trust_env=False,follow_redirects=False) as c:r=await c.get(PRIVATE+'/api/health')
  result=r.json();cfg=current(request.state.visitor);catalog=models.catalog()
  result.update(public_mode=True,model_configured=bool(cfg.get('api_key')),model_name=next((m['name'] for m in catalog['models'] if m['provider']==cfg['provider'] and m['id']==cfg['model']),cfg['model']),provider_name=next(p['name'] for p in catalog['providers'] if p['id']==cfg['provider']))
  return result
@@ -157,41 +185,77 @@ async def chat(request:Request):
  with connect() as db:
   db.execute('INSERT INTO visitor_messages(visitor,role,text) VALUES(?,?,?)',(visitor,'user',message));db.execute('INSERT INTO visitor_messages(visitor,role,text) VALUES(?,?,?)',(visitor,'assistant',reply))
  return {'reply':reply,'model_used':bool(cfg.get('api_key')),'evidence_ids':[c['id'] for c in evidence],'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status()}
+async def checked_public_plan(request,studio=False):
+ """Forward only fixed scientific fields; visitor model keys never reach localhost."""
+ try:body=await request.json()
+ except ValueError:raise HTTPException(422,'计划须为有效 JSON 对象') from None
+ legacy={'template','frequencies_hz','source_depths_m','receiver_depth_m','range_min_km','range_max_km','range_points','depth_points'}
+ studio_fields={'solver','scooter_rmax_factor','scooter_mesh_points','mode_addition','bellhop_output','beam_count','convergence_tolerance_db','scenario','bottom_scan_values','ray_count','angle_min_deg','angle_max_deg','ray_step_m','longitude','latitude','period','water_depth_m','bottom_speed_m_s','bottom_density_g_cm3','bottom_attenuation'}
+ if not isinstance(body,dict) or set(body)-(legacy|studio_fields if studio else legacy):raise HTTPException(422,'公开计划仅接受固定声学仿真参数')
+ # Fixed Plan fields are scalar numbers/enums or arrays of numbers. Reject
+ # nested objects before validation so credentials cannot be hidden in a field.
+ enums={'template':('munk_5000m','woa18','pekeris_100m','constant_5000m'),'solver':('kraken','scooter','bellhop'),'mode_addition':('coherent','incoherent'),'bellhop_output':('rays','coherent','incoherent'),'scenario':('single','source_scan','seasonal','bottom_scan','model_compare','convergence')}
+ for key,value in body.items():
+  if key in enums:
+   if not isinstance(value,str) or value not in enums[key]:raise HTTPException(422,'计划枚举参数无效')
+  else:
+   values=value if key in ('frequencies_hz','source_depths_m','bottom_scan_values') and isinstance(value,list) else [value]
+   if not values or any(not isinstance(v,(int,float)) or isinstance(v,bool) or not math.isfinite(v) for v in values):raise HTTPException(422,'计划数值参数格式无效')
+ request.state.public_submission_body=body
+ path='/api/simulation/plans/preview' if studio else '/api/plans/preview'
+ try:
+  async with httpx.AsyncClient(timeout=100,trust_env=False,follow_redirects=False) as client:validation=await client.post(PRIVATE+path,json=body)
+ except httpx.RequestError:raise HTTPException(503,'计算节点参数校验暂不可用，请稍后重试。') from None
+ if validation.status_code!=200:return None,None,Response(validation.content,status_code=validation.status_code,media_type='application/json')
+ try:
+  data=validation.json();plan=data['plan'];count=data.get('case_count')
+  if not isinstance(plan,dict) or set(plan)-(legacy|studio_fields if studio else legacy):raise ValueError()
+  if not studio and count is None:count=len(plan.get('frequencies_hz',[50]))*len(plan.get('source_depths_m',[1000]))
+  if not isinstance(count,int) or isinstance(count,bool) or count<1:raise ValueError()
+ except (ValueError,KeyError,TypeError):raise HTTPException(502,'节点未返回可核验的仿真计划。') from None
+ if count>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
+ return plan,count,Response(validation.content,status_code=200,media_type='application/json')
+
+@app.post('/api/simulation/plans/preview')
+async def studio_preview(request:Request):
+ _,_,response=await checked_public_plan(request,studio=True);return response
+
 @app.post('/api/jobs')
+@app.post('/api/simulation/jobs')
 async def submit(request:Request):
- visitor=request.state.visitor;body=await request.json()
- async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)
- if validation.status_code!=200:return Response(validation.content,status_code=validation.status_code,media_type='application/json')
- body=validation.json()['plan']
+ visitor=request.state.visitor;studio=request.url.path=='/api/simulation/jobs'
+ body,count,validation=await checked_public_plan(request,studio)
+ if body is None:return validation
  request_key=request.headers.get('idempotency-key','')
  if request_key and not re.fullmatch(r'[A-Za-z0-9:_-]{1,128}',request_key):raise HTTPException(422,'请求标识不合法')
  fingerprint=hashlib.sha256(json.dumps(body,sort_keys=True,separators=(',',':')).encode()).hexdigest()
- count=len(body.get('frequencies_hz',[50]))*len(body.get('source_depths_m',[1000]))
- if count>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
  async with submit_lock:
   prior=None
   if request_key:
    with connect() as db:prior=db.execute('SELECT body_hash,response FROM public_submissions WHERE visitor=? AND request_key=?',(visitor,request_key)).fetchone()
    if prior and prior['body_hash']!=fingerprint:raise HTTPException(409,'同一请求标识不能用于不同参数')
    if prior and prior['response']:return JSONResponse({**json.loads(prior['response']),'reused':True})
-   receipt=local_submission_receipt(visitor,request_key,fingerprint,count)
+   receipt=local_submission_receipt(visitor,request_key,fingerprint,count,body if studio else None)
    if receipt:
     # Recover even when the node committed before a gateway crash could create
     # its own pending row. No new compute and no quota bypass occurs here.
     with connect() as db:db.execute('INSERT INTO public_submissions(visitor,request_key,body_hash,created) VALUES(?,?,?,?) ON CONFLICT(visitor,request_key) DO NOTHING',(visitor,request_key,fingerprint,time.time()))
     save_submission_receipt(visitor,request_key,receipt);return JSONResponse(receipt)
-  async with httpx.AsyncClient(timeout=10) as c:jobs=(await c.get(PRIVATE+'/api/jobs')).json()
+  async with httpx.AsyncClient(timeout=10,trust_env=False,follow_redirects=False) as c:jobs=(await c.get(PRIVATE+'/api/jobs')).json()
   active=[j for j in jobs if j['state'] in ['RUNNING','QUEUED']]
   with connect() as db:owned={r['id'] for r in db.execute('SELECT id FROM owned_jobs WHERE visitor=?',(visitor,))}
   if len(active)+count>16:raise HTTPException(429,'计算节点队列已满，请稍后提交')
   if any(j['id'] in owned for j in active):raise HTTPException(429,'你的上一批仿真尚未完成')
   if request_key:
    with connect() as db:db.execute('INSERT INTO public_submissions(visitor,request_key,body_hash,created) VALUES(?,?,?,?) ON CONFLICT(visitor,request_key) DO NOTHING',(visitor,request_key,fingerprint,time.time()))
-  try:result=await upstream(request,body=body)
+  # Preserve exactly the input used by preview. Re-validating a model_dump can
+  # coerce default int-valued float fields (2 -> 2.0), changing the node's durable
+  # fingerprint even though the physical parameters are unchanged.
+  try:result=await upstream(request,body=request.state.public_submission_body)
   except httpx.RequestError:
    raise HTTPException(503,'提交响应中断；请求标识已保留。请使用同一标识重试以核实是否已经创建任务。') from None
   if request_key and result.status_code!=200:
-   receipt=local_submission_receipt(visitor,request_key,fingerprint,count)
+   receipt=local_submission_receipt(visitor,request_key,fingerprint,count,body if studio else None)
    if receipt:save_submission_receipt(visitor,request_key,receipt);return JSONResponse(receipt)
    # A completed upstream failure plus a readable, empty receipt proves this
    # attempt did not commit. An unavailable/ambiguous DB keeps the pending row.
@@ -214,29 +278,58 @@ async def compare_owned_jobs(request:Request):
  return await upstream(request,body=body)
 @app.get('/api/jobs')
 async def jobs(request:Request):
- async with httpx.AsyncClient(timeout=10) as c:data=(await c.get(PRIVATE+'/api/jobs')).json()
+ async with httpx.AsyncClient(timeout=10,trust_env=False,follow_redirects=False) as c:data=(await c.get(PRIVATE+'/api/jobs')).json()
  with connect() as db:owned={r['id'] for r in db.execute('SELECT id FROM owned_jobs WHERE visitor=?',(request.state.visitor,))}
  return [j for j in data if j['id'] in owned]
+
+@app.get('/api/batches/{identity}')
+async def own_batch(identity:str,request:Request):
+ if not re.fullmatch(r'[a-f0-9]{12}(?:[a-f0-9]{20})?',identity):raise HTTPException(404,'批次不存在或不属于当前访客')
+ try:
+  with closing(sqlite3.connect((LOCAL/'workbench.sqlite3').resolve().as_uri()+'?mode=ro',uri=True,timeout=15)) as db:
+   ids=[row[0] for row in db.execute('SELECT id FROM jobs WHERE batch_id=?',(identity,))]
+ except (OSError,sqlite3.Error):raise HTTPException(503,'暂时无法核实批次归属，请稍后重试。') from None
+ with connect() as db:
+  if not ids or any(not db.execute('SELECT 1 FROM owned_jobs WHERE id=? AND visitor=?',(id,request.state.visitor)).fetchone() for id in ids):raise HTTPException(404,'批次不存在或不属于当前访客')
+ response=await upstream(request)
+ if response.status_code==200:
+  try:
+   data=json.loads(response.body);returned=[case['id'] for case in data['cases']]
+   if data.get('id')!=identity or len(returned)!=len(ids) or set(returned)!=set(ids):raise ValueError()
+  except (ValueError,KeyError,TypeError):raise HTTPException(503,'批次内容暂不可核验，未返回其他访客的数据。') from None
+ return response
+
+@app.delete('/api/jobs/{id}')
+async def delete_owned_job(id:str,request:Request):
+ if not re.fullmatch(r'[a-f0-9]{12}',id):raise HTTPException(404,'任务不存在或不属于当前访客')
+ with connect() as db:owned=db.execute('SELECT 1 FROM owned_jobs WHERE id=? AND visitor=?',(id,request.state.visitor)).fetchone()
+ if not owned:raise HTTPException(404,'任务不存在或不属于当前访客')
+ try:
+  async with httpx.AsyncClient(timeout=10,trust_env=False,follow_redirects=False) as c:details=await c.get(PRIVATE+'/api/jobs/'+id)
+ except httpx.RequestError:raise HTTPException(503,'暂时无法核实任务状态，文件未删除。') from None
+ if details.status_code!=200:return Response(details.content,status_code=details.status_code,media_type='application/json')
+ try:value=details.json()
+ except ValueError:raise HTTPException(503,'任务状态暂不可核验，文件未删除。') from None
+ if not isinstance(value,dict) or value.get('id')!=id or value.get('state') not in ('SUCCEEDED','FAILED','CANCELLED','INTERRUPTED'):raise HTTPException(409,'请先停止任务并确认计算进程结束')
+ # The private endpoint rechecks process/Agent use under its own lock and
+ # physically removes this fixed job directory before deleting queue records.
+ return await upstream(request,path='/api/jobs/'+id,body={})
 @app.api_route('/api/jobs/{id}/{rest:path}',methods=['GET','POST'])
 @app.get('/api/jobs/{id}')
 async def own_job(id:str,request:Request,rest:str=''):
+ if not re.fullmatch(r'[a-f0-9]{12}',id):raise HTTPException(404,'任务不存在或不属于当前访客')
  with connect() as db:owned=db.execute('SELECT 1 FROM owned_jobs WHERE id=? AND visitor=?',(id,request.state.visitor)).fetchone()
  if not owned:raise HTTPException(404,'任务不存在或不属于当前访客')
  if rest and rest not in ['cancel','download'] and not re.fullmatch(r'artifact/[a-zA-Z0-9_.-]+',rest):raise HTTPException(404)
  if request.method=='POST' and rest!='cancel':raise HTTPException(405)
  return await upstream(request)
-@app.api_route('/api/{path:path}',methods=['GET','POST','PUT'])
+@app.api_route('/api/{path:path}',methods=['GET','POST','PUT','DELETE'])
 async def readonly(path:str,request:Request):
  permitted=request.method=='GET' and (path in ['graph','graph/path','sources','models/catalog','knowledge/search','knowledge/status','knowledge/public-sources','exercises'] or re.fullmatch(r'source/S\d{2}/page/\d+',path) or path=='knowledge/code')
  if request.method=='GET' and re.fullmatch(r'source/S\d{2}',path):raise HTTPException(403,'公开版提供教材原页片段，完整资料请使用课程资料包')
  if request.method=='POST' and path=='plans/draft':return await upstream(request)
  if request.method=='POST' and path=='plans/preview':
-  body=await request.json()
-  async with httpx.AsyncClient(timeout=10) as client:validation=await client.post(PRIVATE+'/api/plans/preview',json=body)
-  if validation.status_code!=200:return Response(validation.content,status_code=validation.status_code,media_type='application/json')
-  body=validation.json()['plan']
-  if len(body.get('frequencies_hz',[50]))*len(body.get('source_depths_m',[1000]))>4:raise HTTPException(422,'公开版每批最多 4 组，请拆分提交')
-  permitted=True
+  _,_,validation=await checked_public_plan(request);return validation
  if not permitted:raise HTTPException(403,'公开访客不能操作本地管理接口')
  return await upstream(request)
 if __name__=='__main__':

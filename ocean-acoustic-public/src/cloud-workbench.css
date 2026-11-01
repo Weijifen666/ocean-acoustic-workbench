@@ -1,0 +1,8 @@
+.public-execution-note { margin: 0 0 18px; padding: 13px 17px; border: 1px solid #c7dce5; border-radius: 10px; color: #375c70; background: #eef7fb; font-size: 13px; line-height: 1.8; }
+.dialogue-workbench .dialogue-toolbar label { display: flex; align-items: center; gap: 8px; }
+.dialogue-workbench .dialogue-toolbar input[type=number] { width: 86px; }
+.workbench-app .project-root { overflow-wrap: anywhere; }
+.workbench-app .research-skill-grid article { min-width: 0; overflow-wrap: anywhere; }
+.workbench-app .model-experience-body pre { max-height: 420px; overflow: auto; }
+.workbench-app .dialogue-title > .tag { white-space: nowrap; }
+@media(max-width:640px) { .dialogue-workbench .dialogue-toolbar { flex-wrap: wrap; } .dialogue-workbench .dialogue-actions { flex-wrap: wrap; } .workbench-app .dialogue-title { align-items: flex-start; } }

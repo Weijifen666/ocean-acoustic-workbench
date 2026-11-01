@@ -210,12 +210,28 @@ async function terrainMap(data, params) {
     preview_stride:level.stride,version:data.version};
 }
 
-export async function handleOceanData(request, env) {
+export async function handleOceanData(request, env, {fetcher=fetch}={}) {
   const url=new URL(request.url),path=url.pathname;
   if (path!=='/api/ocean-data' && !path.startsWith('/api/ocean-data/')) return null;
   if (!['/api/ocean-data','/api/ocean-data/profile','/api/ocean-data/terrain'].includes(path)) return json({detail:'海洋数据接口不存在。'},404);
   if (request.method!=='GET') return json({detail:'海洋数据接口只接受 GET 查询。'},405);
   try {
+    // An existing Site can reuse the separately published, versioned dataset.
+    // Only this administrator-set origin selects the upstream. Never forward
+    // visitor cookies, platform identity, model keys, or arbitrary headers.
+    if(env.OCEAN_DATA_REMOTE_URL) {
+      const origin=new URL(env.OCEAN_DATA_REMOTE_URL);
+      if(origin.protocol!=='https:'||!origin.hostname.endsWith('.chatgpt.site')||origin.username||origin.password||origin.port||origin.search||origin.hash||!['','/'].includes(origin.pathname)||origin.origin===url.origin)throw unavailable('海洋数据服务地址配置无效。');
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
+      try {
+        const response=await fetcher(origin.origin+path+url.search,{headers:{Accept:'application/json'},redirect:'manual',signal:controller.signal});
+        if(![200,404,409,422,503].includes(response.status)||!response.headers.get('content-type')?.includes('application/json'))throw unavailable('海洋数据服务暂不可用，请稍后重试。');
+        const bytes=await boundedBytes(response.body,MAX_JSON);
+        const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':response.ok?'public, max-age=300':'no-store','X-Content-Type-Options':'nosniff'};
+        const version=response.headers.get('x-ocean-data-version');if(version)headers['X-Ocean-Data-Version']=version;
+        return new Response(bytes,{status:response.status,headers});
+      }finally{clearTimeout(timer);}
+    }
     if (!env?.BUCKET) throw unavailable();
     const data=await dataset(env.BUCKET,url);
     if(path==='/api/ocean-data') return json({available:true,files:[],count:data.manifest.totals?.objects || 0,bytes:data.manifest.totals?.bytes || 0,

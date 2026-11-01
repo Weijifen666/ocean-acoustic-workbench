@@ -1,4 +1,7 @@
 import fs from 'node:fs';import path from 'node:path';import {build} from 'vite';import {build as bundle} from 'esbuild';
+// The local workbench is the maintained source of graph and research recipes.
+// Regenerate the public, sanitized snapshot on every production build.
+await import('../scripts/generate-public-research.mjs');
 await build();
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.ico':'image/x-icon','.woff2':'font/woff2','.woff':'font/woff','.ttf':'font/ttf'};
 const files={};function walk(dir){for(const name of fs.readdirSync(dir)){const full=path.join(dir,name);if(fs.statSync(full).isDirectory())walk(full);else{files['/'+path.relative('dist',full).replaceAll('\\','/')]={type:mime[path.extname(full)]||'application/octet-stream',data:fs.readFileSync(full).toString('base64')}}}}walk('dist');
@@ -6,6 +9,7 @@ const graph=JSON.parse(fs.readFileSync('data/graph.json','utf8')),models=JSON.pa
 fs.mkdirSync('dist/server',{recursive:true});
 const template=fs.readFileSync('data/public_template.m','utf8'),exercises=JSON.parse(fs.readFileSync('data/exercises.json','utf8'));
 const oceanSources=JSON.parse(fs.readFileSync('data/open-ocean-sources.json','utf8')),oceanChunks=JSON.parse(fs.readFileSync('data/open-ocean-chunks.json','utf8'));
-const generated=`export const FILES=${JSON.stringify(files)};export const GRAPH=${JSON.stringify(graph)};export const MODELS=${JSON.stringify(models)};export const SOURCES=${JSON.stringify(sources)};export const TEMPLATE=${JSON.stringify(template)};export const EXERCISES=${JSON.stringify(exercises)};export const OCEAN_SOURCES=${JSON.stringify(oceanSources)};export const OCEAN_CHUNKS=${JSON.stringify(oceanChunks)};`;
+const researchAssets=JSON.parse(fs.readFileSync('data/research-assets.json','utf8'));
+const generated=`export const FILES=${JSON.stringify(files)};export const GRAPH=${JSON.stringify(graph)};export const MODELS=${JSON.stringify(models)};export const SOURCES=${JSON.stringify(sources)};export const TEMPLATE=${JSON.stringify(template)};export const EXERCISES=${JSON.stringify(exercises)};export const OCEAN_SOURCES=${JSON.stringify(oceanSources)};export const OCEAN_CHUNKS=${JSON.stringify(oceanChunks)};export const RESEARCH_ASSETS=${JSON.stringify(researchAssets)};`;
 await bundle({entryPoints:['worker.mjs'],bundle:true,format:'esm',platform:'browser',target:'es2022',outfile:'dist/server/index.js',plugins:[{name:'inline-public-assets',setup(builder){builder.onResolve({filter:/generated-assets\.mjs$/},()=>({path:'generated-assets',namespace:'course-assets'}));builder.onLoad({filter:/.*/,namespace:'course-assets'},()=>({contents:generated,loader:'js'}))}}]});
 console.log('Cloud worker built:',Object.keys(files).length,'assets,',fs.statSync('dist/server/index.js').size,'bytes');

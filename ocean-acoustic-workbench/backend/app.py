@@ -493,6 +493,9 @@ async def chat(body:Chat):
             raise HTTPException(502,detail) from None
     return finish_reply(reply,used)
 
+import natural_agent
+app.include_router(natural_agent.create_router(globals()))
+
 if (ROOT/'dist').exists():app.mount('/',StaticFiles(directory=ROOT/'dist',html=True),name='frontend')
 if __name__=='__main__':
     import uvicorn

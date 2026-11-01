@@ -95,3 +95,8 @@ SQLite持久保存任务、批次、状态事件、暂停状态和提交幂等�
 ```
 
 模型选择与配置入口参考 [WorkBuddy 官方说明](https://www.codebuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)，未复制其产品或角色。供应商缓存以 [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)和[百炼](https://help.aliyun.com/zh/model-studio/context-cache)官方文档为准，本项目不控制该缓存或保证命中。
+
+
+## 自然语言仿真
+
+已整合自然语言仿真代理、声学基准 Cookbook、Python/MATLAB 脚本、解析射线、交互式 MATLAB 环境检测和图表放大。仿真对话接口为 `/api/simulation/chat`，与课程问答共享配置、任务和结果。

@@ -11,6 +11,7 @@ import { OceanProfile, guideImage } from "./SakanaGuide";
 import { SimulationAssistant, JobComparison } from "./SimulationAssist";
 import MascotDock from "./MascotDock";
 import ChatComposerControls from "./ChatComposerControls";
+import MatlabPanel from "./MatlabPanel";
 import {
   Waves,
   Users,
@@ -1526,52 +1527,13 @@ function Config({ notify, onSaved }) {
       </PageTitle>
       <div className="settings-layout public-settings">
         {!cfg.public_mode && (
-          <section className="panel settings-panel">
-            <div className="panel-heading">
-              <span>
-                <Terminal size={17} />
-                本地计算环境
-              </span>
-              <span className="tag">Windows</span>
-            </div>
-            <Field label="MATLAB 可执行路径">
-              <input value={cfg.matlab_path} onChange={input("matlab_path")} />
-            </Field>
-            <Field label="AT 工具包目录">
-              <input
-                value={cfg.toolbox_path}
-                onChange={input("toolbox_path")}
-              />
-            </Field>
-            <Field label="授权项目目录">
-              <input
-                value={cfg.project_path}
-                onChange={input("project_path")}
-              />
-            </Field>
-            <Field label="单任务超时" unit="秒">
-              <input
-                type="number"
-                value={cfg.timeout_seconds}
-                onChange={input("timeout_seconds")}
-              />
-            </Field>
-            <Button
-              onClick={async () => {
-                try {
-                  setChecks(
-                    await api("/environment/check", { method: "POST" }),
-                  );
-                  notify("环境检查完成");
-                } catch (e) {
-                  notify(e.message);
-                }
-              }}
-            >
-              <CheckCircle2 size={15} />
-              检查运行环境
-            </Button>
-          </section>
+          <MatlabPanel
+            cfg={cfg}
+            setCfg={setCfg}
+            onSave={save}
+            busy={busy}
+            notify={notify}
+          />
         )}
         <ModelPanel
           cfg={cfg}

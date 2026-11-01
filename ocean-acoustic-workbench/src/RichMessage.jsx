@@ -188,6 +188,17 @@ export function AnswerMarkdown({
   onEvidence,
   compact = false,
 }) {
+  const [zoomSrc, setZoomSrc] = useState(null);
+
+  useEffect(() => {
+    if (!zoomSrc) return;
+    const handleKey = (e) => {
+      if (e.key === "Escape") setZoomSrc(null);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [zoomSrc]);
+
   const plugins = useMemo(
     () => [remarkGfm, remarkMath, [remarkEvidence, { rows }]],
     [rows],
@@ -199,9 +210,15 @@ export function AnswerMarkdown({
         rehypePlugins={[
           [rehypeKatex, { strict: false, throwOnError: false, trust: false }],
         ]}
-        urlTransform={(url) =>
-          url.startsWith("#ocean-evidence-") ? url : defaultUrlTransform(url)
-        }
+        urlTransform={(url) => {
+          if (
+            url.startsWith("#ocean-evidence-") ||
+            url.startsWith("/") ||
+            url.startsWith("data:")
+          )
+            return url;
+          return defaultUrlTransform(url);
+        }}
         components={{
           pre: CodeBlock,
           table: ({ children }) => (
@@ -228,15 +245,65 @@ export function AnswerMarkdown({
                 {children}
               </a>
             ),
-          img: ({ alt }) => (
-            <span className="answer-image-reference">
-              [图片：{alt || "请核对来源"}]
-            </span>
-          ),
+          img: ({ src, alt }) => {
+            if (!src) {
+              return (
+                <span className="answer-image-reference">
+                  [图片：{alt || "请核对来源"}]
+                </span>
+              );
+            }
+            return (
+              <span className="answer-image-wrap">
+                <img
+                  src={src}
+                  alt={alt || "声学仿真图表"}
+                  className="answer-image"
+                  onClick={() => setZoomSrc(src)}
+                  loading="lazy"
+                />
+                {alt && (
+                  <span className="answer-image-caption">
+                    🔍 {alt}（点击放大查看）
+                  </span>
+                )}
+              </span>
+            );
+          },
         }}
       >
         {normalizeMath(text)}
       </ReactMarkdown>
+
+      {zoomSrc &&
+        createPortal(
+          <div
+            className="image-zoom-overlay"
+            onClick={() => setZoomSrc(null)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="image-zoom-dialog"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="image-zoom-close"
+                onClick={() => setZoomSrc(null)}
+                aria-label="关闭预览"
+              >
+                <X size={20} />
+              </button>
+              <img
+                src={zoomSrc}
+                alt="全屏放大查看"
+                className="image-zoom-full"
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

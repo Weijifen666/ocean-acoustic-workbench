@@ -21,6 +21,22 @@ assert.match(dialogue, /aria-label="研究上下文预算"/);
 assert.match(dialogue, /<option value="auto" selected="">自动 · 32K/);
 assert.match(dialogue, /<option value="131072">128K/);
 assert.match(dialogue, /<option value="unlimited">不限 · 由模型接口限制/);
+const researchOptions=dialogue.match(/<details\b[^>]*class="dialogue-options"[^>]*>([\s\S]*?)<\/details>/);
+const chatManagement=dialogue.match(/<details\b[^>]*class="dialogue-chat-management"[^>]*>([\s\S]*?)<\/details>/);
+assert(researchOptions,'研究设置保留为原生折叠区');
+for(const label of ['对话后端','Agent工具轮数','研究上下文预算'])assert(researchOptions[1].includes(`aria-label="${label}"`),label);
+assert(chatManagement,'聊天管理保留为原生折叠区');
+assert.match(chatManagement[1],/聊天导出格式/);assert.match(chatManagement[1],/导出聊天/);assert.match(chatManagement[1],/清空聊天/);
+assert.match(dialogue,/<details\b[^>]*class="chat-model-skills"/);
+for(const details of dialogue.matchAll(/<details\b[^>]*>/g))assert.doesNotMatch(details[0],/\sopen(?:\s|=|>)/,'辅助区域默认不展开');
+assert.match(dialogue,/<button(?=[^>]*aria-expanded="false")(?=[^>]*aria-controls="dialogue-context-panel")[^>]*>/);
+assert.match(dialogue,/<aside(?=[^>]*id="dialogue-context-panel")(?=[^>]*hidden="")[^>]*>/);
+function detailDepth(markup,needle){
+ const index=markup.indexOf(needle);assert(index>=0,needle);let depth=0;
+ for(const tag of markup.slice(0,index).matchAll(/<details\b[^>]*>|<\/details>/g))depth+=tag[0].startsWith('</')?-1:1;
+ return depth;
+}
+for(const visible of ['aria-label="输入问题"','aria-label="发送问题"','aria-label="聊天记录"','aria-controls="dialogue-context-panel"'])assert.equal(detailDepth(dialogue,visible),0,visible+'不能隐藏在details内');
 globalThis.localStorage.getItem=key=>key.endsWith('context-budget')?'unlimited':null;
 const restoredDialogue=renderToStaticMarkup(<DialogueWorkbench openSettings={noOp}/>);
 assert.match(restoredDialogue, /<option value="unlimited" selected="">不限 · 由模型接口限制/);
@@ -50,6 +66,7 @@ assert.match(unlimitedStatus,/模型接口仍有自身的上下文与输出限�
 assert.doesNotMatch(unlimitedStatus,/NaN|nullK|模型无限/);
 const recovery=renderToStaticMarkup(<ResearchBudgetRecovery run={{id:'same-run',recoverable:true,error_code:'CONTEXT_BUDGET_EXCEEDED'}} onResume={noOp}/>);
 assert.match(recovery,/调整预算并继续/);
+assert.doesNotMatch(recovery,/<details\b|hidden=/);
 assert.equal(renderToStaticMarkup(<ResearchBudgetRecovery run={{id:'same-run',recoverable:true,error_code:'OTHER_ERROR'}} onResume={noOp}/>),'');
 const math = renderToStaticMarkup(<ChatMessage text={'\\[TL=-20\\log_{10}|p|\\]'} />);
 assert.match(math, /class="katex/);

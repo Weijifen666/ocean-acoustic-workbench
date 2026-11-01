@@ -15,6 +15,16 @@ test('public research, model library and tasks render with honest execution boun
   const result=spawnSync(process.execPath,[outfile],{encoding:'utf8',timeout:20000,windowsHide:true});
   assert.equal(result.status,0,result.stderr||result.stdout);
   assert.match(result.stdout,/Unified public workbench UI contracts passed/);
+  // Conditional runtime/recovery/alert states are absent from the initial SSR
+  // render. Verify their placement in the same component remains outside all
+  // native disclosure regions, without introducing a browser or API fixture.
+  const source=await readFile(new URL('../src/DialogueWorkbench.jsx',import.meta.url),'utf8');
+  const markup=source.slice(source.indexOf('return <div className="dialogue-workbench">'));
+  for(const visible of ['<ResearchBudgetRecovery','className="dialogue-runtime"','role="alert"','aria-label="输入问题"','aria-label="发送问题"']){
+   const index=markup.indexOf(visible);assert(index>=0,visible);let depth=0;
+   for(const tag of markup.slice(0,index).matchAll(/<details\b[^>]*>|<\/details>/g))depth+=tag[0].startsWith('</')?-1:1;
+   assert.equal(depth,0,visible+'必须在辅助折叠区外');
+  }
  }finally{
   if(path.dirname(directory)!==base||!path.basename(directory).startsWith('unified-ocean-ui-'))throw Error('Unexpected UI test output path');
   await rm(directory,{recursive:true,force:true});

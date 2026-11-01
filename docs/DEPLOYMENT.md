@@ -8,9 +8,12 @@
 
 ## 云端网页
 
+海洋环境数据在线查询的完整步骤、数据发布和验证见 [CLOUD_OCEAN_DATA.md](CLOUD_OCEAN_DATA.md)。海洋数据接口由云端 R2/Worker 直接处理，不经过下文需要节点在线的计算桥接。
+
+从完整仓库部署时，在仓库根目录维护自己的 `.openai/hosting.json`（可复制 `ocean-acoustic-public/hosting.example.json`），运行 `npm.cmd --prefix ocean-acoustic-public ci`，再从根目录运行 `npm.cmd run build`。根构建脚本生成 `dist/server/index.js`，并准备现有 D1 迁移以供 Sites 打包。发布身份仍不提交 GitHub。网页复用本地工作台的海洋数据组件，因此保留仓库的两个应用目录，不要只复制 public 目录部署。
+
 ```powershell
-cd ocean-acoustic-public
-npm.cmd ci
+npm.cmd --prefix ocean-acoustic-public ci
 npm.cmd run build
 ```
 
@@ -19,10 +22,11 @@ npm.cmd run build
 | 名称 | 类型 | 用途 |
 | --- | --- | --- |
 | `DB` | D1 | 加密临时请求与节点心跳 |
-| `BUCKET` | R2 | 加密响应和已提供的教材图片缓存 |
+| `BUCKET` | R2 | 海洋数据版本块、加密响应和已提供的教材图片缓存 |
 | `GATEWAY_SECRET` | Secret | 节点验证及 AES-GCM 加密 |
+| `DATA_PUBLISH_TOKEN` | Secret | 维护者发布海洋数据；浏览器不需要 |
 
-当前项目使用 Sites 部署。每个部署者创建自己的站点，将 `hosting.example.json` 复制为 `.openai/hosting.json`，填入实际 Site project_id，并保持 `d1: DB`、`r2: BUCKET`。通过 Sites 标准源码推送、归档、保存版本、部署流程发布；生产网址及绑定由平台返回。`.openai/hosting.json` 不提交本仓库。直接使用其他 Workers 平台时，需要自行配置等效 DB/BUCKET 绑定、应用 `drizzle/*.sql` 迁移及设置 Secret；本仓库未提供已验证的其他平台自动部署流程。
+当前项目使用 Sites 部署。每个部署者创建自己的站点，将 `ocean-acoustic-public/hosting.example.json` 复制为仓库根目录的 `.openai/hosting.json`，填入实际 Site project_id，并保持 `d1: DB`、`r2: BUCKET`。通过 Sites 标准源码推送、归档、保存版本、部署流程发布；生产网址及绑定由平台返回。`.openai/hosting.json` 不提交本仓库。直接使用其他 Workers 平台时，需要自行配置等效 DB/BUCKET 绑定、应用 `ocean-acoustic-public/drizzle/*.sql` 迁移及设置 Secret；本仓库未提供已验证的其他平台自动部署流程。
 
 ## 连接节点
 

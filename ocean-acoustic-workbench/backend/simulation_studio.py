@@ -3,7 +3,7 @@ import json,math,time,statistics,uuid,hashlib,shutil,re
 from pathlib import Path
 from fastapi import APIRouter,HTTPException,Request
 from pydantic import BaseModel,Field,field_validator,ConfigDict
-import custom_environment,classic_environments,scenarios,solver_results,field_plots,comparison,persistence,ocean_data,task_files
+import custom_environment,classic_environments,scenarios,solver_results,field_plots,comparison,persistence,ocean_data,ocean_cloud,task_files
 stamp=persistence.now
 
 class Plan(BaseModel):
@@ -60,6 +60,7 @@ class Plan(BaseModel):
             except ValueError as e:raise HTTPException(422,str(e))
         if self.template=='woa18':
             try:return custom_environment.prepare(self)
+            except ConnectionError as e:raise HTTPException(503,str(e)) from None
             except (ValueError,FileNotFoundError) as e:raise HTTPException(422,str(e))
         if max(self.source_depths_m)>=5000 or self.receiver_depth_m>=5000:raise HTTPException(422,'Munk 模板源深与接收深度须小于5000 m')
         return classic_environments.matched_munk() if self.solver=='scooter' else None
@@ -149,14 +150,20 @@ def router(store,local,wake):
     @api.get('/api/batches/{identity}')
     def batch(identity:str):return batch_results(identity,store,local)
     @api.get('/api/ocean-data')
-    def catalog():return ocean_data.catalog()
+    def catalog():
+        try:return ocean_data.catalog()
+        except ConnectionError as exc:raise HTTPException(503,str(exc)) from None
     @api.get('/api/ocean-data/profile')
-    def profile(lon:float=120,lat:float=20,period:int=0):
-        try:return ocean_data.profile(lon,lat,period)
+    def profile(lon:float=120,lat:float=20,period:int=0,version:str|None=None):
+        try:return ocean_data.profile(lon,lat,period,**({'version':version} if version is not None else {}))
+        except ConnectionError as exc:raise HTTPException(503,str(exc)) from None
+        except ocean_cloud.DatasetVersionMismatch as exc:raise HTTPException(409,str(exc)) from None
         except (ValueError,FileNotFoundError) as exc:raise HTTPException(422,str(exc)) from None
     @api.get('/api/ocean-data/terrain')
-    def terrain(west:float=95,east:float=145,south:float=-5,north:float=45):
-        try:return ocean_data.terrain_map(west,east,south,north)
+    def terrain(west:float=95,east:float=145,south:float=-5,north:float=45,version:str|None=None):
+        try:return ocean_data.terrain_map(west,east,south,north,**({'version':version} if version is not None else {}))
+        except ConnectionError as exc:raise HTTPException(503,str(exc)) from None
+        except ocean_cloud.DatasetVersionMismatch as exc:raise HTTPException(409,str(exc)) from None
         except (ValueError,FileNotFoundError) as exc:raise HTTPException(422,str(exc)) from None
     @api.get('/api/validation/{kind}')
     def validation(kind:str):

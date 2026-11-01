@@ -11,6 +11,7 @@ import { OceanProfile, guideImage } from "./SakanaGuide";
 import { SimulationAssistant, JobComparison } from "./SimulationAssist";
 import MascotDock from "./MascotDock";
 import ChatComposerControls from "./ChatComposerControls";
+import OceanData from "../../ocean-acoustic-workbench/src/OceanData";
 import {
   Waves,
   Users,
@@ -88,6 +89,7 @@ const pages = [
   ["graph", "知识图谱", Network],
   ["chat", "知识问答", MessageSquare],
   ["simulation", "声场仿真", FlaskConical],
+  ["ocean", "海洋环境数据", Waves],
   ["project", "课程代码", FolderCode],
   ["jobs", "任务与结果", Activity],
   ["workspace", "共享课题", Users],
@@ -187,7 +189,7 @@ function App() {
         setImage(null);
         setSidebarOpen(false);
       }
-      if (event.altKey && /^[1-7]$/.test(event.key)) {
+      if (event.altKey && /^[1-8]$/.test(event.key)) {
         event.preventDefault();
         setPage(
           [...pages.map((item) => item[0]), "settings"][Number(event.key) - 1],
@@ -301,7 +303,7 @@ function App() {
         <div className="side-bottom">
           <button
             className={page === "settings" ? "nav-item active" : "nav-item"}
-            title="Alt + 7"
+            title={`Alt + ${pages.length + 1}`}
             onClick={() => navigate("settings")}
           >
             <Settings2 size={17} />
@@ -376,7 +378,7 @@ function App() {
           </div>
         </header>
         <main id="workspace-content" tabIndex={-1}>
-          {!chat.ready && (
+          {!chat.ready && page !== "ocean" && (
             <section className="panel visitor-loading">
               <Loader2 className="spin" size={20} />
               <h2>正在准备课程空间</h2>
@@ -420,6 +422,7 @@ function App() {
             />
           )}
           {chat.ready && page === "project" && <Project notify={setToast} />}
+          {page === "ocean" && <OceanData notify={setToast} />}
           {chat.ready && page === "jobs" && (
             <Jobs
               notify={setToast}

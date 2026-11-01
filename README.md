@@ -4,6 +4,8 @@
 
 **本项目仅用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。**
 
+2026-11-01 海洋数据在线化：新增[数据工作台入口](https://ocean-acoustic-data-workbench.huuiihhuuiii.chatgpt.site/)，复用现有网页导航，提供全球 WOA18 全部 17 个时期的温盐/声速剖面与 ETOPO1 可缩放选点地图。浏览器按需查询，无需下载老师的原始资料包；数据查询独立于 MATLAB 节点。本地研究 Agent 可通过 `OCEAN_DATA_URL` 使用同一数据接口。转换、校验、发布和能力边界见[云端海洋数据部署说明](docs/CLOUD_OCEAN_DATA.md)。完整数据是否已激活以在线 `/api/ocean-data` 为准。
+
 ![v0.7 正式问答界面](docs/assets/course-workbench-v07.jpg)
 
 2026-10-15 更新：采用 Fuwari 风格改编与 Sakana 动画核心，配合原创透明海洋研究员插画；新增公网 SSE 真实流式回答、独立持久会话、Sites 账户个人空间和小组共享课题。知识检索增加有语境的口语改写、RRF 与时空数值证据门控；五份授权 PDF 按保留 Unicode 的入库格式2重建，1789 / 1846 页、4101 个片段，57 页等待复核。仿真支持持久化队列、幂等提交和真实结果对比。见 [v0.7 验收](docs/VALIDATION_V0_7.md)与[知识质量说明](docs/KNOWLEDGE_QUALITY.md)。

@@ -1,0 +1,12 @@
+import {spawnSync} from 'node:child_process';
+import {cpSync,mkdirSync} from 'node:fs';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const app=path.join(root,'ocean-acoustic-public');
+const build=spawnSync(process.execPath,['build-worker.mjs'],{cwd:app,stdio:'inherit',windowsHide:true});
+if(build.status!==0)process.exit(build.status||1);
+mkdirSync(path.join(root,'dist','server'),{recursive:true});
+cpSync(path.join(app,'dist','server','index.js'),path.join(root,'dist','server','index.js'));
+cpSync(path.join(app,'drizzle'),path.join(root,'drizzle'),{recursive:true});
+console.log('Cloud Site artifact and D1 migrations prepared.');

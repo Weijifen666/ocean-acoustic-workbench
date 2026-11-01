@@ -4,6 +4,7 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 import test_research_api as research_fixture
+import ocean_cloud
 
 
 class StudioMigration(unittest.TestCase):
@@ -57,5 +58,35 @@ class StudioMigration(unittest.TestCase):
         self.assertEqual(self.client.post('/api/jobs/'+identity+'/cancel').status_code,200)
         response=self.client.delete('/api/jobs/'+identity);self.assertEqual(response.status_code,200,response.text)
         self.assertTrue(response.json()['files_deleted']);self.assertFalse(folder.exists());self.assertIsNone(self.module.STORE.get(identity))
+    def test_cloud_profile_and_terrain_forward_pinned_version_and_preserve_conflict(self):
+        with patch('ocean_cloud.base_url',return_value='https://data.example'),patch('ocean_cloud.read',return_value={'dataset_version':'v1'}) as read:
+            response=self.client.get('/api/ocean-data/profile?lon=120&lat=20&period=13&version=v1')
+            self.assertEqual(response.status_code,200,response.text)
+            read.assert_called_once_with('/profile',lon=120.0,lat=20.0,period=13,version='v1')
+            read.reset_mock()
+            response=self.client.get('/api/ocean-data/terrain?west=95&east=145&south=-5&north=45&version=v1')
+            self.assertEqual(response.status_code,200,response.text)
+            read.assert_called_once_with('/terrain',west=95.0,east=145.0,south=-5.0,north=45.0,version='v1')
+            read.reset_mock()
+            self.assertEqual(self.client.get('/api/ocean-data/profile?lon=120&lat=20&period=13').status_code,200)
+            read.assert_called_once_with('/profile',lon=120.0,lat=20.0,period=13)
+        with patch('ocean_cloud.base_url',return_value='https://data.example'),patch('ocean_cloud.read',side_effect=ocean_cloud.DatasetVersionMismatch('请刷新页面')):
+            for path in ('/api/ocean-data/profile?version=obsolete','/api/ocean-data/terrain?version=obsolete'):
+                response=self.client.get(path)
+                self.assertEqual(response.status_code,409,response.text)
+                self.assertIn('刷新',response.json()['detail'])
+    def test_cloud_failure_aborts_preview_and_entire_submission_before_enqueue(self):
+        body=self.base(template='woa18',water_depth_m=500,source_depths_m=[100.],receiver_depth_m=100.)
+        for path in ('/api/simulation/plans/preview','/api/simulation/jobs'):
+            with patch('ocean_cloud.base_url',return_value='https://data.example'),patch('ocean_cloud.read',side_effect=ConnectionError('在线数据暂不可达')):
+                response=self.client.post(path,json=body)
+                self.assertEqual(response.status_code,503,response.text)
+                self.assertIn('暂不可达',response.json()['detail'])
+        # A later season failing must not enqueue already expanded earlier seasons.
+        with patch('ocean_cloud.base_url',return_value='https://data.example'),patch('ocean_cloud.read',side_effect=[self.profile(120,20,13),ConnectionError('第二季数据暂不可达')]):
+            response=self.client.post('/api/simulation/jobs',json={**body,'scenario':'seasonal'})
+            self.assertEqual(response.status_code,503,response.text)
+        self.assertEqual(self.client.get('/api/jobs').json(),[])
+        self.assertFalse((self.local/'runs').exists() and any((self.local/'runs').iterdir()))
 
 if __name__=='__main__':unittest.main()

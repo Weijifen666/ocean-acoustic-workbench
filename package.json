@@ -1,0 +1,10 @@
+{
+  "name": "ocean-acoustic-workbench-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-cloud-site.mjs",
+    "test:cloud": "npm --prefix ocean-acoustic-public test"
+  },
+  "engines": {"node": ">=22.13.0"}
+}

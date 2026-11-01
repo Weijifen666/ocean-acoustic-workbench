@@ -4,6 +4,7 @@ import threading,os,json
 import numpy as np
 from netCDF4 import Dataset
 import gsw
+import ocean_cloud
 
 LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(Path(__file__).absolute().parents[1]/'.local')))
 CONFIG=LOCAL/'config.json'
@@ -13,6 +14,7 @@ LOCK=threading.Lock() # netCDF/HDF5 operations must not overlap across request t
 PERIODS=[{'id':0,'label':'年平均'}]+[{'id':m,'label':f'{m}月'} for m in range(1,13)]+[{'id':m,'label':label} for m,label in [(13,'1—3月'),(14,'4—6月'),(15,'7—9月'),(16,'10—12月')]]
 
 def catalog():
+    if ocean_cloud.base_url():return ocean_cloud.read()
     files=[{'path':str(p.relative_to(ROOT)).replace('\\','/'),'bytes':p.stat().st_size} for p in ROOT.rglob('*') if p.is_file() and p.suffix in ('.nc','.grd','.gz','.tif')]
     return {'available':len(files)==39,'files':files,'count':len(files),'bytes':sum(f['bytes'] for f in files),'periods':PERIODS,'name':'WOA18 温盐气候场与 ETOPO1 海底地形','path':str(ROOT.resolve()),'method':'TEOS-10：深度→海水压力，实用盐度→绝对盐度，原位温度→声速（完整 Gibbs 函数）'}
 
@@ -21,7 +23,8 @@ def terrain(lon,lat):
         x=np.asarray(ds['x'][:]);y=np.asarray(ds['y'][:]);ix=int(np.argmin(abs(x-lon)));iy=int(np.argmin(abs(y-lat)))
         return {'lon':float(x[ix]),'lat':float(y[iy]),'elevation_m':float(ds['z'][iy,ix])}
 
-def terrain_map(west=95,east=145,south=-5,north=45):
+def terrain_map(west=95,east=145,south=-5,north=45,version=None):
+    if ocean_cloud.base_url():return ocean_cloud.read('/terrain',west=west,east=east,south=south,north=north,**({'version':version} if version is not None else {}))
     if not np.isfinite([west,east,south,north]).all() or not (-180<=west<east<=180 and -90<=south<north<=90):raise ValueError('地图经纬范围无效')
     if east-west<.1 or north-south<.1:raise ValueError('地图范围不能小于0.1度')
     with LOCK:
@@ -34,7 +37,8 @@ def terrain_map(west=95,east=145,south=-5,north=45):
             z=np.ma.filled(ds['z'][ys,xs],np.nan).astype(float)
             return {'lons':x[xs].tolist(),'lats':y[ys].tolist(),'elevation_m':[[float(v) if np.isfinite(v) else None for v in row] for row in z], 'source':'ETOPO1 基岩高程（m，相对海平面）','note':'地图为降采样预览；点选后按原始地形网格读取，温盐采用最近1°格点。'}
 
-def profile(lon,lat,period):
+def profile(lon,lat,period,version=None):
+    if ocean_cloud.base_url():return ocean_cloud.read('/profile',lon=lon,lat=lat,period=period,**({'version':version} if version is not None else {}))
     if not np.isfinite([lon,lat]).all() or not -180<=lon<=180 or not -90<=lat<=90 or period not in range(17):raise ValueError('经纬度或时段超出范围')
     lon=-180. if lon==180 else lon
     with LOCK:

@@ -4,6 +4,8 @@ import {createCourseRetriever} from './server/course-retrieval.mjs';
 import {createCloudModels} from './server/cloud-models.mjs';
 import {createPublicOceanKnowledge} from './server/open-ocean-retrieval.mjs';
 import {resolveVisitorIdentity,visitorCookie} from './server/identity.mjs';
+import {handleOceanData} from './server/ocean-data.mjs';
+import {handleOceanPublish} from './server/ocean-publish.mjs';
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers}});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const encoder=new TextEncoder();
@@ -68,6 +70,8 @@ const cloudApi=createCloudModels({catalog:MODELS,retrieve:createCourseRetriever(
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
  try{
+  const publish=await handleOceanPublish(request,env);if(publish)return publish;
+  const ocean=await handleOceanData(request,env);if(ocean)return ocean;
   if(url.pathname.startsWith('/_bridge/'))return await bridge(request,env,ctx,url.pathname);
   const direct=await cloudApi(request,env,ctx,url);if(direct)return direct;
   if(request.method==='GET'){

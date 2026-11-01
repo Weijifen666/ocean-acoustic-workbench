@@ -3,13 +3,13 @@ import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {setup,decrypt,encrypt} from './test-support.mjs';
-import {assertMessagesBudget} from '../server/context-budget.mjs';
+import {assertMessagesBudget,estimateMessages} from '../server/context-budget.mjs';
 
 const assets=JSON.parse(readFileSync(new URL('../data/research-assets.json',import.meta.url),'utf8'));
 const cfg={provider:'DeepSeek',base_url:'https://api.deepseek.com',model:'deepseek-flash',api_key:'TEST-ONLY-RESEARCH-VISITOR-KEY'};
 const plan={solver:'kraken',template:'pekeris_100m',frequencies_hz:[50],source_depths_m:[50],receiver_depth_m:50,range_min_km:0.1,range_max_km:5};
 const toolCall=(name,args={},id='call-'+name)=>({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
-const provider=(content='',calls=[],finish='stop')=>new Response(JSON.stringify({model:'reported-research-model',choices:[{finish_reason:finish,message:{role:'assistant',content,...(calls.length?{tool_calls:calls,reasoning_content:'Provider reasoning retained for API continuity.'}:{})}}]}),{headers:{'content-type':'application/json'}});
+const provider=(content='',calls=[],finish='stop',reasoning='Provider reasoning retained for API continuity.')=>new Response(JSON.stringify({model:'reported-research-model',choices:[{finish_reason:finish,message:{role:'assistant',content,...(calls.length?{tool_calls:calls,reasoning_content:reasoning}:{})}}]}),{headers:{'content-type':'application/json'}});
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 const chatBody=(overrides={})=>({session:'session-research-0001',request_id:'research-request-0001',message:'请分析海洋声学研究流程',backend:'api',rounds:40,...overrides});
 function harness(replies=[],options={}){
@@ -242,7 +242,7 @@ test('running step budget changes are explicit, validated, persisted and never a
  }finally{s.sqlite.close();}
 });
 
-test('an existing ContextBudget-failed run resumes in place without resubmitting its completed compute tool',async()=>{
+test('an existing ContextBudget-failed run explicitly resumes to unlimited without resubmitting its completed compute tool',async()=>{
  // The large numerical payload is explicitly a protocol fixture, not a claim
  // about an ocean location or a real solver result. Preserve its supplied
  // masked surface and known scalar values; never replace them with guesses.
@@ -268,9 +268,9 @@ test('an existing ContextBudget-failed run resumes in place without resubmitting
   delete legacy.error_code;
   s.sqlite.prepare("UPDATE cloud_research_runs SET state='failed',lease_until=0,ciphertext=? WHERE id=?").run(await encrypt(legacy,s.env.GATEWAY_SECRET),id);
   const failed=await get(s,cookie,id);assert.equal(failed.data.state,'failed');assert.equal(failed.data.recoverable,true);assert.equal(s.providerRequests.length,2);
-  assert.equal((await step(s,cookie,id,{context_budget:65536})).data.state,'failed','Ordinary step/poll must not silently recover a failed paid run');
+  assert.equal((await step(s,cookie,id,{context_budget:'unlimited'})).data.state,'failed','Ordinary step/poll must not silently recover a failed paid run');
   assert.equal(s.providerRequests.length,2);
-  const resume=await s.call(`/api/research/runs/${id}/resume`,'POST',{context_budget:65536},cookie);
+  const resume=await s.call(`/api/research/runs/${id}/resume`,'POST',{context_budget:'unlimited'},cookie);
   assert.equal(resume.r.status,200,JSON.stringify(resume.data));assert.equal(resume.data.state,'running');assert.equal(resume.data.id,id);
   assert.equal(s.providerRequests.length,2,'Explicit resume changes persistent scheduling state without charging a model request');
   const resumed=await step(s,cookie,id);
@@ -278,9 +278,10 @@ test('an existing ContextBudget-failed run resumes in place without resubmitting
   assert.equal(s.providerRequests.length,3);assert.equal(s.submissions.size,1);
   assert.equal(s.nodeRequests.filter(r=>r.path==='/api/simulation/jobs').length,1);
   assert.deepEqual([...s.submissions.values()][0].ids,createdReceipt.ids);
-  const final=await stored(s,id);assert.equal(final.data.context_budget,65536);assert.equal(final.data.trace.length,2);
+  const final=await stored(s,id);assert.equal(final.data.context_budget,'unlimited');assert.equal(final.data.trace.length,2);
+  assert.equal(resumed.data.context.budget_limited,false);assert.equal(resumed.data.context.budget_tokens,null);
   const sent=s.providerRequests[2].body;
-  completeToolGroups(sent.messages);assert.doesNotThrow(()=>assertMessagesBudget(sent.messages,65536,sent.tools||[]));
+  completeToolGroups(sent.messages);assert.doesNotThrow(()=>assertMessagesBudget(sent.messages,'unlimited',sent.tools||[]));
   assert.equal(sent.messages.find(m=>m.role==='user').content,checkpoint.data.question);
   const latest=sent.messages.find(m=>m.role==='tool'&&m.tool_call_id==='inspect-existing-compute');
   assert.ok(latest,'Retain the completed job observation, paired with its original tool call');
@@ -295,5 +296,33 @@ test('an existing ContextBudget-failed run resumes in place without resubmitting
    }
   }
   suppliedScalars(parse);
+ }finally{s.sqlite.close();}
+});
+
+test('unlimited public research is persisted and sends accumulated necessary context beyond 128K without another submission',async()=>{
+ const question='按已给定计划只提交一次计算，然后检查同一任务；完整保留这条原始问题🌊。';
+ const reasoning='Verify existing evidence; do not invent measurements. '.repeat(285);
+ const replies=[provider('',[toolCall('submit_simulation',{plan},'unlimited-single-compute')],'tool_calls',reasoning)];
+ for(let i=1;i<9;i++)replies.push(init=>{
+  const messages=JSON.parse(init.body).messages,last=JSON.parse(messages.findLast(m=>m.role==='tool').content),id=last.ids?.[0]||last.id;
+  assert.match(id,/^[a-f0-9]{12}$/);return provider('',[toolCall('get_job',{id},'unlimited-existing-job-'+i)],'tool_calls',reasoning);
+ });
+ replies.push(provider('仅核对已有任务，未再次提交，也未声称物理精度得到证明。'));
+ const s=harness(replies);
+ try{
+  const cookie=await visitor(s),capabilities=await s.call('/api/research/capabilities','GET',undefined,cookie);
+  assert.equal(capabilities.r.status,200);assert.ok(capabilities.data.context_budgets.includes('unlimited'));
+  const id=await start(s,cookie,chatBody({message:question,context_budget:'unlimited'}));
+  assert.equal((await stored(s,id)).data.context_budget,'unlimited');
+  for(let round=0;round<9;round++)assert.equal((await step(s,cookie,id)).data.state,'running');
+  const final=await step(s,cookie,id);assert.equal(final.data.state,'done',JSON.stringify(final.data));
+  assert.equal(s.providerRequests.length,10);assert.equal(s.submissions.size,1);assert.equal(s.nodeRequests.filter(r=>r.path==='/api/simulation/jobs').length,1);
+  const sent=s.providerRequests.at(-1).body;
+  assert.ok(estimateMessages(sent.messages,sent.tools||[])>131072,'Necessary retained reasoning must actually exceed the largest finite budget');
+  assert.equal(sent.messages.filter(m=>m.role==='tool').length,9);assert.equal(sent.messages.find(m=>m.role==='user').content,question);completeToolGroups(sent.messages);
+  assert.doesNotThrow(()=>assertMessagesBudget(sent.messages,'unlimited',sent.tools||[]));
+  assert.equal(final.data.context.budget_limited,false);assert.equal(final.data.context.budget_tokens,null);
+  assert.equal(final.data.context.dropped_tool_messages,0);assert.equal(final.data.context.dropped_history_messages,0);
+  assert.equal(JSON.parse(JSON.stringify(final.data.context)).budget_tokens,null);
  }finally{s.sqlite.close();}
 });

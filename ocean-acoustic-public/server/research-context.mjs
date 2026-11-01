@@ -119,10 +119,10 @@ function memory(messages) {
  return {jobs:[...jobs.values()].slice(-30),skill_resources:[...skills.values()].slice(-12),note:'这是旧工具记录的定位索引，不是新的科学结论。需重新查任务状态/原资料后核实；提交不等于完成，执行成功不等于物理精度证明。'};
 }
 export function packResearchContext(messages,budget='auto',tools=[]) {
- const resolved=resolveBudget(budget),limit=resolved-CONTEXT_RESERVE,raw=clone(messages);
+ const resolved=resolveBudget(budget),limit=resolved===null?Infinity:resolved-CONTEXT_RESERVE,raw=clone(messages);
  let user=-1;for(let i=0;i<raw.length;i++)if(raw[i].role==='user')user=i;
  if(user<0)throw new ContextBudgetError('研究记录缺少当前用户问题。');
- const context={requested_budget:budget,budget_tokens:resolved,reserve_tokens:CONTEXT_RESERVE,estimator:'utf8_bytes_upper_bound_v1',original_estimated_input_tokens:estimateMessages(raw,tools),estimated_input_tokens:0,compacted_tool_messages:0,dropped_tool_messages:0,dropped_history_messages:0,dropped_evidence_count:0,notes:[],applied:true};
+ const context={requested_budget:budget,budget_tokens:resolved,budget_limited:resolved!==null,reserve_tokens:CONTEXT_RESERVE,estimator:'utf8_bytes_upper_bound_v1',original_estimated_input_tokens:estimateMessages(raw,tools),estimated_input_tokens:0,compacted_tool_messages:0,dropped_tool_messages:0,dropped_history_messages:0,dropped_evidence_count:0,notes:[],applied:true};
  const base=raw.slice(0,user+1),groups=roundGroups(raw.slice(user+1));
  for(const group of groups) {
   // Call IDs are scoped to their assistant round. Some providers reuse an ID

@@ -34,12 +34,13 @@ export function researchRounds(value, maximum = 1000, fallback = 40) {
 export const researchContextBudgets = Object.freeze([4096,8192,16384,32768,65536,131072]);
 
 export function contextBudgetChoices(advertised) {
-  const values = Array.isArray(advertised) ? advertised.map(value => Number(value?.value ?? value)) : researchContextBudgets;
-  return ['auto', ...researchContextBudgets.filter(value => values.includes(value))];
+  const values = Array.isArray(advertised) ? advertised.map(value => (value?.value ?? value)==='unlimited'?'unlimited':Number(value?.value ?? value)) : [...researchContextBudgets,'unlimited'];
+  return ['auto', ...researchContextBudgets.filter(value => values.includes(value)), ...(values.includes('unlimited')?['unlimited']:[])];
 }
 
 export function normalizeResearchBudget(value, advertised) {
   if (value === 'auto') return 'auto';
+  if (value === 'unlimited') return contextBudgetChoices(advertised).includes(value) ? value : 'auto';
   const number = Number(value);
   return contextBudgetChoices(advertised).includes(number) ? number : 'auto';
 }

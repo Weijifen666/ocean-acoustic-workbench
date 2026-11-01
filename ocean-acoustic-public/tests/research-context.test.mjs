@@ -254,3 +254,25 @@ test('convergence rows are preserved as tables and are not falsely described as 
   assert.deepEqual(projected.validation.rows,result.validation.rows);
   assert.equal(projected.validation.profile_rows_index,undefined);
 });
+
+test('unlimited research keeps every complete old tool round beyond 128K while still projecting resource pages',()=>{
+  const question='完整保留当前原问题🌊，全部旧轮只是原记录，不生成新的物理结论。';
+  const history=[{role:'system',content:'保留规则。'},
+    {role:'user',content:'旧问题原文。'},{role:'assistant',content:'旧回答原文。'},
+    {role:'user',content:question}];
+  const reasoning='Retain original provider reasoning; do not invent observations. '.repeat(240);
+  for(let i=0;i<10;i++)history.push(...round('full_round_'+i,{id:'aabbccddeeff',state:'SUCCEEDED',summary:{physical_accuracy_verified:false,temperature_mld:{depth_m:null,status:'not_crossed'}}},{reasoning}));
+  const content='注册文件的原始参考文字🌊\n'.repeat(2000),resource={id:'at-environment',skill:'at-environment',path:'references/unlimited-test.md',content,sha256:sha(content),read_only:true};
+  history.push(...round('paged_reference',resource,{name:'read_skill_resource',args:{id:resource.id,path:resource.path},reasoning}));
+  const snapshot=structuredClone(history),packed=packResearchContext(history,'unlimited');
+  assert.ok(estimateMessages(packed.messages)>131072);assert.equal(packed.context.budget_limited,false);assert.equal(packed.context.budget_tokens,null);
+  assert.equal(packed.context.requested_budget,'unlimited');assert.equal(packed.context.dropped_history_messages,0);assert.equal(packed.context.dropped_tool_messages,0);assert.equal(packed.context.dropped_evidence_count,0);
+  assert.equal(packed.messages.filter(m=>m.role==='tool').length,11);
+  assert.equal(packed.messages.findLast(m=>m.role==='user').content,question);
+  assert.deepEqual(packed.messages.slice(1,3),history.slice(1,3));assertToolProtocol(packed.messages);
+  for(const m of packed.messages.filter(m=>m.tool_calls))assert.equal(m.reasoning_content,reasoning);
+  const page=JSON.parse(packed.messages.at(-1).content);
+  assert.equal(page.sha256,resource.sha256);assert.equal(page.complete,false);assert.equal(page.has_more,true);assert.ok(page.returned_bytes<=6000);assert.equal(page.content,Array.from(content).slice(0,page.next_offset).join(''));
+  assert.equal(JSON.parse(JSON.stringify(packed.context)).budget_tokens,null);assert.deepEqual(history,snapshot);
+  const finite=packResearchContext(history,131072);assert.ok(finite.context.dropped_tool_messages>0);assertToolProtocol(finite.messages);
+});

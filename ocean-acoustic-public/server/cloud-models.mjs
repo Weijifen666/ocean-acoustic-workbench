@@ -22,6 +22,25 @@ export function validateConnection(cfg,catalog){
 }
 const providerError=status=>({401:'密钥无效或地域不匹配',402:'余额或额度不足',403:'账户没有该模型权限',404:'模型或接口不存在',429:'请求频率或额度受限'})[status]||'请求未成功，请核对官方参数';
 function transportError(message,code){const error=new Error(message);error.code=code;error.status=502;return error}
+export async function providerResponseError(response){
+ // Inspect only a bounded error payload. Provider text can echo request data,
+ // URLs and credentials, so none of it is included in a public diagnostic.
+ let fields=[];
+ try{
+  if(response.body){
+   const reader=response.body.getReader(),chunks=[];let size=0,complete=false;
+   try{
+    while(size<=32768){const item=await reader.read();if(item.done){complete=true;break}size+=item.value.byteLength;if(size<=32768)chunks.push(item.value)}
+   }finally{if(!complete)await reader.cancel().catch(()=>{})}
+   if(complete){const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}const data=JSON.parse(new TextDecoder().decode(bytes)),error=data?.error;
+    fields=[data?.code,data?.error_code,data?.message,data?.error_msg,typeof error==='string'?error:null,error?.code,error?.type,error?.message];}
+  }
+ }catch{/* Invalid, interrupted or oversized error responses use a fixed fallback. */}
+ const contextLimit=/context[_\s-]*length[_\s-]*exceeded|context\s+window|maximum\s+context\s+length|input[\s_-]*tokens?\s+exceeds?\b|prompt[\s_-]+(?:is[\s_-]+)?too[\s_-]+long/i;
+ if(fields.some(value=>typeof value==='string'&&contextLimit.test(value)))return transportError('模型接口拒绝请求：已超过模型自身的上下文限制。应用预算不限不代表模型可接收无限输入，请缩小输入或使用该模型支持的上下文预算。','PROVIDER_CONTEXT_LIMIT');
+ const status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:502;
+ return transportError(`供应商返回 HTTP ${status}：${providerError(status)}`,'PROVIDER_RESPONSE');
+}
 function safeNetworkMessage(error){
  // Return fixed diagnoses, never raw runtime messages, headers, URLs or secrets.
  const message=String(error?.message||'').toLowerCase();
@@ -64,7 +83,7 @@ async function remote(cfg,catalog,body,fetcher,signal){
  cfg=validateConnection(cfg,catalog);
  const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
   const r=await providerFetch(cfg,'/chat/completions',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options})},fetcher);
-  if(!r.ok)throw new Error(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
+  if(!r.ok)throw await providerResponseError(r);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
   if(!data.choices?.[0]?.message)throw new Error('供应商响应缺少文字消息');return data;
 }
 async function remoteStream(cfg,catalog,body,fetcher,onDelta,signal){
@@ -74,7 +93,7 @@ async function remoteStream(cfg,catalog,body,fetcher,onDelta,signal){
   const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
   const usageOptions=['DeepSeek','Qwen'].includes(cfg.provider)?{stream_options:{include_usage:true}}:{};
   const r=await providerFetch(cfg,'/chat/completions',{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options,stream:true,...usageOptions})},fetcher);
-  if(!r.ok)throw transportError(`供应商返回 HTTP ${r.status}：${providerError(r.status)}`,'PROVIDER_RESPONSE');
+  if(!r.ok)throw await providerResponseError(r);
   const result=await readProviderStream(r,onDelta,controller.signal);return result;
  }catch(error){
   if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{name:'AbortError',code:'CANCELLED'});

@@ -1,12 +1,33 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {buildContext,resolveBudget,assertMessagesBudget,withProviderUsage,inactiveContext,CONTEXT_BUDGETS} from '../server/context-budget.mjs';
+import {buildContext,resolveBudget,assertMessagesBudget,withProviderUsage,inactiveContext,estimateMessages,CONTEXT_BUDGETS} from '../server/context-budget.mjs';
 import {setup} from './test-support.mjs';
 
-test('allowed application budgets and auto have explicit sizes; malformed sizes are rejected',()=>{
+test('allowed application budgets include explicit finite sizes and JSON-safe unlimited; malformed sizes are rejected',()=>{
  assert.equal(resolveBudget('auto'),32768);
- for(const size of CONTEXT_BUDGETS)assert.equal(resolveBudget(size),size);
+ assert.equal(resolveBudget('unlimited'),null);
+ for(const size of CONTEXT_BUDGETS)assert.equal(resolveBudget(size),size==='unlimited'?null:size);
  for(const size of [true,null,'4096',4096.5,1,1048576])assert.throws(()=>resolveBudget(size));
+});
+
+test('unlimited context preserves full required text, evidence and history beyond 128K with JSON-safe metadata',()=>{
+ const question='当前问题原文必须保留🌊；不截断、不补造数字。';
+ const system='不可截断的必要系统说明。\n'+'S'.repeat(140000);
+ const history=[{role:'user',text:'旧问题'+ 'U'.repeat(10000)},{role:'assistant',text:'旧回答'+ 'A'.repeat(10000)}];
+ const evidence=[{id:'actual-source',source_id:'TEST-ONLY',text:'有来源资料🌊'.repeat(1200),conditions:'只是协议测试原文，没有新的物理测量。'}];
+ const template='% Actual registered reference text, read only.\n'.repeat(300);
+ const packed=buildContext({question,system,history,evidence,template,context_budget:'unlimited'});
+ assert.equal(packed.messages.at(-1).content,question);assert.ok(packed.messages[0].content.startsWith(system));
+ assert.equal(packed.messages.find(m=>m.role==='user').content,history[0].text);
+ assert.deepEqual(packed.evidence,evidence);assert.ok(packed.messages[0].content.includes(template));
+ assert.equal(packed.context.history_messages_used,2);assert.equal(packed.context.dropped_history_messages,0);
+ assert.equal(packed.context.dropped_evidence_count,0);assert.equal(packed.context.evidence_truncated,false);assert.equal(packed.context.template_truncated,false);
+ assert.ok(estimateMessages(packed.messages)>131072);assert.equal(assertMessagesBudget(packed.messages,'unlimited'),estimateMessages(packed.messages));
+ for(const metadata of [inactiveContext('unlimited'),packed.context]){
+  assert.equal(metadata.requested_budget,'unlimited');assert.equal(metadata.budget_limited,false);assert.equal(metadata.budget_tokens,null);
+  assert.equal(JSON.parse(JSON.stringify(metadata)).budget_tokens,null);
+ }
+ assert.throws(()=>buildContext({question,system,context_budget:131072}),error=>error.code==='CONTEXT_BUDGET_EXCEEDED');
 });
 test('current question and mandatory system survive exactly; old history drops as complete turns',()=>{
  const history=Array.from({length:20},(_,i)=>[{role:'user',text:'question-'+i+'x'.repeat(100)},{role:'assistant',text:'answer-'+i+'y'.repeat(150)}]).flat();

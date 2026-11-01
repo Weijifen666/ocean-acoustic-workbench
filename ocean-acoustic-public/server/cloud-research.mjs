@@ -50,7 +50,7 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
  const budgetFailure=data=>data.error_code==='CONTEXT_BUDGET_EXCEEDED'||/^(当前问题或工具结果超过所选上下文预算|当前必要问题|当前问题与必要系统说明无法完整放入)/.test(data.error||'');
  function view(row) {
   const recoverable=row.state==='failed'&&budgetFailure(row.data);
-  const context=row.data.context||(recoverable?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
+  const context=row.data.context||(recoverable?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),budget_limited:row.data.context_budget!=='unlimited',estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
   return {id:row.id,state:row.state,backend:'api',stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,error_code:row.data.error_code||(recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,context,trace:row.data.trace||[],rounds:row.data.rounds||0};
  }
  async function getSession(env,owner,id) {
@@ -199,7 +199,7 @@ export function createCloudResearch({assets,encrypt,decrypt,remote,retrieve,hear
   if(path==='/api/model-workflows')return json(catalog.modelWorkflows());
   if(path==='/api/project/files')return json(catalog.listProjectFiles({source:url.searchParams.get('source'),query:url.searchParams.get('q')}));
   if(path==='/api/project/file')return json(catalog.readProjectFile(url.searchParams.get('path')));
-  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,max_rounds:1000,default_rounds:40,execution_mode:'poll_steps',context_budgets:['auto',...CONTEXT_BUDGETS],context_policy:'deterministic_tool_projection_and_complete_rounds'});
+  if(path==='/api/research/capabilities')return json({enabled:true,scope:'cloud_research',public_mode:true,api_configured:!!identity.data.selected.api_key,ocean_data_available:true,script_execution:false,codex_available:false,dsh_available:false,max_rounds:1000,default_rounds:40,execution_mode:'poll_steps',context_budgets:['auto',...CONTEXT_BUDGETS,'unlimited'],context_policy:'deterministic_tool_projection_and_complete_rounds'});
   if(path.endsWith('/dsh/status')||path.endsWith('/codex/status'))return json({available:false,message:'公网研究使用模型API；桌面Agent需要专属执行环境，当前没有接入。'});
   if(path==='/api/research/history')return json((await getSession(env,owner,url.searchParams.get('session')))?.data.messages||[]);
   if(path==='/api/research/active') {

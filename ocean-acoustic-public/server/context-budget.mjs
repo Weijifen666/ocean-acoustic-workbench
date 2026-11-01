@@ -8,7 +8,10 @@ const TEMPLATE_LABEL='\n\n课程代码参考（只读，不表示已执行）：
 export class ContextBudgetError extends Error{constructor(message){super(message);this.status=422;this.code='CONTEXT_BUDGET_EXCEEDED'}}
 export function resolveBudget(value='auto'){
  if(value==='auto')return 32768;
- if(typeof value!=='number'||!Number.isInteger(value)||!CONTEXT_BUDGETS.includes(value))throw new ContextBudgetError('上下文预算请选择自动、4K、8K、16K、32K、64K或128K。');
+ // Null is the JSON-safe representation of no application budget. Infinity
+ // stays internal to comparisons and must never enter persisted metadata.
+ if(value==='unlimited')return null;
+ if(typeof value!=='number'||!Number.isInteger(value)||!CONTEXT_BUDGETS.includes(value))throw new ContextBudgetError('上下文预算请选择自动、4K、8K、16K、32K、64K、128K或不限。');
  return value;
 }
 function clean(value){
@@ -24,11 +27,11 @@ export function estimateMessages(messages,tools=[]){
 }
 export function assertMessagesBudget(messages,budget='auto',tools=[]){
  const resolved=resolveBudget(budget),count=estimateMessages(messages,tools);
- if(count>resolved-CONTEXT_RESERVE)throw new ContextBudgetError('当前问题或工具结果超过所选上下文预算，请调大预算或缩小读取范围后重试；未自动调用模型压缩。');
+ if(resolved!==null&&count>resolved-CONTEXT_RESERVE)throw new ContextBudgetError('当前问题或工具结果超过所选上下文预算，请调大预算或缩小读取范围后重试；未自动调用模型压缩。');
  return count;
 }
 export function inactiveContext(budget='auto'){
- return {requested_budget:budget,budget_tokens:resolveBudget(budget),estimated_input_tokens:0,estimator:'utf8_bytes_upper_bound_v1',reserve_tokens:CONTEXT_RESERVE,history_messages_used:0,dropped_history_messages:0,evidence_count:0,dropped_evidence_count:0,evidence_truncated:false,template_truncated:false,applied:false,provider_prompt_tokens:null,cached_tokens:null};
+ return {requested_budget:budget,budget_tokens:resolveBudget(budget),budget_limited:budget!=='unlimited',estimated_input_tokens:0,estimator:'utf8_bytes_upper_bound_v1',reserve_tokens:CONTEXT_RESERVE,history_messages_used:0,dropped_history_messages:0,evidence_count:0,dropped_evidence_count:0,evidence_truncated:false,template_truncated:false,applied:false,provider_prompt_tokens:null,cached_tokens:null};
 }
 function historyUnits(history){
  const units=[];let pending=null;
@@ -51,7 +54,7 @@ function projectEvidence(rows){return (rows||[]).map(row=>{
 })}
 function prefix(text,characters){return Array.from(text).slice(0,characters).join('')}
 export function buildContext({question,system,evidence=[],history=[],template='',context_budget='auto',tools=[]}){
- const budget=resolveBudget(context_budget),limit=budget-CONTEXT_RESERVE;
+ const budget=resolveBudget(context_budget),limit=budget===null?Infinity:budget-CONTEXT_RESERVE;
  if(typeof question!=='string'||typeof system!=='string')throw new ContextBudgetError('问题与系统说明必须为文本。');
  const allEvidence=projectEvidence(evidence),units=historyUnits(history),originalHistory=units.reduce((n,u)=>n+u.length,0);
  let keptEvidence=[...allEvidence],keptUnits=[...units],keptTemplate=String(template||''),templateTruncated=false;

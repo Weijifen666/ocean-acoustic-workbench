@@ -18,7 +18,8 @@ class ContextBudgetError(ValueError):
 
 def resolve_budget(value='auto'):
     if value=='auto':return 32768
-    if type(value) is not int or value not in CONTEXT_BUDGETS:raise ContextBudgetError('上下文预算请选择自动、4K、8K、16K、32K、64K或128K。')
+    if value=='unlimited':return None
+    if type(value) is not int or value not in CONTEXT_BUDGETS:raise ContextBudgetError('上下文预算请选择自动、4K、8K、16K、32K、64K、128K或不限。')
     return value
 
 def _clean(value):
@@ -36,11 +37,12 @@ def estimate_messages(messages,tools=None):
 
 def assert_messages_budget(messages,budget='auto',tools=None):
     resolved=resolve_budget(budget);count=estimate_messages(messages,tools)
-    if count>resolved-CONTEXT_RESERVE:raise ContextBudgetError('当前问题或工具结果超过所选上下文预算，请调大预算或缩小读取范围后重试；未自动调用模型压缩。')
+    if resolved is not None and count>resolved-CONTEXT_RESERVE:raise ContextBudgetError('当前问题或工具结果超过所选上下文预算，请调大预算或缩小读取范围后重试；未自动调用模型压缩。')
     return count
 
 def inactive_context(budget='auto'):
-    return {'requested_budget':budget,'budget_tokens':resolve_budget(budget),'estimated_input_tokens':0,'estimator':'utf8_bytes_upper_bound_v1','reserve_tokens':CONTEXT_RESERVE,'history_messages_used':0,'dropped_history_messages':0,'evidence_count':0,'dropped_evidence_count':0,'evidence_truncated':False,'template_truncated':False,'applied':False,'provider_prompt_tokens':None,'cached_tokens':None}
+    resolved=resolve_budget(budget)
+    return {'requested_budget':budget,'budget_tokens':resolved,'budget_limited':resolved is not None,'estimated_input_tokens':0,'estimator':'utf8_bytes_upper_bound_v1','reserve_tokens':CONTEXT_RESERVE,'history_messages_used':0,'dropped_history_messages':0,'evidence_count':0,'dropped_evidence_count':0,'evidence_truncated':False,'template_truncated':False,'applied':False,'provider_prompt_tokens':None,'cached_tokens':None}
 
 def _history_units(history):
     units=[];pending=None
@@ -53,7 +55,7 @@ def _history_units(history):
     return units
 
 def build_context(*,question,system,evidence=None,history=None,template='',context_budget='auto',tools=None):
-    budget=resolve_budget(context_budget);limit=budget-CONTEXT_RESERVE;tools=tools or []
+    budget=resolve_budget(context_budget);limit=math.inf if budget is None else budget-CONTEXT_RESERVE;tools=tools or []
     if not isinstance(question,str) or not isinstance(system,str):raise ContextBudgetError('问题与系统说明必须为文本。')
     all_evidence=[]
     for row in evidence or []:

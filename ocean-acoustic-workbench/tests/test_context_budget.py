@@ -21,9 +21,33 @@ import context_budget as cb
 class ContextBudget(unittest.TestCase):
  def test_allowed_and_invalid_settings(self):
   self.assertEqual(cb.resolve_budget('auto'),32768)
+  self.assertIsNone(cb.resolve_budget('unlimited'))
   for size in cb.CONTEXT_BUDGETS:self.assertEqual(cb.resolve_budget(size),size)
-  for size in [True,None,'4096',4096.0,1,1048576]:
+  for size in [True,None,'4096',4096.0,1,1048576,'Unlimited',' unlimited',float('inf')]:
    with self.subTest(size=size),self.assertRaises(cb.ContextBudgetError):cb.resolve_budget(size)
+  for size in ['auto',*cb.CONTEXT_BUDGETS]:self.assertTrue(cb.inactive_context(size)['budget_limited'])
+  self.assertEqual(cb.inactive_context()['budget_tokens'],32768)
+ def test_unlimited_preserves_all_history_evidence_and_template_without_json_infinity(self):
+  history=[entry for i in range(20) for entry in [{'role':'user','text':f'旧问题-{i}'+('x'*500)},{'role':'assistant','text':f'旧回答-{i}'+('y'*500)}]]
+  evidence=[{'id':'first','source_id':'TEST','text':'原始条件与缺测🌊'*6000,'formula':'TL','conditions':'仅气候态，不替代观测。'},
+            {'id':'second','source_id':'TEST','text':'次要来源仍需保留。'*3000}]
+  template='function example\n'+('% 海洋环境注释\n'*5000)
+  packed=cb.build_context(question='当前完整问题🌊',system='必要系统说明',evidence=evidence,history=history,template=template,context_budget='unlimited')
+  context=packed['context']
+  self.assertIsNone(context['budget_tokens']);self.assertFalse(context['budget_limited'])
+  self.assertEqual(context['requested_budget'],'unlimited');self.assertGreater(context['estimated_input_tokens'],max(cb.CONTEXT_BUDGETS))
+  self.assertEqual(context['history_messages_used'],len(history));self.assertEqual(context['dropped_history_messages'],0)
+  self.assertEqual(context['evidence_count'],2);self.assertEqual(context['dropped_evidence_count'],0)
+  self.assertFalse(context['evidence_truncated']);self.assertFalse(context['template_truncated'])
+  self.assertEqual(packed['evidence'],evidence)
+  self.assertTrue(packed['messages'][0]['content'].endswith(template))
+  self.assertEqual(packed['messages'][-1]['content'],'当前完整问题🌊')
+  self.assertEqual(packed['messages'][1:-1],[{'role':row['role'],'content':row['text']} for row in history])
+  self.assertEqual(cb.assert_messages_budget(packed['messages'],'unlimited'),cb.estimate_messages(packed['messages']))
+  self.assertEqual(json.loads(json.dumps(packed,ensure_ascii=False,allow_nan=False))['context']['budget_tokens'],None)
+  inactive=cb.inactive_context('unlimited')
+  self.assertIsNone(inactive['budget_tokens']);self.assertFalse(inactive['budget_limited']);self.assertFalse(inactive['applied'])
+  self.assertNotIn('Infinity',json.dumps(inactive,allow_nan=False))
  def test_question_system_and_complete_history(self):
   history=[entry for i in range(20) for entry in [{'role':'user','text':f'question-{i}'+('x'*100)},{'role':'assistant','text':f'answer-{i}'+('y'*150)}]]
   small=cb.build_context(question='当前问题🌊',system='必须保留的系统说明',history=history,context_budget=4096)
@@ -63,8 +87,11 @@ class ContextBudget(unittest.TestCase):
   module=(ROOT.parent/'ocean-acoustic-public/server/context-budget.mjs').as_uri()
   fixture={'question':'当前问题🌊','system':'必要系统说明','context_budget':4096,'evidence':[{'id':'first','source_id':'TEST','text':'原文🌊'*800,'formula':'TL','conditions':'归一化压力'},{'id':'second','source_id':'TEST','text':'低优先级'}],'history':[{'role':'user','text':'旧问题'},{'role':'assistant','text':'旧回答'}],'template':'function example\n'+('% 注释\n'*1000)}
   script="import{buildContext}from"+json.dumps(module)+";let input='';for await(const chunk of process.stdin)input+=chunk;process.stdout.write(JSON.stringify(buildContext(JSON.parse(input))));"
-  cloud=json.loads(subprocess.run([executable,'--input-type=module','-e',script],input=json.dumps(fixture,ensure_ascii=False),text=True,encoding='utf-8',capture_output=True,check=True).stdout)
-  self.assertEqual(cloud,cb.build_context(**fixture))
+  for budget in [4096,'unlimited']:
+   with self.subTest(context_budget=budget):
+    fixture['context_budget']=budget
+    cloud=json.loads(subprocess.run([executable,'--input-type=module','-e',script],input=json.dumps(fixture,ensure_ascii=False),text=True,encoding='utf-8',capture_output=True,check=True).stdout)
+    self.assertEqual(cloud,cb.build_context(**fixture))
 
 class ContextBudgetEndpoint(unittest.IsolatedAsyncioTestCase):
  def setUp(self):
@@ -73,7 +100,7 @@ class ContextBudgetEndpoint(unittest.IsolatedAsyncioTestCase):
  def tearDown(self):self.fixture.tearDown()
  def test_local_schema_rejects_coercible_but_invalid_choices(self):
   schema=self.fixture.namespace['Chat']
-  for value in [True,'4096',4096.0,1,None]:
+  for value in [True,'4096',4096.0,1,None,'unlimited']:
    with self.subTest(value=value),self.assertRaises(ValidationError):schema(message='测试',context_budget=value)
  async def test_large_question_stops_before_provider_transport(self):
   with patch.object(httpx,'AsyncClient',side_effect=AssertionError('Provider transport must not run')):

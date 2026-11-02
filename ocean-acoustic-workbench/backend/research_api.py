@@ -19,6 +19,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal
 import persistence, research_tasks, research_skills, model_workflows, project_browser, codex_bridge, agent_loop, models
+import layer_diagnostics, research_validation
 
 
 GUIDANCE = agent_context.guidance() + '''
@@ -131,7 +132,15 @@ class ResearchService:
         value = self.lookup(identity); folder = self.local/'runs'/identity
         value['artifacts'] = [p.name for p in folder.glob('*') if p.is_file()]
         value['log'] = task_files.read_log(folder/'run.log',10000) if (folder/'run.log').exists() else '等待运行脚本或整理报告。'
-        if value['state']=='SUCCEEDED' and (folder/'summary.json').is_file():value['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
+        if value['state']=='SUCCEEDED' and (folder/'summary.json').is_file():
+            report=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
+            # Read-time projection also labels legacy tasks without editing them.
+            report['checks']=[{**c,'authority':'agent_self_report'} for c in report.get('checks',[])]
+            receipts=research_validation.ValidationStore(self.local).receipts(identity,folder)
+            audit=research_validation.audit_task(folder,value['plan'],receipts)
+            report.update(execution_validation=audit['execution'],scientific_validation=audit['scientific_validation'],
+                          validation_scope='执行记录、Agent自评和程序数值检查分别记录；归档完成不代表物理精度已获证明。')
+            value['summary']=report
         value['events'] = []
         return value
 
@@ -154,6 +163,21 @@ class ResearchService:
         if name=='search_materials':return await asyncio.to_thread(materials.search,args['query'],args.get('source_id'))
         if name=='read_material_page':return await asyncio.to_thread(materials.read,args['source_id'],args['page'])
         if name=='get_ocean_profile':return await asyncio.to_thread(ocean_data.profile,args['lon'],args['lat'],args['period'])
+        if name=='diagnose_ocean_layers':
+            periods=args['periods']
+            if not isinstance(periods,list) or not 1<=len(periods)<=17 or len(set(periods))!=len(periods) or any(type(p) is not int or not 0<=p<=16 for p in periods):
+                raise ValueError('periods须为0—16内不重复的整数列表')
+            if 'id' in args:
+                job,_=engine.folder(args['id'])
+                if job['state'] in ('SUCCEEDED','CANCELLED'):raise ValueError('请新建研究任务保存诊断；已完成任务可只读审核')
+            start=time.monotonic()
+            profiles=await asyncio.to_thread(lambda:[ocean_data.profile(args['lon'],args['lat'],p) for p in periods])
+            result=await asyncio.to_thread(layer_diagnostics.diagnose_profiles,profiles,args['reference_depth_m'],args['density_threshold'],args['temperature_threshold'])
+            if 'id' in args:
+                implementation=self.root/'skills/seasonal-layer-diagnostics/scripts/analyze_profiles.py'
+                saved=engine.save_layer_diagnostics(args['id'],profiles,result,[Path(layer_diagnostics.__file__),implementation],time.monotonic()-start)
+                result={**result,**saved}
+            return result
         if name=='get_simulation_schema':return self.fixed_schema()
         if name=='preview_simulation':return self.fixed_preview(args['plan'])
         if name=='submit_simulation':
@@ -242,7 +266,8 @@ class ResearchService:
 def router(service):
     api=APIRouter()
     @api.get('/api/research/capabilities')
-    def capabilities():return {'enabled':True,'scope':'local_research','codex_available':bool(codex_bridge.executable()),'api_configured':bool(service.config().get('api_key')),'ocean_data_available':ocean_data.ROOT.exists()}
+    def capabilities():return {'enabled':True,'scope':'local_research','codex_available':bool(codex_bridge.executable()),'api_configured':bool(service.config().get('api_key')),'ocean_data_available':ocean_data.ROOT.exists(),
+                               'scientific_tools':[t['function']['name'] for t in service.tools() if t['function']['name'] in ('diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task')]}
     @api.get('/api/research/dsh/status')
     async def dsh_status():return await dsh_bridge.status()
     @api.get('/api/research/codex/status')

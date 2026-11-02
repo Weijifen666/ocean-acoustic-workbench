@@ -25,6 +25,7 @@ const skillIds = ['at-environment', 'seasonal-layer-diagnostics', 'surface-duct-
   'at-kraken', 'at-krakenc', 'at-scooter', 'at-bellhop', 'at-ram', 'at-simplepe', 'at-sparc', 'at-bellhop3d', 'at-krakel'];
 const json = value => JSON.stringify(value, null, 2) + '\n';
 const publicNote = '公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。';
+const scientificToolNote = '公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。';
 const historical = '历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。';
 const sourceFiles = [];
 
@@ -54,6 +55,9 @@ function cleanText(text, relative) {
       'WOA18 剖面可通过已开放的海洋数据工具按需读取。混合层与表面声道技能提供诊断方法；脚本执行与传播验证以本次节点能力为准。');
     text = text.replace('KRAKEL（弹性模态）缺程序，已从清单移除', 'KRAKEL 保留为未开放创建配方的研究条目，弹性场后处理与收敛尚待核验');
     text = text.replace('KRAKEL（已移除）', 'KRAKEL（未开放创建配方）');
+    if (['at-environment/SKILL.md', 'seasonal-layer-diagnostics/SKILL.md',
+      'surface-duct-investigation/SKILL.md', 'at-environment/references/scientific-evidence.md'].includes(relative))
+      text = addNote(text, scientificToolNote);
     text = addNote(text, publicNote);
   }
   return text;
@@ -109,7 +113,7 @@ function walkSkill(id, dir, relative = '') {
     const key = id + '/' + rel;
     const source = cached.get(key) || (() => {
       const original = read('skills/' + key);
-      let content = cleanText(original.raw, rel);
+      let content = cleanText(original.raw, key);
       if (rel.endsWith('.json')) {
         const record = JSON.parse(content);
         record.public_scope = historical;

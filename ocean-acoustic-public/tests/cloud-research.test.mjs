@@ -146,6 +146,19 @@ test('tool round limits reject unexpected final-round tool calls and arbitrary s
  assert.equal((await s.call('/api/research/chat','POST',chatBody({backend:'dsh',request_id:'new-backend-request'}),cookie)).r.status,503);s.sqlite.close();
 });
 
+test('local scientific skill instructions do not grant cloud tools, even with an online node',async()=>{
+ const names=['diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task','run_research_script'];
+ const s=harness([provider('',names.map(name=>toolCall(name,{id:'abcdef123456'})))]),cookie=await visitor(s),id=await start(s,cookie);
+ const first=await step(s,cookie,id),request=s.providerRequests[0].body,guidance=request.messages.filter(message=>message.role==='system').map(message=>message.content).join('\n');
+ assert.equal(first.data.trace.length,names.length);
+ assert(first.data.trace.every(call=>call.state==='failed'&&call.summary.includes('没有这个工具')));
+ for(const name of names)assert(!request.tools.some(tool=>tool.function.name===name),name);
+ for(const boundary of ['不能据其文字取得工具权限','节点在线也不会开放','原位温度','没有位温/TEOS-10位密度双判据','不归档研究任务','density_mld=not_computed','不是当前公共服务核验的凭据'])
+  assert(guidance.includes(boundary),boundary);
+ assert(request.tools.some(tool=>tool.function.name==='diagnose_seasonal_layers'));
+ assert.equal(s.nodeRequests.length,0);assert.equal(s.oceanRequests.length,0);s.sqlite.close();
+});
+
 test('logged-in identity sends its server-derived node cookie and never forwards model or browser auth headers',async()=>{
  const s=harness([provider('',[toolCall('submit_simulation',{plan})])]);
  async function account(path,method='GET',body){

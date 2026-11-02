@@ -6,8 +6,8 @@
       "description": "查阅模型、tests 调用证据及 ENV/FLP，形成可复核的环境与验证计划。",
       "prompt": "请载入 at-environment 技能，依据已收录的 AT tests 对应算例规划研究任务。我的目标是：",
       "read_only": true,
-      "resource_count": 13,
-      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
+      "resource_count": 14,
+      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
       "resources": [
         {
           "path": "references/applicability.md",
@@ -45,6 +45,11 @@
           "size": 4498
         },
         {
+          "path": "references/scientific-evidence.md",
+          "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
+          "size": 6317
+        },
+        {
           "path": "references/validation-latest.json",
           "sha256": "70450acd527c2fad47a5ca3ff46fb144a32fe17bb9754576295ae859d643f32a",
           "size": 22510
@@ -71,8 +76,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
-          "size": 4437
+          "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+          "size": 6897
         }
       ],
       "runtime_available": false,
@@ -85,7 +90,7 @@
       "prompt": "请载入 seasonal-layer-diagnostics 技能，先读取 120°E、20°N 的 WOA18 四季剖面，说明判据与缺测，再规划混合层季节诊断。单点气候态不得代替区域或瞬时观测。",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
+      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
       "resources": [
         {
           "path": "scripts/analyze_profiles.py",
@@ -94,8 +99,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
-          "size": 2535
+          "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+          "size": 4671
         }
       ],
       "runtime_available": false,
@@ -108,12 +113,12 @@
       "prompt": "请载入 surface-duct-investigation 技能，读取 120°E、20°N 的 WOA18 四季近表层剖面，区分混合层与声道候选结构；先完成环境诊断，传播验证前列出缺失条件与节点能力。",
       "read_only": true,
       "resource_count": 1,
-      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
+      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
       "resources": [
         {
           "path": "SKILL.md",
-          "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
-          "size": 2309
+          "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+          "size": 4635
         }
       ],
       "runtime_available": false,

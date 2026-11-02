@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationEr
 from typing import Literal
 import httpx
 import knowledge, models, science, answer_policy, context_budget, public_ocean, persistence, simulation
-import research_api, project_browser, simulation_studio, task_files
+import research_api, research_validation, project_browser, simulation_studio, task_files
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -378,6 +378,7 @@ def delete_task_files(id:str):
         if any(r['state']=='running' and any(t.get('arguments',{}).get('id')==id for t in r.get('trace',[])) for r in RESEARCH.runs.values()):raise HTTPException(409,'Agent 正在使用此任务，请先停止当前请求')
         try:task_files.remove(LOCAL/'runs',id)
         except (OSError,ValueError) as exc:raise HTTPException(409,'文件未成功删除，任务记录保留：'+str(exc)) from None
+        research_validation.ValidationStore(LOCAL).delete(id)
         with connect() as db:
             db.execute('DELETE FROM research_jobs WHERE id=?',(id,))
             db.execute('DELETE FROM job_events WHERE job_id=?',(id,))

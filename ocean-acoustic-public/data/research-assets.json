@@ -11,8 +11,8 @@
       "description": "查阅模型、tests 调用证据及 ENV/FLP，形成可复核的环境与验证计划。",
       "prompt": "请载入 at-environment 技能，依据已收录的 AT tests 对应算例规划研究任务。我的目标是：",
       "read_only": true,
-      "resource_count": 13,
-      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
+      "resource_count": 14,
+      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
       "resources": [
         {
           "path": "references/applicability.md",
@@ -50,6 +50,11 @@
           "size": 4498
         },
         {
+          "path": "references/scientific-evidence.md",
+          "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
+          "size": 6317
+        },
+        {
           "path": "references/validation-latest.json",
           "sha256": "70450acd527c2fad47a5ca3ff46fb144a32fe17bb9754576295ae859d643f32a",
           "size": 22510
@@ -76,8 +81,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
-          "size": 4437
+          "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+          "size": 6897
         }
       ],
       "runtime_available": false,
@@ -90,7 +95,7 @@
       "prompt": "请载入 seasonal-layer-diagnostics 技能，先读取 120°E、20°N 的 WOA18 四季剖面，说明判据与缺测，再规划混合层季节诊断。单点气候态不得代替区域或瞬时观测。",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
+      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
       "resources": [
         {
           "path": "scripts/analyze_profiles.py",
@@ -99,8 +104,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
-          "size": 2535
+          "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+          "size": 4671
         }
       ],
       "runtime_available": false,
@@ -113,12 +118,12 @@
       "prompt": "请载入 surface-duct-investigation 技能，读取 120°E、20°N 的 WOA18 四季近表层剖面，区分混合层与声道候选结构；先完成环境诊断，传播验证前列出缺失条件与节点能力。",
       "read_only": true,
       "resource_count": 1,
-      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
+      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
       "resources": [
         {
           "path": "SKILL.md",
-          "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
-          "size": 2309
+          "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+          "size": 4635
         }
       ],
       "runtime_available": false,
@@ -1715,6 +1720,24 @@
         "url": "/api/project/file?path=%40workbench%2Fskills%2Fat-environment%2Freferences%2Fram-and-pe.md"
       }
     },
+    "at-environment/references/scientific-evidence.md": {
+      "id": "at-environment",
+      "skill": "at-environment",
+      "path": "references/scientific-evidence.md",
+      "content": "> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 科学证据与比较协议\n\n用于实际研究、数值比较与报告核验；概念问答只取适用部分，不要求每个问题都开展完整仿真。\n\n## 问题与证据\n\n先写清研究对象、可测量量、比较变量和判断依据。表面声道频率效应可用固定接收几何/ROI 中的 TL、能量分布及其变化回答，不能以一张颜色图或候选层深度替代。\n\n保留四类来源：资料/气候态分析场及版本；现场实测及其时空范围；人为假设/理想环境；由数据或公式得到的推断。WOA18 不是现场实测，源深、底质与外推段不能作为数据集自带事实。记录 requested/selected 格点、请求点与温盐格点海底、有效深度和缺测。公式量级估计与实际求解结果分别引用。\n\n标准温密阈值由 `diagnose_ocean_layers` 计算；无交点、缺测和未计算保留工具状态与深度界限。方法变体另列参数，不能仍标为标准判据。\n\n## 受控比较与感兴趣区域（ROI）\n\n- 在比较前明确频率、环境、源深/接收几何、边界、归一化和相干方式，以及用于结论的 ROI。改变物理变量用于研究其效应；改变数值控制用于稳定性检查，二者不混称。\n- 单独加密波束或减半步长才可分辨各变量影响；同时改动只能称联合敏感性。两级结果差异是观察到的差异，真实误差界需要额外理论或参照依据。\n- 在相同物理坐标和共同有效掩码上比较，另报每组有效覆盖及交集覆盖。NaN/Inf/零点处理规则固定；不把缺测填0或仅留下有利位置。插值和平滑注明方法、窗口的物理尺度及处理前后的差异。\n- 分开报告全域与目标 ROI 的指标。深层一致、全域中位值小或相同程序无警告，都不能代替浅层 ROI 的验证。事后缩小 ROI 应标为探索性，不能掩去原区域失效。\n- `evaluate_acoustic_checks(id, spec)` 当前只做 `refinement`：送检同频、同源、同模型、同环境、同归一化与同一输出网格的数值加密对，NPZ 规则见下节。跨频/跨模型效应由研究脚本另作受控分析，不直接送该工具，不借其 `stable` 标记认证。保留共同覆盖、偏差方向和绝对差分布，绝对差中位/p90/p95与有符号中位差不是同一指标；最大差大时定位原因，而非直接丢弃。\n\n## 核验输入与执行依赖\n\nrefinement NPZ 固定为 `tl_db[depth, range]`，坐标向量为 `z_m`、`r_km`；附实际 `frequency_hz`、`source_depth_m`、`environment_id`、`tl_reference`、`field_type`、`model` 元数据。由冻结输入与实际输出填写，缺失或不一致时保留工具的不可判定/拒绝状态，不能按期望值补齐以取得通过。\n\n`run_research_script(id, file, inputs, outputs)` 的后两个参数为可选普通文件名数组。建议声明实际读取的剖面、CSV/MAT、ENV/FLP 和辅助脚本，以及生成或更新的产物；以工具记录保留执行前后 SHA。原地变换允许同一文件兼为 input/output，保留历史 SHA 与转换后的 SHA，不以最终版本覆盖输入溯源。\n\n`diagnose_ocean_layers` 可带研究任务 `id`，直接保存冻结 profiles/results 与程序执行记录。纯 MLD 诊断可以据此提交报告；生成图表时再运行读取这些实际文件的绘图脚本。\n\n## dB 平均与能量平均\n\n相同源归一化和参考下，设有效样本权重为 \\(w_i\\)。dB 算术平均为\n\\[\n\\overline{TL}_{\\mathrm{dB}}=\\frac{\\sum_i w_i TL_i}{\\sum_i w_i}.\n\\]\n由归一化强度平均得到的等效损失为\n\\[\nTL_{E}=-10\\log_{10}\\!\\left(\\frac{\\sum_i w_i10^{-TL_i/10}}{\\sum_i w_i}\\right).\n\\]\n两者分别命名、说明空间/距离区间与权重；不能把平均 dB 称为平均能量。跨季节、频率或模型采用相同样本范围和有效掩码，覆盖不足另报。\n\n## 执行、核验与结论\n\n`audit_research_task(id)` 只读检查当前执行、版本和产物。数据文件出现不等于主脚本完成；以执行记录和对应输入/产物为证。修改后重跑受影响步骤，经典基线成功不能替代真实研究的验证。\n\n`finish_research_task` 保留 Agent 自评并标记 `authority: agent_self_report`，程序 `scientific_validation` 单列。执行成功、有效覆盖、数值稳定、跨模型一致、解析/观测参照是不同证据；程序通过它所列检查也不等于物理准确性认证。BELLHOP 的波束计算不输出实际模态数，经验公式只能提供量级，不能充当严格模态截止或俘获证明。\n\n“未观察到稳健效应”“检查未通过”“证据不足”都可以作为有用结果。报告实际指标、影响范围与未验证项，不通过改参数、换判据或重跑无关基线把阴性结果变成通过。\n",
+      "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
+      "source_sha256": "2120514338a962b95e18c45e68999461d7839ca35aafeec562602e361b51996c",
+      "size": 6317,
+      "read_only": true,
+      "scope": "public_read_only",
+      "metadata": {
+        "source": "repository_skill_snapshot",
+        "execution": "reference_only",
+        "history_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。",
+        "source_hash_normalization": "utf8-lf",
+        "url": "/api/project/file?path=%40workbench%2Fskills%2Fat-environment%2Freferences%2Fscientific-evidence.md"
+      }
+    },
     "at-environment/references/validation-latest.json": {
       "id": "at-environment",
       "skill": "at-environment",
@@ -1809,10 +1832,10 @@
       "id": "at-environment",
       "skill": "at-environment",
       "path": "SKILL.md",
-      "content": "---\nname: at-environment\ndescription: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV、FLP 及运行链，复现、扩展和核验声场算例。用于实际 AT 研究与输入格式核对。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# AT 环境构造与算例复现\n\n创建指定模型任务时，先载入对应 `at-kraken`、`at-krakenc`、`at-scooter`、`at-bellhop`、`at-ram`、`at-simplepe`、`at-sparc`、`at-bellhop3d` 或 `at-krakel` 技能及其 `references/workflow.md`。使用 list_model_workflows 查创建配方和程序可用性；prepare_model_research_task 在独立目录冻结原例输入并生成脚本，创建后仍须实际运行和验证。其他算例或开放研究按源码构造，不能用默认算例替代用户研究环境。\n\n按模型查用法时先读取 references/models.json，其中分列KRAKEN、KRAKENC、SCOOTER和BELLHOP的适用条件、输入配置、调用流程与验证范围。\n\n研究RAM或PE时读取 references/ram-and-pe.md；查算例目的与入口时先读取 references/casebook-summary.json，再按需读取 references/casebook.json 中的调用行证据。实际运行覆盖见 references/validation-latest.json，包含未收敛观察和读取器问题；跨模型与解析验证的通用规则见 references/validation.md。RAM、SimplePE、SPARC、BELLHOP3D和KRAKEL均单独列在模型经验中，不能把PE、时域、3D输出套入二维单频声场。\n\n先明确物理问题、所需观测量、环境是否随距离变化和数据来源，再选择求解器。选型时先按水深（浅海/深海）× 频段（<500 Hz / >500 Hz）× 距离无关/变化（RI/RD）查 references/applicability.md 的适用性矩阵，再落到具体程序；矩阵是定性经验，收敛仍按专项 workflow 检查。用 list_at_examples 和 read_at_file 查最接近的本机算例，并按需读取 references/input-and-functions.md。索引中的签名只用于发现；使用某函数前读取其源码和测试调用。\n\n在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写运行脚本，再用 run_research_script 实际运行；保持工作目录为任务目录。MATLAB 路径必须固定为与 `bin`（2018 版 exe）配套的旧代码：`genpath(AT路径)` 会连带加入 `AT/matlab2026`（2026 版读取器，`.moA`/新 `.mod` 格式，读不了 2018 版 `.mod`），务必排除它并把 `AT/ReadWrite` 提到最前：\n\n```matlab\nparts = strsplit(genpath(AT), pathsep); parts = parts(~contains(parts,'matlab2026'));\naddpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-begin');\n```\n\n加载后先核对 `which('read_modes')` 指向 `AT/ReadWrite/read_modes.m`，`which('kraken.exe')` 指向 `AT/bin`。若要 `.moA`/新格式，必须同时换用 2026 编译的 exe 与 2026 读取器，不能混搭。源文件保持只读。\n\n先原样复现，再一次只改变明确的研究变量。当前表单无法表达多层、距离相关或特殊声道时，写独立 ENV/FLP 和脚本；不要为了适应表单擅自改研究问题。ENV 选项不能跨求解器直接照搬，读取该求解器的 tests 及 read_env/write_env 分支。\n\n完成标准：检查 exe 返回和 PRT 日志、频率/源深/接收深度/坐标单位、复声压维度与有效覆盖；验证输入冻结一致、采样加密或参考解，并生成输入文件、脚本、PNG、数值 CSV/JSON、检查记录。模态单列/波数标量须显式规范维度。跨模型比 TL 前先对齐相干/非相干/半相干与源归一化，场叠加方式和参考归一化一致后再比较 TL；相位差与干涉极小值不能只看一个全局最大差。\n\nWOA18 剖面可通过已开放的海洋数据工具按需读取。混合层与表面声道技能提供诊断方法；脚本执行与传播验证以本次节点能力为准。用 finish_research_task 登记方法、假设、证据、产物、验证和局限。求解器运行成功与物理精度验证分别报告。\n",
-      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
-      "source_sha256": "83a899e853378caad8318d6cd6e439050d60f08839139cbdd5eb5a7125439b42",
-      "size": 4437,
+      "content": "---\nname: at-environment\ndescription: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV、FLP 及运行链，复现、扩展和核验声场算例。用于实际 AT 研究与输入格式核对。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# AT 环境构造与算例复现\n\n先把问题落到可测量量：指定海域或理想环境、时段、频率/几何、要比较的变量，以及用什么指标回答。只问用法时解释条件与输入；只需混合层或声速结构时转入 `seasonal-layer-diagnostics` / `surface-duct-investigation`，优先用 `diagnose_ocean_layers` 取得标准诊断，无需为此启动声场求解器。\n\n创建指定模型任务时，先载入对应 `at-kraken`、`at-krakenc`、`at-scooter`、`at-bellhop`、`at-ram`、`at-simplepe`、`at-sparc`、`at-bellhop3d` 或 `at-krakel` 技能及其 `references/workflow.md`。使用 list_model_workflows 查创建配方和程序可用性；prepare_model_research_task 在独立目录冻结原例输入并生成脚本，创建后仍须实际运行和验证。其他算例或开放研究按源码构造，不能用默认算例替代用户研究环境。\n\n按模型查用法时先读取 references/models.json，其中分列KRAKEN、KRAKENC、SCOOTER和BELLHOP的适用条件、输入配置、调用流程与验证范围。\n\n研究RAM或PE时读取 references/ram-and-pe.md；查算例目的与入口时先读取 references/casebook-summary.json，再按需读取 references/casebook.json 中的调用行证据。实际运行覆盖见 references/validation-latest.json，包含未收敛观察和读取器问题；跨模型与解析验证的通用规则见 references/validation.md。RAM、SimplePE、SPARC、BELLHOP3D和KRAKEL均单独列在模型经验中，不能把PE、时域、3D输出套入二维单频声场。\n\n先明确物理问题、所需观测量、环境是否随距离变化和数据来源，再选择求解器。选型时先按水深（浅海/深海）× 频段（<500 Hz / >500 Hz）× 距离无关/变化（RI/RD）查 references/applicability.md 的适用性矩阵，再落到具体程序；矩阵是定性经验，收敛仍按专项 workflow 检查。用 list_at_examples 和 read_at_file 查最接近的本机算例，并按需读取 references/input-and-functions.md。索引中的签名只用于发现；使用某函数前读取其源码和测试调用。\n\n在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写脚本，再用 `run_research_script` 实际运行；建议在其可选 `inputs` / `outputs` 普通文件名数组中声明实际依赖和产物，保存执行前后 SHA。原地变换可将同一文件同时列为输入/输出，保留前后版本。保持工作目录为任务目录。MATLAB 路径必须固定为与 `bin`（2018 版 exe）配套的旧代码：`genpath(AT路径)` 会连带加入 `AT/matlab2026`（2026 版读取器，`.moA`/新 `.mod` 格式，读不了 2018 版 `.mod`），务必排除它并把 `AT/ReadWrite` 提到最前：\n\n```matlab\nparts = strsplit(genpath(AT), pathsep); parts = parts(~contains(parts,'matlab2026'));\naddpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-begin');\n```\n\n加载后先核对 `which('read_modes')` 指向 `AT/ReadWrite/read_modes.m`，`which('kraken.exe')` 指向 `AT/bin`。若要 `.moA`/新格式，必须同时换用 2026 编译的 exe 与 2026 读取器，不能混搭。源文件保持只读。\n\n已有可复用的运行链时沿用其验证记录；接入新模型或新调用链时先复现相应原例，再改变研究变量。当前表单无法表达多层、距离相关或特殊声道时，按本次工具权限写独立 ENV/FLP 和脚本，不为适应表单改换研究问题。ENV 选项不能跨求解器直接照搬，读取该求解器的 tests 及 read_env/write_env 分支。\n\n比较频率效应、模型或数值设置，或准备声场研究报告时，先读 [科学证据与比较协议](references/scientific-evidence.md)。`evaluate_acoustic_checks(id, spec)` 当前只接受同频、同模型、同源/环境/归一化的 `refinement` NPZ，按引用中的固定轴与元数据准备，再指定 ROI、共同掩码和阈值；跨频或跨模型效应由研究脚本另作受控分析，不能直接送此工具。一次改变一个数值控制量用于单变量稳定性检查；同时改变波束与步长属于联合敏感性实验。两级差异只报告为观察到的数值差异，不称真实误差界。\n\n完成实际计算后检查 exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，按研究目标保存输入、脚本、数值及必要图表。提交前用只读 `audit_research_task(id)` 核对当前研究的执行、版本和产物；修改数据或脚本后重跑受影响的研究步骤，重跑无关基线不能替代研究验证。`finish_research_task` 中 Agent 自评以 `authority: agent_self_report` 标记，程序返回的 `scientific_validation` 单列；两者都按已有证据解释，不等同物理准确性证明。阴性、未收敛或证据不足结果也可如实报告。\n\nWOA18、混合层与表面声道技能均已提供；数据、诊断和执行能力以本次注册工具及其返回状态为准。仅有 Skill 说明或历史运行记录时，交付方法、现有证据与具体缺项；不把未执行步骤写成完成。\n",
+      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+      "source_sha256": "c67205171d0251d361968139178b6d9de85683a0fca23b2dd7fff975e8321deb",
+      "size": 6897,
       "read_only": true,
       "scope": "public_read_only",
       "metadata": {
@@ -1845,10 +1868,10 @@
       "id": "seasonal-layer-diagnostics",
       "skill": "seasonal-layer-diagnostics",
       "path": "SKILL.md",
-      "content": "---\nname: seasonal-layer-diagnostics\ndescription: 用实际温盐剖面研究某点或区域的混合层季节变化，计算位密度和温度阈值混合层深度，并保留缺测、判据与空间尺度的不确定性。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# 混合层季节诊断\n\n明确经纬范围、季节或月份、空间采样方式及判据。用户只说“某区域”且无上下文范围时，先询问区域；仍可解释方法，但不得将任意一点替代区域。四季用 WOA18 原始季节场13–16；月场1–12与季节场深度范围不同，不能把四季诊断称为全年逐月实测。\n\n用 get_ocean_profile 获取带 requested/selected 和缺测信息的实际数据。研究区域应按实际1°温盐格点去重，说明海岸遮罩、有效点数及面积加权方式；区域内各格点先诊断后汇总，平均剖面诊断不等于混合层深度的空间平均。\n\n读取 scripts/analyze_profiles.py。脚本提供温度和位密度双判据：10 m参考，位温绝对偏差0.2°C、TEOS-10 sigma0 增量0.03 kg/m³，阈值首次穿越线性定位。判据依据 de Boyer Montégut et al. 2004，https://doi.org/10.1029/2004JC002378 。这是从平滑气候平均剖面得到的诊断量，不能当作瞬时观测MLD。\n\n本机 Codex 可在研究目录运行返回的脚本绝对路径；其他执行环境可读取脚本内容后写入研究目录。脚本 --lon/--lat --periods 13,14,15,16 --out-dir 研究目录可直接读取本机数据；--profiles 接受实际剖面JSON数组（支持多点）并计算，不访问外部网络。自定义问题可扩展脚本，保留版本和输入。\n\n无阈值交点时返回 not_crossed 与有效深度界限，不能拿最深层当作MLD；参考深度不足或内部缺测时明确标记。比较阈值0.02/0.03/0.05 kg/m³时属于敏感性实验，不冒充三套真值。\n\n创建并执行研究任务，检查人工剖面的解析交点、季节格点一致性与有效覆盖。产物包括冻结剖面、指标JSON/CSV、MLD季节图和温盐声速图；报告方法、来源和未验证项。若只研究MLD，无需调用声场求解器。\n",
-      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
-      "source_sha256": "f3e6eeb6d016871d25934a0106ba258b2f530004511d3c136cb2f4a4a851ca1b",
-      "size": 2535,
+      "content": "---\nname: seasonal-layer-diagnostics\ndescription: 研究某点或区域混合层的季节变化，优先调用标准温度/位密度阈值诊断，解释缺测、判据差异与空间尺度。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 混合层季节诊断\n\n明确研究点或经纬范围、季节/月、要回答的量（例如双判据 MLD 及季节差值）。用户只说“某区域”且无范围时先澄清，方法说明可以继续；不以任意一点替代区域。四季用 WOA18 原始季节场13–16；月场1–12与季节场深度范围不同。结果称为气候态诊断，不称全年逐月实测。\n\n优先调用 `diagnose_ocean_layers(lon, lat, periods, reference_depth_m, density_threshold, temperature_threshold)`，四季通常指定 periods 为13、14、15、16，参考10 m、位密度增量0.03 kg/m³、位温绝对偏差0.2°C。保留工具返回的实际参数、方法版本、来源及状态；用 `get_ocean_profile` 查看 requested/selected、数据版本和缺测。标准诊断可直接回答单点季节问题，无需 AT 仿真。\n\n标准方法是10 m参考值、首次阈值穿越的线性定位，温度用位温，密度用 TEOS-10 sigma0；不能替换成0–10 m平均、首个离散深度层或原位温度后仍称同一方法。判据依据 de Boyer Montégut et al. 2004，https://doi.org/10.1029/2004JC002378 。标准工具缺失时读取并复用 `scripts/analyze_profiles.py`，在可执行的研究目录运行其 `--profiles` 冻结剖面输入；不自行重写温密阈值算法。该 CLI 使用默认判据；非默认参数可复用已读取的 `diagnose` 函数明确传参，不臆造 CLI 选项。自定义判据作为明确命名的方法变体，保留参数与标准结果的区别。\n\n逐项保留无阈值交点、参考深度不足、内部缺测与未计算的原始状态及有效深度界限；无交点给出范围限制，不拿最深层当作 MLD。比较0.02/0.03/0.05 kg/m³等阈值属于敏感性实验，不当作三套真值。\n\n区域研究按实际1°格点去重，报告海岸遮罩、有效点数、共同季节覆盖及面积权重；先逐点诊断后汇总，平均剖面诊断不等于 MLD 空间平均。季节比较使用相同格点集合，另报被排除格点；覆盖不足时缩小结论范围。做方法对比或区域统计前，用 `read_skill_resource(id=\"at-environment\", path=\"references/scientific-evidence.md\")` 读取共同掩码与证据规则。\n\n按用户需要交付数值表、季节图与温盐声速图。需要任务记录时创建普通研究任务，将其 `id` 传给 `diagnose_ocean_layers`；工具可直接保存冻结剖面、诊断结果与程序执行记录，纯 MLD 任务无需另造求解脚本即可 `finish_research_task`。需要图时再写整理/绘图脚本，用 `run_research_script` 的 `inputs` / `outputs` 声明工具实际返回的文件名及图表，保留前后 SHA；提交前用只读 `audit_research_task(id)` 核对。Agent 自评使用 `authority: agent_self_report`，与程序 `scientific_validation` 分列。回答“无明确季节差异”或“覆盖不足无法判定”同样有效，结论限于实际剖面、判据和时空范围。\n",
+      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+      "source_sha256": "cc3b78bf43e2b44218616e233c6aa0e35ebfa6920178662b43128abaab182782",
+      "size": 4671,
       "read_only": true,
       "scope": "public_read_only",
       "metadata": {
@@ -1863,10 +1886,10 @@
       "id": "surface-duct-investigation",
       "skill": "surface-duct-investigation",
       "path": "SKILL.md",
-      "content": "---\nname: surface-duct-investigation\ndescription: 研究季节性表面声道候选结构与声学俘获，从近表层声速诊断到AT环境构造和传播验证，区分混合层、声道结构与有效波导。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# 表面声道与传播研究\n\n先载入 seasonal-layer-diagnostics，取得实际温盐声速剖面。复用其脚本得到从海面连续正声速梯度到首个局部极大值的候选声道边界。无连续正梯度、数据截断未见极大值或缺测时分别标记，不把最深层当声道底。混合层厚度和声道厚度分别绘图；声速结构不能独自证明某频率下存在有效声学俘获。\n\n需要传播时载入 at-environment，实际读取 tests/sduct/runtests.m 及 sductK.env/sductK.flp、sductS.env/sductS.flp、sductB.env。用本地原始算例作运行链基准后，替换成研究剖面并保存修改清单。该算例描述泄漏表面声道，不能预设完全俘获。\n\n明确频率、源深、接收深度与距离、海底条件、海面和距离无关假设。缺少关键传播条件时先完成环境诊断，再询问，而不是随意指定海底参数得出真实海域结论。源深在声道内外的对照可分离源深效应。\n\nSCOOTER适合距离无关环境的谱积分分析，但当前表单RP为远场变换，近场研究应核对原始FLP、fieldsco变换选项后独立构造。KRAKEN结果要检查近表层模态形状和衰减；泄漏模态需求须审查KRAKENC或其他适当谱处理，不能只数模态个数判定波导有无。\n\n验证固定环境下采样加密、相干方式、有效覆盖、边界条件、模态/谱积分一致性。报告候选声道深度、频率条件下的能量分布和衰减、泄漏及底质不确定性，保留 ENV/FLP、脚本、PRT、数值和图。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。\n",
-      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
-      "source_sha256": "fc08807e1066fac436467566b8e183834e4090d4e9582e1ca312c4803ce8160b",
-      "size": 2309,
+      "content": "---\nname: surface-duct-investigation\ndescription: 研究季节性表面声道候选结构与声学俘获，从近表层声速诊断到AT环境构造和传播验证，区分混合层、声道结构与有效波导。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 表面声道与传播研究\n\n先区分用户要的是结构诊断、频率效应还是已有结果解释，并选可测量量：候选层深度/声速差，或指定源深、ROI 内的能量分布、TL 及泄漏变化。只问结构时完成诊断即可；只有需要传播证据时才构造求解任务。\n\n载入 `seasonal-layer-diagnostics`，优先用 `diagnose_ocean_layers` 取得实际温盐声速及标准诊断。从海面连续正声速梯度到首个局部极大值定义候选结构；使用工具原始状态区分无连续正梯度、数据截断、缺测与未计算。若另取更深处极大值或海面声速回交深度，单独命名并说明其与标准候选的区别。MLD 和候选声道深度分别报告，不能据剖面形状证明某频率的有效俘获。\n\n研究频率效应或比较 TL 时，读取 `at-environment` 的 `references/scientific-evidence.md`。固定环境、源深/接收几何、ROI、归一化、相干方式与统计定义，再改变频率；源深内外、底质与理想声道对照另列实验。缺少关键传播条件时先交付已有诊断并列缺项。海底参数、剖面外推、理想层厚度均记录为假设或敏感性构造，不能回写成 WOA18 实测。\n\n需要新运行链时载入 `at-environment`，读取 tests/sduct/runtests.m 及对应 K/S/B 输入并先复现原例，再替换成研究剖面、保存改动。该算例描述泄漏表面声道，不能预设完全俘获。SCOOTER 的 RP 是远场变换；近场研究须核对 FLP/fieldsco。KRAKEN/KRAKENC 结合实际模态形状、衰减与边界判断；BELLHOP 提供声线/波束近似结果，不能仅凭尺度公式宣称实际模态个数或严格截止频率。公式估计只作待核验的量级解释。\n\n数值稳定性用 `evaluate_acoustic_checks(id, spec)` 核验共同掩码与 ROI；当前仅支持同频、同模型、同源/环境/归一化的 `refinement` NPZ，固定轴与必要元数据见共同协议。跨频效应与跨模型差异由研究脚本另存受控分析，不能直接送此工具，也不能借其 `stable` 认证。dB 算术平均与能量平均分开命名，平滑/排除零点说明规则和物理窗口。若浅层 ROI 尚不稳定或跨模型不一致，就限制该 ROI 的定量结论；全域或深层一致不能替代近表层验证。两级网格差异不等于真实误差界。\n\n保存与问题相关的 ENV/FLP、脚本、PRT、数值和图；执行时声明实际 `inputs` / `outputs`，提交前只读 `audit_research_task(id)`。将 Agent 的 `authority: agent_self_report` 检查与程序 `scientific_validation` 单列。允许报告“本次设置未观察到稳健频率效应”或“现有证据不能判定”，不为得到预期正结果不断改变环境或把候选结构写成已证实波导。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。\n",
+      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+      "source_sha256": "822699ef86c472698bb7005c894560c201b32bee381b4d69f8a6c566e6d04088",
+      "size": 4635,
       "read_only": true,
       "scope": "public_read_only",
       "metadata": {
@@ -2903,6 +2926,28 @@
       }
     },
     {
+      "path": "@workbench/skills/at-environment/references/scientific-evidence.md",
+      "label": "skills/at-environment/references/scientific-evidence.md",
+      "group": "workbench",
+      "source": "workbench",
+      "category": "docs",
+      "kind": "text",
+      "url": null,
+      "size": 6317,
+      "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
+      "source_sha256": "2120514338a962b95e18c45e68999461d7839ca35aafeec562602e361b51996c",
+      "truncated": false,
+      "read_only": true,
+      "scope": "public_read_only",
+      "metadata": {
+        "execution": "reference_only",
+        "source_hash_normalization": "utf8-lf",
+        "source": "repository_skill_snapshot",
+        "history_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。",
+        "url": "/api/project/file?path=%40workbench%2Fskills%2Fat-environment%2Freferences%2Fscientific-evidence.md"
+      }
+    },
+    {
       "path": "@workbench/skills/at-environment/references/validation-latest.json",
       "label": "skills/at-environment/references/validation-latest.json",
       "group": "workbench",
@@ -3020,9 +3065,9 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "size": 4437,
-      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
-      "source_sha256": "83a899e853378caad8318d6cd6e439050d60f08839139cbdd5eb5a7125439b42",
+      "size": 6897,
+      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+      "source_sha256": "c67205171d0251d361968139178b6d9de85683a0fca23b2dd7fff975e8321deb",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -3372,9 +3417,9 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "size": 2535,
-      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
-      "source_sha256": "f3e6eeb6d016871d25934a0106ba258b2f530004511d3c136cb2f4a4a851ca1b",
+      "size": 4671,
+      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+      "source_sha256": "cc3b78bf43e2b44218616e233c6aa0e35ebfa6920178662b43128abaab182782",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -3394,9 +3439,9 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "size": 2309,
-      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
-      "source_sha256": "fc08807e1066fac436467566b8e183834e4090d4e9582e1ca312c4803ce8160b",
+      "size": 4635,
+      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+      "source_sha256": "822699ef86c472698bb7005c894560c201b32bee381b4d69f8a6c566e6d04088",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -3789,6 +3834,29 @@
         "url": "/api/project/file?path=%40workbench%2Fskills%2Fat-environment%2Freferences%2Fram-and-pe.md"
       }
     },
+    "@workbench/skills/at-environment/references/scientific-evidence.md": {
+      "path": "@workbench/skills/at-environment/references/scientific-evidence.md",
+      "label": "skills/at-environment/references/scientific-evidence.md",
+      "group": "workbench",
+      "source": "workbench",
+      "category": "docs",
+      "kind": "text",
+      "url": null,
+      "content": "> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 科学证据与比较协议\n\n用于实际研究、数值比较与报告核验；概念问答只取适用部分，不要求每个问题都开展完整仿真。\n\n## 问题与证据\n\n先写清研究对象、可测量量、比较变量和判断依据。表面声道频率效应可用固定接收几何/ROI 中的 TL、能量分布及其变化回答，不能以一张颜色图或候选层深度替代。\n\n保留四类来源：资料/气候态分析场及版本；现场实测及其时空范围；人为假设/理想环境；由数据或公式得到的推断。WOA18 不是现场实测，源深、底质与外推段不能作为数据集自带事实。记录 requested/selected 格点、请求点与温盐格点海底、有效深度和缺测。公式量级估计与实际求解结果分别引用。\n\n标准温密阈值由 `diagnose_ocean_layers` 计算；无交点、缺测和未计算保留工具状态与深度界限。方法变体另列参数，不能仍标为标准判据。\n\n## 受控比较与感兴趣区域（ROI）\n\n- 在比较前明确频率、环境、源深/接收几何、边界、归一化和相干方式，以及用于结论的 ROI。改变物理变量用于研究其效应；改变数值控制用于稳定性检查，二者不混称。\n- 单独加密波束或减半步长才可分辨各变量影响；同时改动只能称联合敏感性。两级结果差异是观察到的差异，真实误差界需要额外理论或参照依据。\n- 在相同物理坐标和共同有效掩码上比较，另报每组有效覆盖及交集覆盖。NaN/Inf/零点处理规则固定；不把缺测填0或仅留下有利位置。插值和平滑注明方法、窗口的物理尺度及处理前后的差异。\n- 分开报告全域与目标 ROI 的指标。深层一致、全域中位值小或相同程序无警告，都不能代替浅层 ROI 的验证。事后缩小 ROI 应标为探索性，不能掩去原区域失效。\n- `evaluate_acoustic_checks(id, spec)` 当前只做 `refinement`：送检同频、同源、同模型、同环境、同归一化与同一输出网格的数值加密对，NPZ 规则见下节。跨频/跨模型效应由研究脚本另作受控分析，不直接送该工具，不借其 `stable` 标记认证。保留共同覆盖、偏差方向和绝对差分布，绝对差中位/p90/p95与有符号中位差不是同一指标；最大差大时定位原因，而非直接丢弃。\n\n## 核验输入与执行依赖\n\nrefinement NPZ 固定为 `tl_db[depth, range]`，坐标向量为 `z_m`、`r_km`；附实际 `frequency_hz`、`source_depth_m`、`environment_id`、`tl_reference`、`field_type`、`model` 元数据。由冻结输入与实际输出填写，缺失或不一致时保留工具的不可判定/拒绝状态，不能按期望值补齐以取得通过。\n\n`run_research_script(id, file, inputs, outputs)` 的后两个参数为可选普通文件名数组。建议声明实际读取的剖面、CSV/MAT、ENV/FLP 和辅助脚本，以及生成或更新的产物；以工具记录保留执行前后 SHA。原地变换允许同一文件兼为 input/output，保留历史 SHA 与转换后的 SHA，不以最终版本覆盖输入溯源。\n\n`diagnose_ocean_layers` 可带研究任务 `id`，直接保存冻结 profiles/results 与程序执行记录。纯 MLD 诊断可以据此提交报告；生成图表时再运行读取这些实际文件的绘图脚本。\n\n## dB 平均与能量平均\n\n相同源归一化和参考下，设有效样本权重为 \\(w_i\\)。dB 算术平均为\n\\[\n\\overline{TL}_{\\mathrm{dB}}=\\frac{\\sum_i w_i TL_i}{\\sum_i w_i}.\n\\]\n由归一化强度平均得到的等效损失为\n\\[\nTL_{E}=-10\\log_{10}\\!\\left(\\frac{\\sum_i w_i10^{-TL_i/10}}{\\sum_i w_i}\\right).\n\\]\n两者分别命名、说明空间/距离区间与权重；不能把平均 dB 称为平均能量。跨季节、频率或模型采用相同样本范围和有效掩码，覆盖不足另报。\n\n## 执行、核验与结论\n\n`audit_research_task(id)` 只读检查当前执行、版本和产物。数据文件出现不等于主脚本完成；以执行记录和对应输入/产物为证。修改后重跑受影响步骤，经典基线成功不能替代真实研究的验证。\n\n`finish_research_task` 保留 Agent 自评并标记 `authority: agent_self_report`，程序 `scientific_validation` 单列。执行成功、有效覆盖、数值稳定、跨模型一致、解析/观测参照是不同证据；程序通过它所列检查也不等于物理准确性认证。BELLHOP 的波束计算不输出实际模态数，经验公式只能提供量级，不能充当严格模态截止或俘获证明。\n\n“未观察到稳健效应”“检查未通过”“证据不足”都可以作为有用结果。报告实际指标、影响范围与未验证项，不通过改参数、换判据或重跑无关基线把阴性结果变成通过。\n",
+      "size": 6317,
+      "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
+      "source_sha256": "2120514338a962b95e18c45e68999461d7839ca35aafeec562602e361b51996c",
+      "truncated": false,
+      "read_only": true,
+      "scope": "public_read_only",
+      "metadata": {
+        "execution": "reference_only",
+        "source_hash_normalization": "utf8-lf",
+        "source": "repository_skill_snapshot",
+        "history_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。",
+        "url": "/api/project/file?path=%40workbench%2Fskills%2Fat-environment%2Freferences%2Fscientific-evidence.md"
+      }
+    },
     "@workbench/skills/at-environment/references/validation-latest.json": {
       "path": "@workbench/skills/at-environment/references/validation-latest.json",
       "label": "skills/at-environment/references/validation-latest.json",
@@ -3912,10 +3980,10 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "content": "---\nname: at-environment\ndescription: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV、FLP 及运行链，复现、扩展和核验声场算例。用于实际 AT 研究与输入格式核对。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# AT 环境构造与算例复现\n\n创建指定模型任务时，先载入对应 `at-kraken`、`at-krakenc`、`at-scooter`、`at-bellhop`、`at-ram`、`at-simplepe`、`at-sparc`、`at-bellhop3d` 或 `at-krakel` 技能及其 `references/workflow.md`。使用 list_model_workflows 查创建配方和程序可用性；prepare_model_research_task 在独立目录冻结原例输入并生成脚本，创建后仍须实际运行和验证。其他算例或开放研究按源码构造，不能用默认算例替代用户研究环境。\n\n按模型查用法时先读取 references/models.json，其中分列KRAKEN、KRAKENC、SCOOTER和BELLHOP的适用条件、输入配置、调用流程与验证范围。\n\n研究RAM或PE时读取 references/ram-and-pe.md；查算例目的与入口时先读取 references/casebook-summary.json，再按需读取 references/casebook.json 中的调用行证据。实际运行覆盖见 references/validation-latest.json，包含未收敛观察和读取器问题；跨模型与解析验证的通用规则见 references/validation.md。RAM、SimplePE、SPARC、BELLHOP3D和KRAKEL均单独列在模型经验中，不能把PE、时域、3D输出套入二维单频声场。\n\n先明确物理问题、所需观测量、环境是否随距离变化和数据来源，再选择求解器。选型时先按水深（浅海/深海）× 频段（<500 Hz / >500 Hz）× 距离无关/变化（RI/RD）查 references/applicability.md 的适用性矩阵，再落到具体程序；矩阵是定性经验，收敛仍按专项 workflow 检查。用 list_at_examples 和 read_at_file 查最接近的本机算例，并按需读取 references/input-and-functions.md。索引中的签名只用于发现；使用某函数前读取其源码和测试调用。\n\n在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写运行脚本，再用 run_research_script 实际运行；保持工作目录为任务目录。MATLAB 路径必须固定为与 `bin`（2018 版 exe）配套的旧代码：`genpath(AT路径)` 会连带加入 `AT/matlab2026`（2026 版读取器，`.moA`/新 `.mod` 格式，读不了 2018 版 `.mod`），务必排除它并把 `AT/ReadWrite` 提到最前：\n\n```matlab\nparts = strsplit(genpath(AT), pathsep); parts = parts(~contains(parts,'matlab2026'));\naddpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-begin');\n```\n\n加载后先核对 `which('read_modes')` 指向 `AT/ReadWrite/read_modes.m`，`which('kraken.exe')` 指向 `AT/bin`。若要 `.moA`/新格式，必须同时换用 2026 编译的 exe 与 2026 读取器，不能混搭。源文件保持只读。\n\n先原样复现，再一次只改变明确的研究变量。当前表单无法表达多层、距离相关或特殊声道时，写独立 ENV/FLP 和脚本；不要为了适应表单擅自改研究问题。ENV 选项不能跨求解器直接照搬，读取该求解器的 tests 及 read_env/write_env 分支。\n\n完成标准：检查 exe 返回和 PRT 日志、频率/源深/接收深度/坐标单位、复声压维度与有效覆盖；验证输入冻结一致、采样加密或参考解，并生成输入文件、脚本、PNG、数值 CSV/JSON、检查记录。模态单列/波数标量须显式规范维度。跨模型比 TL 前先对齐相干/非相干/半相干与源归一化，场叠加方式和参考归一化一致后再比较 TL；相位差与干涉极小值不能只看一个全局最大差。\n\nWOA18 剖面可通过已开放的海洋数据工具按需读取。混合层与表面声道技能提供诊断方法；脚本执行与传播验证以本次节点能力为准。用 finish_research_task 登记方法、假设、证据、产物、验证和局限。求解器运行成功与物理精度验证分别报告。\n",
-      "size": 4437,
-      "sha256": "3c95df82da16e0ff7b4b0bd027882c4e446c8c7e07f869a4e57756df8afc13f3",
-      "source_sha256": "83a899e853378caad8318d6cd6e439050d60f08839139cbdd5eb5a7125439b42",
+      "content": "---\nname: at-environment\ndescription: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV、FLP 及运行链，复现、扩展和核验声场算例。用于实际 AT 研究与输入格式核对。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# AT 环境构造与算例复现\n\n先把问题落到可测量量：指定海域或理想环境、时段、频率/几何、要比较的变量，以及用什么指标回答。只问用法时解释条件与输入；只需混合层或声速结构时转入 `seasonal-layer-diagnostics` / `surface-duct-investigation`，优先用 `diagnose_ocean_layers` 取得标准诊断，无需为此启动声场求解器。\n\n创建指定模型任务时，先载入对应 `at-kraken`、`at-krakenc`、`at-scooter`、`at-bellhop`、`at-ram`、`at-simplepe`、`at-sparc`、`at-bellhop3d` 或 `at-krakel` 技能及其 `references/workflow.md`。使用 list_model_workflows 查创建配方和程序可用性；prepare_model_research_task 在独立目录冻结原例输入并生成脚本，创建后仍须实际运行和验证。其他算例或开放研究按源码构造，不能用默认算例替代用户研究环境。\n\n按模型查用法时先读取 references/models.json，其中分列KRAKEN、KRAKENC、SCOOTER和BELLHOP的适用条件、输入配置、调用流程与验证范围。\n\n研究RAM或PE时读取 references/ram-and-pe.md；查算例目的与入口时先读取 references/casebook-summary.json，再按需读取 references/casebook.json 中的调用行证据。实际运行覆盖见 references/validation-latest.json，包含未收敛观察和读取器问题；跨模型与解析验证的通用规则见 references/validation.md。RAM、SimplePE、SPARC、BELLHOP3D和KRAKEL均单独列在模型经验中，不能把PE、时域、3D输出套入二维单频声场。\n\n先明确物理问题、所需观测量、环境是否随距离变化和数据来源，再选择求解器。选型时先按水深（浅海/深海）× 频段（<500 Hz / >500 Hz）× 距离无关/变化（RI/RD）查 references/applicability.md 的适用性矩阵，再落到具体程序；矩阵是定性经验，收敛仍按专项 workflow 检查。用 list_at_examples 和 read_at_file 查最接近的本机算例，并按需读取 references/input-and-functions.md。索引中的签名只用于发现；使用某函数前读取其源码和测试调用。\n\n在 create_research_task 返回的独立目录复制算例及依赖，保存原始路径、SHA256 与改动清单。用 write_research_file 写脚本，再用 `run_research_script` 实际运行；建议在其可选 `inputs` / `outputs` 普通文件名数组中声明实际依赖和产物，保存执行前后 SHA。原地变换可将同一文件同时列为输入/输出，保留前后版本。保持工作目录为任务目录。MATLAB 路径必须固定为与 `bin`（2018 版 exe）配套的旧代码：`genpath(AT路径)` 会连带加入 `AT/matlab2026`（2026 版读取器，`.moA`/新 `.mod` 格式，读不了 2018 版 `.mod`），务必排除它并把 `AT/ReadWrite` 提到最前：\n\n```matlab\nparts = strsplit(genpath(AT), pathsep); parts = parts(~contains(parts,'matlab2026'));\naddpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-begin');\n```\n\n加载后先核对 `which('read_modes')` 指向 `AT/ReadWrite/read_modes.m`，`which('kraken.exe')` 指向 `AT/bin`。若要 `.moA`/新格式，必须同时换用 2026 编译的 exe 与 2026 读取器，不能混搭。源文件保持只读。\n\n已有可复用的运行链时沿用其验证记录；接入新模型或新调用链时先复现相应原例，再改变研究变量。当前表单无法表达多层、距离相关或特殊声道时，按本次工具权限写独立 ENV/FLP 和脚本，不为适应表单改换研究问题。ENV 选项不能跨求解器直接照搬，读取该求解器的 tests 及 read_env/write_env 分支。\n\n比较频率效应、模型或数值设置，或准备声场研究报告时，先读 [科学证据与比较协议](references/scientific-evidence.md)。`evaluate_acoustic_checks(id, spec)` 当前只接受同频、同模型、同源/环境/归一化的 `refinement` NPZ，按引用中的固定轴与元数据准备，再指定 ROI、共同掩码和阈值；跨频或跨模型效应由研究脚本另作受控分析，不能直接送此工具。一次改变一个数值控制量用于单变量稳定性检查；同时改变波束与步长属于联合敏感性实验。两级差异只报告为观察到的数值差异，不称真实误差界。\n\n完成实际计算后检查 exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，按研究目标保存输入、脚本、数值及必要图表。提交前用只读 `audit_research_task(id)` 核对当前研究的执行、版本和产物；修改数据或脚本后重跑受影响的研究步骤，重跑无关基线不能替代研究验证。`finish_research_task` 中 Agent 自评以 `authority: agent_self_report` 标记，程序返回的 `scientific_validation` 单列；两者都按已有证据解释，不等同物理准确性证明。阴性、未收敛或证据不足结果也可如实报告。\n\nWOA18、混合层与表面声道技能均已提供；数据、诊断和执行能力以本次注册工具及其返回状态为准。仅有 Skill 说明或历史运行记录时，交付方法、现有证据与具体缺项；不把未执行步骤写成完成。\n",
+      "size": 6897,
+      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+      "source_sha256": "c67205171d0251d361968139178b6d9de85683a0fca23b2dd7fff975e8321deb",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -3958,10 +4026,10 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "content": "---\nname: seasonal-layer-diagnostics\ndescription: 用实际温盐剖面研究某点或区域的混合层季节变化，计算位密度和温度阈值混合层深度，并保留缺测、判据与空间尺度的不确定性。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# 混合层季节诊断\n\n明确经纬范围、季节或月份、空间采样方式及判据。用户只说“某区域”且无上下文范围时，先询问区域；仍可解释方法，但不得将任意一点替代区域。四季用 WOA18 原始季节场13–16；月场1–12与季节场深度范围不同，不能把四季诊断称为全年逐月实测。\n\n用 get_ocean_profile 获取带 requested/selected 和缺测信息的实际数据。研究区域应按实际1°温盐格点去重，说明海岸遮罩、有效点数及面积加权方式；区域内各格点先诊断后汇总，平均剖面诊断不等于混合层深度的空间平均。\n\n读取 scripts/analyze_profiles.py。脚本提供温度和位密度双判据：10 m参考，位温绝对偏差0.2°C、TEOS-10 sigma0 增量0.03 kg/m³，阈值首次穿越线性定位。判据依据 de Boyer Montégut et al. 2004，https://doi.org/10.1029/2004JC002378 。这是从平滑气候平均剖面得到的诊断量，不能当作瞬时观测MLD。\n\n本机 Codex 可在研究目录运行返回的脚本绝对路径；其他执行环境可读取脚本内容后写入研究目录。脚本 --lon/--lat --periods 13,14,15,16 --out-dir 研究目录可直接读取本机数据；--profiles 接受实际剖面JSON数组（支持多点）并计算，不访问外部网络。自定义问题可扩展脚本，保留版本和输入。\n\n无阈值交点时返回 not_crossed 与有效深度界限，不能拿最深层当作MLD；参考深度不足或内部缺测时明确标记。比较阈值0.02/0.03/0.05 kg/m³时属于敏感性实验，不冒充三套真值。\n\n创建并执行研究任务，检查人工剖面的解析交点、季节格点一致性与有效覆盖。产物包括冻结剖面、指标JSON/CSV、MLD季节图和温盐声速图；报告方法、来源和未验证项。若只研究MLD，无需调用声场求解器。\n",
-      "size": 2535,
-      "sha256": "1d4fd6fefe91bb815323645c4afeacb3919d60c54306e3a1685cd40edf8b95da",
-      "source_sha256": "f3e6eeb6d016871d25934a0106ba258b2f530004511d3c136cb2f4a4a851ca1b",
+      "content": "---\nname: seasonal-layer-diagnostics\ndescription: 研究某点或区域混合层的季节变化，优先调用标准温度/位密度阈值诊断，解释缺测、判据差异与空间尺度。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 混合层季节诊断\n\n明确研究点或经纬范围、季节/月、要回答的量（例如双判据 MLD 及季节差值）。用户只说“某区域”且无范围时先澄清，方法说明可以继续；不以任意一点替代区域。四季用 WOA18 原始季节场13–16；月场1–12与季节场深度范围不同。结果称为气候态诊断，不称全年逐月实测。\n\n优先调用 `diagnose_ocean_layers(lon, lat, periods, reference_depth_m, density_threshold, temperature_threshold)`，四季通常指定 periods 为13、14、15、16，参考10 m、位密度增量0.03 kg/m³、位温绝对偏差0.2°C。保留工具返回的实际参数、方法版本、来源及状态；用 `get_ocean_profile` 查看 requested/selected、数据版本和缺测。标准诊断可直接回答单点季节问题，无需 AT 仿真。\n\n标准方法是10 m参考值、首次阈值穿越的线性定位，温度用位温，密度用 TEOS-10 sigma0；不能替换成0–10 m平均、首个离散深度层或原位温度后仍称同一方法。判据依据 de Boyer Montégut et al. 2004，https://doi.org/10.1029/2004JC002378 。标准工具缺失时读取并复用 `scripts/analyze_profiles.py`，在可执行的研究目录运行其 `--profiles` 冻结剖面输入；不自行重写温密阈值算法。该 CLI 使用默认判据；非默认参数可复用已读取的 `diagnose` 函数明确传参，不臆造 CLI 选项。自定义判据作为明确命名的方法变体，保留参数与标准结果的区别。\n\n逐项保留无阈值交点、参考深度不足、内部缺测与未计算的原始状态及有效深度界限；无交点给出范围限制，不拿最深层当作 MLD。比较0.02/0.03/0.05 kg/m³等阈值属于敏感性实验，不当作三套真值。\n\n区域研究按实际1°格点去重，报告海岸遮罩、有效点数、共同季节覆盖及面积权重；先逐点诊断后汇总，平均剖面诊断不等于 MLD 空间平均。季节比较使用相同格点集合，另报被排除格点；覆盖不足时缩小结论范围。做方法对比或区域统计前，用 `read_skill_resource(id=\"at-environment\", path=\"references/scientific-evidence.md\")` 读取共同掩码与证据规则。\n\n按用户需要交付数值表、季节图与温盐声速图。需要任务记录时创建普通研究任务，将其 `id` 传给 `diagnose_ocean_layers`；工具可直接保存冻结剖面、诊断结果与程序执行记录，纯 MLD 任务无需另造求解脚本即可 `finish_research_task`。需要图时再写整理/绘图脚本，用 `run_research_script` 的 `inputs` / `outputs` 声明工具实际返回的文件名及图表，保留前后 SHA；提交前用只读 `audit_research_task(id)` 核对。Agent 自评使用 `authority: agent_self_report`，与程序 `scientific_validation` 分列。回答“无明确季节差异”或“覆盖不足无法判定”同样有效，结论限于实际剖面、判据和时空范围。\n",
+      "size": 4671,
+      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+      "source_sha256": "cc3b78bf43e2b44218616e233c6aa0e35ebfa6920178662b43128abaab182782",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -3981,10 +4049,10 @@
       "category": "docs",
       "kind": "text",
       "url": null,
-      "content": "---\nname: surface-duct-investigation\ndescription: 研究季节性表面声道候选结构与声学俘获，从近表层声速诊断到AT环境构造和传播验证，区分混合层、声道结构与有效波导。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n# 表面声道与传播研究\n\n先载入 seasonal-layer-diagnostics，取得实际温盐声速剖面。复用其脚本得到从海面连续正声速梯度到首个局部极大值的候选声道边界。无连续正梯度、数据截断未见极大值或缺测时分别标记，不把最深层当声道底。混合层厚度和声道厚度分别绘图；声速结构不能独自证明某频率下存在有效声学俘获。\n\n需要传播时载入 at-environment，实际读取 tests/sduct/runtests.m 及 sductK.env/sductK.flp、sductS.env/sductS.flp、sductB.env。用本地原始算例作运行链基准后，替换成研究剖面并保存修改清单。该算例描述泄漏表面声道，不能预设完全俘获。\n\n明确频率、源深、接收深度与距离、海底条件、海面和距离无关假设。缺少关键传播条件时先完成环境诊断，再询问，而不是随意指定海底参数得出真实海域结论。源深在声道内外的对照可分离源深效应。\n\nSCOOTER适合距离无关环境的谱积分分析，但当前表单RP为远场变换，近场研究应核对原始FLP、fieldsco变换选项后独立构造。KRAKEN结果要检查近表层模态形状和衰减；泄漏模态需求须审查KRAKENC或其他适当谱处理，不能只数模态个数判定波导有无。\n\n验证固定环境下采样加密、相干方式、有效覆盖、边界条件、模态/谱积分一致性。报告候选声道深度、频率条件下的能量分布和衰减、泄漏及底质不确定性，保留 ENV/FLP、脚本、PRT、数值和图。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。\n",
-      "size": 2309,
-      "sha256": "f6d918c715c743a85f7f87698a2b50300b7e9fd49294dd142ef3fd2973a00628",
-      "source_sha256": "fc08807e1066fac436467566b8e183834e4090d4e9582e1ca312c4803ce8160b",
+      "content": "---\nname: surface-duct-investigation\ndescription: 研究季节性表面声道候选结构与声学俘获，从近表层声速诊断到AT环境构造和传播验证，区分混合层、声道结构与有效波导。\n---\n\n> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。\n\n> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。\n\n# 表面声道与传播研究\n\n先区分用户要的是结构诊断、频率效应还是已有结果解释，并选可测量量：候选层深度/声速差，或指定源深、ROI 内的能量分布、TL 及泄漏变化。只问结构时完成诊断即可；只有需要传播证据时才构造求解任务。\n\n载入 `seasonal-layer-diagnostics`，优先用 `diagnose_ocean_layers` 取得实际温盐声速及标准诊断。从海面连续正声速梯度到首个局部极大值定义候选结构；使用工具原始状态区分无连续正梯度、数据截断、缺测与未计算。若另取更深处极大值或海面声速回交深度，单独命名并说明其与标准候选的区别。MLD 和候选声道深度分别报告，不能据剖面形状证明某频率的有效俘获。\n\n研究频率效应或比较 TL 时，读取 `at-environment` 的 `references/scientific-evidence.md`。固定环境、源深/接收几何、ROI、归一化、相干方式与统计定义，再改变频率；源深内外、底质与理想声道对照另列实验。缺少关键传播条件时先交付已有诊断并列缺项。海底参数、剖面外推、理想层厚度均记录为假设或敏感性构造，不能回写成 WOA18 实测。\n\n需要新运行链时载入 `at-environment`，读取 tests/sduct/runtests.m 及对应 K/S/B 输入并先复现原例，再替换成研究剖面、保存改动。该算例描述泄漏表面声道，不能预设完全俘获。SCOOTER 的 RP 是远场变换；近场研究须核对 FLP/fieldsco。KRAKEN/KRAKENC 结合实际模态形状、衰减与边界判断；BELLHOP 提供声线/波束近似结果，不能仅凭尺度公式宣称实际模态个数或严格截止频率。公式估计只作待核验的量级解释。\n\n数值稳定性用 `evaluate_acoustic_checks(id, spec)` 核验共同掩码与 ROI；当前仅支持同频、同模型、同源/环境/归一化的 `refinement` NPZ，固定轴与必要元数据见共同协议。跨频效应与跨模型差异由研究脚本另存受控分析，不能直接送此工具，也不能借其 `stable` 认证。dB 算术平均与能量平均分开命名，平滑/排除零点说明规则和物理窗口。若浅层 ROI 尚不稳定或跨模型不一致，就限制该 ROI 的定量结论；全域或深层一致不能替代近表层验证。两级网格差异不等于真实误差界。\n\n保存与问题相关的 ENV/FLP、脚本、PRT、数值和图；执行时声明实际 `inputs` / `outputs`，提交前只读 `audit_research_task(id)`。将 Agent 的 `authority: agent_self_report` 检查与程序 `scientific_validation` 单列。允许报告“本次设置未观察到稳健频率效应”或“现有证据不能判定”，不为得到预期正结果不断改变环境或把候选结构写成已证实波导。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。\n",
+      "size": 4635,
+      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+      "source_sha256": "822699ef86c472698bb7005c894560c201b32bee381b4d69f8a6c566e6d04088",
       "truncated": false,
       "read_only": true,
       "scope": "public_read_only",
@@ -5586,6 +5654,11 @@
         "size": 4077
       },
       {
+        "path": "skills/at-environment/references/scientific-evidence.md",
+        "sha256": "2120514338a962b95e18c45e68999461d7839ca35aafeec562602e361b51996c",
+        "size": 4807
+      },
+      {
         "path": "skills/at-environment/references/validation-latest.json",
         "sha256": "79a742b756cbc6dcbcf025a660077f9253b7543d54b4066d567aa6957bac9f20",
         "size": 22375
@@ -5612,8 +5685,8 @@
       },
       {
         "path": "skills/at-environment/SKILL.md",
-        "sha256": "83a899e853378caad8318d6cd6e439050d60f08839139cbdd5eb5a7125439b42",
-        "size": 3972
+        "sha256": "c67205171d0251d361968139178b6d9de85683a0fca23b2dd7fff975e8321deb",
+        "size": 5387
       },
       {
         "path": "skills/at-krakel/references/workflow.md",
@@ -5692,13 +5765,13 @@
       },
       {
         "path": "skills/seasonal-layer-diagnostics/SKILL.md",
-        "sha256": "f3e6eeb6d016871d25934a0106ba258b2f530004511d3c136cb2f4a4a851ca1b",
-        "size": 2114
+        "sha256": "cc3b78bf43e2b44218616e233c6aa0e35ebfa6920178662b43128abaab182782",
+        "size": 3161
       },
       {
         "path": "skills/surface-duct-investigation/SKILL.md",
-        "sha256": "fc08807e1066fac436467566b8e183834e4090d4e9582e1ca312c4803ce8160b",
-        "size": 1888
+        "sha256": "822699ef86c472698bb7005c894560c201b32bee381b4d69f8a6c566e6d04088",
+        "size": 3125
       },
       {
         "path": "tests/check_ram_grid.py",
@@ -5711,7 +5784,7 @@
         "size": 13257
       }
     ],
-    "source_manifest_sha256": "ec7ed43b22582ab9408607f0fe4a3bebf9dc67916ec8768b7f675ae5019395e7",
+    "source_manifest_sha256": "3aecc9c7f14b50e60b4609d521530a6f528f04ff36f6a5deff9d2e2d6f5e03b4",
     "public_sources_sha256": "59bfdc00f50d7210e5f92d2969307d35b4441cc86afa2b9fdf6b24513d13cd92"
   },
   "source_count": 25

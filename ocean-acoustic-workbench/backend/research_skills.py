@@ -41,4 +41,13 @@ def at_catalog(toolbox,query=''):
 
 def tools():
     specs=[('list_model_workflows','查看各模型已固化的创建配方、默认算例和本机程序可用性',{}),('list_research_skills','列出研究技能及应用场景',{}),('load_research_skill','读取研究技能的SKILL.md，执行任务前按目标加载',{'id':'string'}),('read_skill_resource','读取技能参考文档或可执行脚本，返回路径与内容',{'id':'string','path':'string'}),('list_at_examples','按关键词查AT算例族和MATLAB函数签名，空字符串列目录',{'query':'string'}),('read_at_file','读取本机AT中的相对路径文本，如tests/sduct/sductK.env',{'path':'string'}),('get_ocean_profile','读取实际WOA18温盐声速剖面及地形，period为0年平均、1–12月、13–16季节',{'lon':'number','lat':'number','period':'integer'})]
-    return [{'type':'function','function':{'name':n,'description':d,'parameters':{'type':'object','properties':{k:{'type':v} for k,v in fields.items()},'required':list(fields),'additionalProperties':False}}} for n,d,fields in specs]
+    result=[{'type':'function','function':{'name':n,'description':d,'parameters':{'type':'object','properties':{k:{'type':v} for k,v in fields.items()},'required':list(fields),'additionalProperties':False}}} for n,d,fields in specs]
+    result.append({'type':'function','function':{'name':'diagnose_ocean_layers',
+        'description':'实际读取WOA18并用固定TEOS-10/10m参考温密阈值算法计算混合层及首个表面声道候选，保留无交叉/缺测状态和来源。可选id保存冻结剖面、结果及程序凭据到研究任务；默认阈值可按研究目的更改',
+        'parameters':{'type':'object','properties':{
+            'lon':{'type':'number','minimum':-180,'maximum':180},'lat':{'type':'number','minimum':-90,'maximum':90},
+            'periods':{'type':'array','items':{'type':'integer','minimum':0,'maximum':16},'minItems':1,'maxItems':17,'uniqueItems':True},
+            'reference_depth_m':{'type':'number','minimum':0},'density_threshold':{'type':'number','exclusiveMinimum':0},
+            'temperature_threshold':{'type':'number','exclusiveMinimum':0},'id':{'type':'string','description':'可选，未完成的研究任务编号，保存可导出诊断文件'}},
+            'required':['lon','lat','periods','reference_depth_m','density_threshold','temperature_threshold'],'additionalProperties':False}}})
+    return result

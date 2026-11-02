@@ -5,12 +5,14 @@ description: 研究季节性表面声道候选结构与声学俘获，从近表�
 
 # 表面声道与传播研究
 
-先载入 seasonal-layer-diagnostics，取得实际温盐声速剖面。复用其脚本得到从海面连续正声速梯度到首个局部极大值的候选声道边界。无连续正梯度、数据截断未见极大值或缺测时分别标记，不把最深层当声道底。混合层厚度和声道厚度分别绘图；声速结构不能独自证明某频率下存在有效声学俘获。
+先区分用户要的是结构诊断、频率效应还是已有结果解释，并选可测量量：候选层深度/声速差，或指定源深、ROI 内的能量分布、TL 及泄漏变化。只问结构时完成诊断即可；只有需要传播证据时才构造求解任务。
 
-需要传播时载入 at-environment，实际读取 tests/sduct/runtests.m 及 sductK.env/sductK.flp、sductS.env/sductS.flp、sductB.env。用本地原始算例作运行链基准后，替换成研究剖面并保存修改清单。该算例描述泄漏表面声道，不能预设完全俘获。
+载入 `seasonal-layer-diagnostics`，优先用 `diagnose_ocean_layers` 取得实际温盐声速及标准诊断。从海面连续正声速梯度到首个局部极大值定义候选结构；使用工具原始状态区分无连续正梯度、数据截断、缺测与未计算。若另取更深处极大值或海面声速回交深度，单独命名并说明其与标准候选的区别。MLD 和候选声道深度分别报告，不能据剖面形状证明某频率的有效俘获。
 
-明确频率、源深、接收深度与距离、海底条件、海面和距离无关假设。缺少关键传播条件时先完成环境诊断，再询问，而不是随意指定海底参数得出真实海域结论。源深在声道内外的对照可分离源深效应。
+研究频率效应或比较 TL 时，读取 `at-environment` 的 `references/scientific-evidence.md`。固定环境、源深/接收几何、ROI、归一化、相干方式与统计定义，再改变频率；源深内外、底质与理想声道对照另列实验。缺少关键传播条件时先交付已有诊断并列缺项。海底参数、剖面外推、理想层厚度均记录为假设或敏感性构造，不能回写成 WOA18 实测。
 
-SCOOTER适合距离无关环境的谱积分分析，但当前表单RP为远场变换，近场研究应核对原始FLP、fieldsco变换选项后独立构造。KRAKEN结果要检查近表层模态形状和衰减；泄漏模态需求须审查KRAKENC或其他适当谱处理，不能只数模态个数判定波导有无。
+需要新运行链时载入 `at-environment`，读取 tests/sduct/runtests.m 及对应 K/S/B 输入并先复现原例，再替换成研究剖面、保存改动。该算例描述泄漏表面声道，不能预设完全俘获。SCOOTER 的 RP 是远场变换；近场研究须核对 FLP/fieldsco。KRAKEN/KRAKENC 结合实际模态形状、衰减与边界判断；BELLHOP 提供声线/波束近似结果，不能仅凭尺度公式宣称实际模态个数或严格截止频率。公式估计只作待核验的量级解释。
 
-验证固定环境下采样加密、相干方式、有效覆盖、边界条件、模态/谱积分一致性。报告候选声道深度、频率条件下的能量分布和衰减、泄漏及底质不确定性，保留 ENV/FLP、脚本、PRT、数值和图。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。
+数值稳定性用 `evaluate_acoustic_checks(id, spec)` 核验共同掩码与 ROI；当前仅支持同频、同模型、同源/环境/归一化的 `refinement` NPZ，固定轴与必要元数据见共同协议。跨频效应与跨模型差异由研究脚本另存受控分析，不能直接送此工具，也不能借其 `stable` 认证。dB 算术平均与能量平均分开命名，平滑/排除零点说明规则和物理窗口。若浅层 ROI 尚不稳定或跨模型不一致，就限制该 ROI 的定量结论；全域或深层一致不能替代近表层验证。两级网格差异不等于真实误差界。
+
+保存与问题相关的 ENV/FLP、脚本、PRT、数值和图；执行时声明实际 `inputs` / `outputs`，提交前只读 `audit_research_task(id)`。将 Agent 的 `authority: agent_self_report` 检查与程序 `scientific_validation` 单列。允许报告“本次设置未观察到稳健频率效应”或“现有证据不能判定”，不为得到预期正结果不断改变环境或把候选结构写成已证实波导。参考AT说明：https://oalib-acoustics.org/website_resources/AcousticsToolbox/manual/node63.html 。

@@ -20,6 +20,12 @@ const html=renderToStaticMarkup(React.createElement(Result,{detail,setImage:()=>
 assert(html.includes('/api/jobs/abcdefabcdef/artifact/ram_tl.png'));
 assert(html.includes('尚未验证'));assert(html.includes('katex'));
 assert(!html.includes('undefined'));
+assert(html.includes('Agent 自评'));assert(html.includes('尚无程序数值检查'));assert(html.includes('物理精度'));
+detail.summary.scientific_validation={numerical_status:'not_stable',scope:'仅指定ROI',checks:[{id:'receipt-test',kind:'acoustic_refinement',current:true,input_sha256:{'base.npz':'abc'},result:{status:'not_stable',roi:{depth_min_m:0,depth_max_m:50,range_min_km:2,range_max_km:48},coverage:{common_valid_ratio:.96},abs_difference:{median_db:1.479,p95_db:11.426,p99_db:20.177,threshold_db:1}}}]};
+const checked=renderToStaticMarkup(React.createElement(Result,{detail,setImage:()=>{}}));
+assert(checked.includes('指定区域尚未稳定'));assert(checked.includes('11.426'));assert(checked.includes('Agent 自评'));assert(checked.includes('尚未确立'));
+detail.summary.scientific_validation.numerical_status='stale';detail.summary.scientific_validation.checks[0].current=false;
+assert(renderToStaticMarkup(React.createElement(Result,{detail,setImage:()=>{}})).includes('依据已变化'));
 console.log('PASS: nine model cards (KRAKEL restored), generic report, math rendering and task artifact links');
 `,loader:'js'},bundle:true,platform:'node',format:'cjs',outfile:out,loader:{'.css':'empty'},logLevel:'error'});
 process.stdout.write(execFileSync(process.execPath,[out],{encoding:'utf8'}));

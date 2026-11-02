@@ -68,6 +68,31 @@ class ResearchAPI(unittest.TestCase):
             self.assertEqual(self.client.get('/api/project/file',params={'path':key}).status_code,403)
         functions={t['function']['name'] for t in self.module.RESEARCH.tools()}
         self.assertIn('prepare_model_research_task',functions);self.assertIn('get_ocean_profile',functions);self.assertIn('read_material_page',functions)
+        for name in ['diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task']:self.assertIn(name,functions)
+    def test_canonical_diagnostic_can_archive_and_legacy_report_cannot_forge_verification(self):
+        engine=self.engine();created=asyncio.run(engine.execute('create_research_task',{'title':'Layer fixture','objective':'MLD from a frozen profile'}));identity=created['id']
+        profile={'selected':{'lon':120,'lat':20},'requested':{'lon':120,'lat':20},'period':16,
+                 'rows':[{'depth_m':d,'temperature_c':25-d*.02,'practical_salinity':35.,'sound_speed_m_s':1500+d*.01} for d in [0,5,10,20,30,50]]}
+        with patch('research_api.ocean_data.profile',return_value=profile) as reader:
+            result=asyncio.run(self.module.RESEARCH.execute(engine,'diagnose_ocean_layers',{'id':identity,'lon':120,'lat':20,'periods':[16],'reference_depth_m':10.,'density_threshold':.03,'temperature_threshold':.2}))
+        reader.assert_called_once_with(120,20,16)
+        report={'method':'Canonical profile method','assumptions':[],'inputs':[],'sources':['Fixture'],
+                'outputs':[{'file':f} for f in result['artifacts']],'checks':[{'name':'Self assessment','passed':True,'evidence':'Agent assertion'}],
+                'conclusion':'Bounded diagnostic','limitations':['No propagation or observation validation']}
+        asyncio.run(engine.execute('finish_research_task',{'id':identity,'report':report}))
+        folder=Path(created['directory']);summary=folder/'summary.json'
+        fake=json.loads(summary.read_text(encoding='utf-8'));fake['scientific_validation']={'numerical_status':'proven','physical_accuracy':'proven'}
+        summary.write_text(json.dumps(fake),encoding='utf-8');before=summary.read_bytes()
+        detail=self.client.get('/api/jobs/'+identity).json()
+        self.assertEqual(detail['summary']['scientific_validation']['numerical_status'],'checked')
+        self.assertEqual(detail['summary']['scientific_validation']['physical_accuracy'],'not_established')
+        self.assertEqual(detail['summary']['checks'][0]['authority'],'agent_self_report')
+        self.assertEqual(summary.read_bytes(),before,'Read projection must not edit legacy reports')
+        (folder/result['artifacts'][0]).write_text('[]',encoding='utf-8')
+        self.assertEqual(self.client.get('/api/jobs/'+identity).json()['summary']['scientific_validation']['numerical_status'],'stale')
+        self.assertEqual(self.client.delete('/api/jobs/'+identity).status_code,200)
+        self.assertFalse(folder.exists())
+        self.assertEqual(engine.validations.receipts(identity,folder),[])
     def test_agent_creates_runs_and_reports_real_python_task_once(self):
         async def provider(messages,tools,execute,stop,trace,*args,**kwargs):
             async def call(name,args):

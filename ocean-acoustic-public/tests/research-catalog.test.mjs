@@ -33,7 +33,7 @@ test('all 12 skills expose complete registered resources with reproducible sourc
   const catalog = api.catalog();
   assert.equal(catalog.skills.length, 12);
   assert.equal(new Set(catalog.skills.map(skill => skill.id)).size, 12);
-  assert.equal(catalog.resource_count, 34);
+  assert.equal(catalog.resource_count, 35);
   for (const skill of catalog.skills) {
     assert.equal(skill.sha256, api.readSkill(skill.id).sha256);
     assert.ok(skill.resource_count >= 1);
@@ -53,6 +53,22 @@ test('all 12 skills expose complete registered resources with reproducible sourc
   }
   assert.ok(api.readSkill('at-environment', 'scripts/summarize_model.m').content.includes('read_shd(workflow_output)'));
   assert.ok(api.readSkill('seasonal-layer-diagnostics', 'scripts/analyze_profiles.py').content.includes('sigma0'));
+});
+
+test('scientific protocol is complete and public skills route missing local tools without claiming equivalent diagnostics', () => {
+  const resource = api.readSkill('at-environment', 'references/scientific-evidence.md');
+  const source = fs.readFileSync(new URL('../../ocean-acoustic-workbench/skills/at-environment/references/scientific-evidence.md', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+  assert.equal(resource.source_sha256, sha(source));
+  assert.equal(resource.sha256, sha(resource.content));
+  assert(resource.content.endsWith(source));
+  for (const requirement of ['tl_db[depth, range]', 'frequency_hz', 'tl_reference', 'agent_self_report', 'scientific_validation', '共同有效掩码', '真实误差界'])
+    assert(resource.content.includes(requirement), requirement);
+  assert.equal(api.readProjectFile('@workbench/skills/at-environment/references/scientific-evidence.md').sha256, resource.sha256);
+  for (const text of [resource.content, ...['at-environment','seasonal-layer-diagnostics','surface-duct-investigation'].map(id => api.readSkill(id).content)]) {
+    assert(text.indexOf('公网工具路由') < text.indexOf('# '));
+    for (const boundary of ['只调用当前请求实际注册的工具', '节点在线也不会自动授予', 'diagnose_seasonal_layers', '原位温度', '不能冒充本地位温/位密度双判据', 'density_mld=not_computed', '不归档研究任务', '不自行重写算法'])
+      assert(text.includes(boundary), boundary);
+  }
 });
 
 test('nine recipe and experience models retain eight supported recipes without claiming current executors', () => {
@@ -82,7 +98,7 @@ test('skill path traversal, encoded paths, absolute paths, unknown IDs and inher
 
 test('shared project list contains classified source and real ENV/FLP snapshots, no private runs or arbitrary files', () => {
   const result = api.listProjectFiles();
-  assert.equal(result.total, 56);
+  assert.equal(result.total, 57);
   assert.ok(result.groups.every(group => ['workbench','project'].includes(group.id)));
   assert.equal(result.roots.runs, undefined);
   assert.ok(result.files.some(file => file.path.endsWith('.env')));

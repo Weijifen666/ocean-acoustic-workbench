@@ -26,7 +26,6 @@ import {
   Play,
   Link2,
   Download,
-  FileText,
   GraduationCap,
 } from "lucide-react";
 import "./graph.css";
@@ -852,7 +851,7 @@ export default function GraphExplorer({
               {[
                 ["overview", "知识讲解"],
                 ["relations", "关联知识"],
-                ["sources", "图片与来源"],
+                ["sources", "图片"],
               ].map(([id, title]) => (
                 <button
                   key={id}
@@ -911,8 +910,6 @@ export default function GraphExplorer({
                       <p>{node.example}</p>
                     </div>
                   )}
-                  <h3>来源定位</h3>
-                  <SourceLinks references={node.references} notify={notify} />
                 </>
               ) : detailTab === "relations" ? (
                 <>
@@ -985,22 +982,21 @@ export default function GraphExplorer({
               ) : (
                 <>
                   <p className="drawer-help">
-                    示意图用于理解原理。教材页保留原始上下文，点击可放大并核对原页。
+                    相关图片用于理解知识点，点击可放大查看。
                   </p>
                   {node.images.map((im, i) => (
                     <button
                       className="knowledge-source-image"
                       key={i}
-                      onClick={() => setImage(im)}
+                      onClick={() => setImage({...im, caption: im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption})}
                     >
-                      <ResourceImage loading="lazy" src={im.url} alt={im.caption} />
+                      <ResourceImage loading="lazy" src={im.url} alt={im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption} />
                       <span>
-                        {im.caption}
+                        {im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption}
                         <Maximize2 size={14} />
                       </span>
                     </button>
                   ))}
-                  <SourceLinks references={node.references} notify={notify} />
                 </>
               )}
             </div>
@@ -1195,38 +1191,6 @@ function PublicOceanResources({ status }) {
 }
 function ExternalLinkIcon() {
   return <ArrowUpRight size={12} />;
-}
-function SourceLinks({ references, notify }) {
-  return (
-    <div className="knowledge-source-links">
-      {references.map((r, i) => (
-        <React.Fragment key={i}>
-          {r.pdf_page ? (
-            <a
-              href={`/api/source/${r.source_id}/page/${r.pdf_page}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <BookOpen size={13} />
-              <span>
-                {r.source_id} · PDF 第 {r.pdf_page} 页<small>{r.locator}</small>
-              </span>
-              <ArrowUpRight size={13} />
-            </a>
-          ) : (
-            <a href={r.code_url} target="_blank" rel="noreferrer">
-              <FileText size={13} />
-              <span>
-                {r.locator?.startsWith("backend/") ? "本项目" : r.source_id} ·{" "}
-                {r.locator}
-              </span>
-              <ArrowUpRight size={13} />
-            </a>
-          )}
-        </React.Fragment>
-      ))}
-    </div>
-  );
 }
 function CourseUniverse({ chapters, knowledge, read, choose }) {
   return (

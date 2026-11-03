@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Cpu,
   ExternalLink,
@@ -12,23 +12,26 @@ import {
 } from "lucide-react";
 import "./models.css";
 import { useAccount } from "./account";
-const request = async (path, body) => {
+const request = async (path, body, signal) => {
   const r = await fetch("/api" + path, {
     method: body ? "POST" : "GET",
     headers: { "Content-Type": "application/json" },
+    signal,
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const data = await r.json();
   if (!r.ok)
-    throw Error(
+    throw Object.assign(Error(
       typeof data.detail === "string"
         ? data.detail
         : JSON.stringify(data.detail),
-    );
+    ), {code:data.code || r.headers.get('X-Ocean-Provider-Code'),diagnostic:data.diagnostic});
   return data;
 };
 export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
   const personalAccount = useAccount();
+  const activeRequest = useRef(null);
+  const [elapsed, setElapsed] = useState(0);
   const [catalog, setCatalog] = useState(null),
     [profiles, setProfiles] = useState({}),
     [action, setAction] = useState(""),
@@ -44,9 +47,20 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
       .catch((e) => notify(e.message));
   }, [cfg.api_key_set]);
   useEffect(() => {
+    activeRequest.current?.abort();
+    activeRequest.current = null;
+    setAction("");
     setResult(null);
     setAccount(null);
   }, [cfg.provider, cfg.model, cfg.base_url, cfg.api_key]);
+  useEffect(() => () => activeRequest.current?.abort(), []);
+  useEffect(() => {
+    if(action !== "test") return;
+    const started = Date.now();
+    setElapsed(0);
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now()-started)/1000)), 1000);
+    return () => clearInterval(timer);
+  }, [action]);
   if (!catalog)
     return (
       <section className="panel model-panel">正在载入供应商模型目录…</section>
@@ -70,6 +84,9 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
     setCustom(false);
   }
   async function run(type) {
+    const controller = new AbortController();
+    activeRequest.current?.abort();
+    activeRequest.current = controller;
     setAction(type);
     setResult(null);
     try {
@@ -78,13 +95,17 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
         base_url: cfg.base_url,
         model: cfg.model,
         api_key: cfg.api_key || "",
-      });
+      }, controller.signal);
+      if(activeRequest.current !== controller) return;
       if (type === "list") setAccount(data);
       else setResult({ ok: true, ...data });
     } catch (e) {
-      setResult({ ok: false, note: e.message });
+      if(activeRequest.current === controller) setResult({ ok: false, note:e.name === "AbortError" ? "已停止本次测试，尚未验证模型生成。" : e.message, code:e.code, diagnostic:e.diagnostic });
     } finally {
-      setAction("");
+      if(activeRequest.current === controller) {
+        activeRequest.current = null;
+        setAction("");
+      }
     }
   }
   async function clearKeys() {
@@ -291,8 +312,8 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
             </button>
           </div>
           <p className="model-test-hint">
-            测试会发起一次短模型调用，可能消耗少量
-            Token。未测试时不标记为已可用。
+            {action === "test" ? `正在等待真实回答（${elapsed} 秒）。供应商可能排队，最多等待 180 秒。` : "测试会发起一次短模型调用，可能消耗少量 Token；模型列表返回不代表生成调用成功。"}
+            {action === "test" && <button type="button" onClick={() => activeRequest.current?.abort()}>停止测试</button>}
           </p>
           {result && (
             <div
@@ -302,6 +323,7 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
             >
               <strong>{result.ok ? "当前模型调用通过" : "连接尚未通过"}</strong>
               <p>{result.note}</p>
+              {!result.ok && result.code && <small>诊断代码：{result.code}{result.diagnostic?.finish_reason ? ` · finish_reason=${result.diagnostic.finish_reason}` : ""}</small>}
               {result.ok && (
                 <small>
                   请求 {result.requested_model}

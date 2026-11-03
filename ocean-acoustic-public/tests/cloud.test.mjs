@@ -63,10 +63,10 @@ test('DeepSeek connection test disables thinking while normal chat keeps model o
   assert.equal(checked.r.status,200);
   assert.equal(sent[0].url,'https://api.deepseek.com/chat/completions');
   assert.equal(sent[0].body.model,'deepseek-flash');
-  assert.equal(sent[0].body.max_tokens,64);
+  assert.equal(sent[0].body.max_tokens,256);
   assert.equal(sent[0].body.stream,false);
   assert.deepEqual(sent[0].body.thinking,{type:'disabled'});
-  assert.equal(sent[0].body.reasoning_effort,'none');
+  assert.equal(sent[0].body.reasoning_effort,undefined);
   await s.call('/api/config','PUT',deepseekTestConfig,a.cookie);
   const chat=await s.call('/api/chat','POST',{message:'Munk 声速剖面'},a.cookie);
   assert.equal(chat.r.status,200);

@@ -79,12 +79,59 @@ export async function providerFetch(cfg,path,options={},fetcher=fetch){
   throw transportError(`云端连接供应商失败（${name}）：${safeNetworkMessage(error,cfg)}`,'PROVIDER_NETWORK');
  }finally{if(!transferred)cleanup()}
 }
-async function remote(cfg,catalog,body,fetcher,signal){
+function completionDiagnostic(data,cfg,responseFormat='json'){
+ // Whitelisted metadata only: no raw provider body, reasoning, URLs or headers.
+ const model=typeof data?.model==='string'&&data.model.length<=160&&/^[A-Za-z0-9][A-Za-z0-9_.:/-]*$/.test(data.model)&&(!cfg.api_key||!data.model.includes(cfg.api_key))?data.model:null;
+ const reason=data?.choices?.[0]?.finish_reason;
+ return {response_format:responseFormat,response_model:model,finish_reason:['stop','length','content_filter','tool_calls','function_call','insufficient_system_resource'].includes(reason)?reason:null,reasoning_only:!!data?.choices?.[0]?.message?.reasoning_content&&!String(data?.choices?.[0]?.message?.content||'').trim()};
+}
+function completionError(message,code,data,cfg,responseFormat){
+ const error=transportError(message,code);error.diagnostic=completionDiagnostic(data,cfg,responseFormat);return error;
+}
+async function readCompletionResponse(response,cfg,body,signal){
+ let text;
+ try{text=await response.text()}catch(error){
+  if(error.status===502||error.code==='CANCELLED')throw error;
+  throw transportError('供应商响应读取中断，尚未收到完整回答；请重试。','PROVIDER_NETWORK');
+ }
+ text=text.replace(/^\uFEFF/,'').trim();
+ if(!text)throw completionError('供应商返回 HTTP 200，但响应为空，未完成模型调用。','PROVIDER_EMPTY_RESPONSE',null,cfg,'empty');
+ if(text.length>4194304)throw completionError('供应商响应超过安全读取上限，未完成模型调用。','PROVIDER_RESPONSE_TOO_LARGE',null,cfg,'oversized');
+ // Some compatible gateways return SSE even for stream:false. Accept complete
+ // text streams for a text request; never mistake keepalive frames for a reply.
+ if(/^(?:data:|:)/.test(text)){
+  if(body.tools?.length)throw completionError('供应商对非流式工具请求返回了事件流，请核对接口兼容性。','PROVIDER_UNEXPECTED_STREAM',null,cfg,'event_stream');
+  try{
+   const stream=await readProviderStream(new Response(text+'\n\n',{headers:{'content-type':'text/event-stream'}}),async()=>{},signal);
+   return {model:stream.model,usage:stream.usage,choices:[{message:{content:stream.reply},finish_reason:stream.finish_reason}],_response_format:'event_stream'};
+  }catch(error){
+   if(error.status===502||error.code==='CANCELLED')throw error;
+   throw completionError('供应商返回了事件流，但未收到完整的文字回答。','PROVIDER_INCOMPLETE_STREAM',null,cfg,'event_stream');
+  }
+ }
+ let data;
+ try{data=JSON.parse(text)}catch{
+  const html=/^</.test(text);
+  throw completionError(html?'供应商返回 HTTP 200，但内容为网页而非模型 JSON；请核对服务状态与接口。':'供应商返回 HTTP 200，但响应不是完整的 Chat Completions JSON；请重试。',html?'PROVIDER_HTML_RESPONSE':'PROVIDER_JSON_INVALID',null,cfg,html?'html':'invalid_json');
+ }
+ if(data?.error)throw completionError('供应商返回 HTTP 200，但响应包含错误，模型调用未完成。','PROVIDER_ERROR_PAYLOAD',data,cfg,'json');
+ if(!data?.choices?.[0]?.message||typeof data.choices[0].message!=='object')throw completionError('供应商响应未包含 Chat Completions 的消息结构。','PROVIDER_MESSAGE_MISSING',data,cfg,'json');
+ return data;
+}
+function connectionReply(data,cfg){
+ const choice=data.choices[0],content=choice.message.content,diagnostic=completionDiagnostic(data,cfg,data._response_format||'json');
+ if(typeof content!=='string'||!content.trim()){
+  const message=diagnostic.reasoning_only?'供应商只返回了思考内容，没有最终文字回答；本次测试未通过。':diagnostic.finish_reason==='content_filter'?'供应商过滤了测试回答，尚未验证文字生成。':'供应商接受了请求，但没有返回文字回答；本次测试未通过。';
+  throw completionError(diagnostic.finish_reason==='length'?message+' 输出预算已耗尽（finish_reason=length）。':message,'PROVIDER_EMPTY_CONTENT',data,cfg,diagnostic.response_format);
+ }
+ if(diagnostic.finish_reason==='length'||diagnostic.finish_reason==='content_filter')throw completionError('供应商返回的测试回答未完成（finish_reason='+diagnostic.finish_reason+'）；本次测试未通过。','PROVIDER_INCOMPLETE_COMPLETION',data,cfg,diagnostic.response_format);
+ return {reply:content.slice(0,200),...diagnostic};
+}
+async function remote(cfg,catalog,body,fetcher,signal,transport={}){
  cfg=validateConnection(cfg,catalog);
  const options=catalog.models.find(m=>m.provider===cfg.provider&&m.id===cfg.model)?.request_options||{};
-  const r=await providerFetch(cfg,'/chat/completions',{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,model:cfg.model,...options})},fetcher);
-  if(!r.ok)throw await providerResponseError(r);let data;try{data=await r.json()}catch{throw new Error('供应商响应格式不兼容')}
-  if(!data.choices?.[0]?.message)throw new Error('供应商响应缺少文字消息');return data;
+  const r=await providerFetch(cfg,'/chat/completions',{...transport,method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({...options,...body,model:cfg.model})},fetcher);
+  if(!r.ok)throw await providerResponseError(r);return readCompletionResponse(r,cfg,body,signal);
 }
 async function remoteStream(cfg,catalog,body,fetcher,onDelta,signal){
  const controller=new AbortController(),abort=()=>controller.abort(),timer=setTimeout(()=>controller.abort(),90000);
@@ -197,8 +244,11 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
      const r=await providerFetch(selected,'/models',{timeoutMs:25000},fetcher);
      if(!r.ok)return finish(json({detail:`供应商返回 HTTP ${r.status}：${providerError(r.status)}`},502));const payload=await r.json();if(!Array.isArray(payload.data))throw Error('模型目录格式不兼容');const ids=payload.data.slice(0,500).map(x=>String(x.id));return finish(json({ids,selected_listed:ids.includes(selected.model),note:'目录表示账户接口返回，实际调用仍需额度和权限。'}));
     }
-    const testBody={messages:[{role:'user',content:'Reply with OK.'}],max_tokens:256,stream:false};if(provider==='DeepSeek')Object.assign(testBody,{max_tokens:64,thinking:{type:'disabled'},reasoning_effort:'none'});
-    const data=await remote(selected,catalog,testBody,fetcher);return finish(json({ok:true,provider,requested_model:selected.model,response_model:data.model||selected.model,reply:(data.choices[0].message.content||'').slice(0,200),usage:data.usage||{},note:'短请求已通过。请点击“保存并应用配置”后在知识问答中使用。'}));
+    const testBody={messages:[{role:'user',content:'Reply with OK.'}],max_tokens:256,stream:false};if(provider==='DeepSeek')Object.assign(testBody,{thinking:{type:'disabled'}});
+    // Providers may send HTTP 200 + whitespace while a completion is queued.
+    // A model-list success cannot establish inference availability. Give this
+    // explicit probe its own bounded queue budget, and propagate browser cancel.
+    const data=await remote(selected,catalog,testBody,fetcher,request.signal,{timeoutMs:180000}),checked=connectionReply(data,selected);return finish(json({ok:true,provider,requested_model:selected.model,...checked,usage:data.usage||{},note:'已收到真实文字回答，当前模型调用通过。请保存并应用配置后在知识问答中使用；此测试不表示 Agent 工具已验证。'}));
    }
    const message=String(body.message||'');if(message.length<1||message.length>12000)throw Error('问题长度须为 1–12000 字符');if(!['chat','agent',undefined].includes(body.mode))throw Error('未知对话模式');
    const provider=body.provider||cfg.provider;
@@ -237,7 +287,7 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     const actualPolicy=answerPolicy(evidence,knowledgeScope,body.mode,message);Object.assign(policy,actualPolicy);
     if(!actualPolicy.can_generate)reply=actualPolicy.coverage_notice;
     else if(onDelta){const data=await remoteStream(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher,onDelta,signal);reply=data.reply;used=true;responseModel=data.model;finishReason=data.finish_reason;contextMetadata=withProviderUsage(packed.context,data.usage)}
-    else{const data=await remote(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher,signal);reply=data.choices[0].message.content||'模型未返回文字内容';used=true;responseModel=typeof data.model==='string'?data.model:null;finishReason=data.choices[0].finish_reason||null;contextMetadata=withProviderUsage(packed.context,data.usage)}
+    else{const data=await remote(selected,catalog,{messages:packed.messages,max_tokens:4096},fetcher,signal);reply=data.choices[0].message.content;if(typeof reply!=='string'||!reply.trim())throw completionError('供应商没有返回有效文字回答，本次生成未完成；请重试。','PROVIDER_EMPTY_CONTENT',data,selected,data._response_format||'json');used=true;responseModel=typeof data.model==='string'?data.model:null;finishReason=data.choices[0].finish_reason||null;contextMetadata=withProviderUsage(packed.context,data.usage)}
    }
    const methods=[...new Set(evidence.flatMap(c=>Array.isArray(c.retrieval?.methods)?c.retrieval.methods:c.retrieval?.method==='bm25+curated-graph'?['BM25','bilingual_term_aliases','typed_graph_context','concept_priority']:c.retrieval?.method==='bm25+editorial-bilingual-aliases'?['BM25','editorial_bilingual_topic_aliases']:c.retrieval?.method?[c.retrieval.method]:[]))];
    const scope=[...new Set(evidence.map(c=>c.evidence_type==='public_web_excerpt'?'公开网页快照':c.evidence_type==='public_reference_guide'?'项目参考导读':c.evidence_type==='source_excerpt'?'教材原文片段':'课程知识卡'))].join('、')||'未提供资料片段';
@@ -254,6 +304,6 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
     },{signal:request.signal,onCancel:()=>chats.abandon(token,'cancelled')}));
    }
    try{return finish(json(await execute(null,request.signal)))}catch(error){await chats.abandon(token,error.code==='CANCELLED'?'cancelled':'failed');throw error}
-  }catch(e){const msg=String(e.message||'').slice(0,220);const status=[400,403,404,405,409,413,422,429,502,503,504].includes(e.status)?e.status:msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{}),...(e.context?{context:e.context}:{})},status))}
+  }catch(e){const msg=String(e.message||'').slice(0,220);const status=[400,403,404,405,409,413,422,429,502,503,504].includes(e.status)?e.status:msg.startsWith('供应商')||msg.includes('连接')||msg.includes('响应')?502:422;return finish(json({detail:msg.startsWith('Unexpected')||e instanceof SyntaxError?'请求必须是有效 JSON':msg||'请求未完成',...(e.code?{code:e.code}:{}),...(e.context?{context:e.context}:{}),...(e.diagnostic?{diagnostic:e.diagnostic}:{})},status))}
  };
 }

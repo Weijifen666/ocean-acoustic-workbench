@@ -10,7 +10,7 @@
   border-radius: 10px;
   text-align: left;
   color: #536f81;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   text-decoration: none;
 }
 .account-badge > span:not(.account-avatar) {
@@ -22,7 +22,7 @@
 }
 .account-badge small {
   display: block;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-font-scale, 1.18));
   color: #536f81;
   line-height: 1.8;
   margin-top: 2px;
@@ -35,10 +35,10 @@
   border-radius: 8px;
   background: #e1f0f8;
   color: #536f81;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .account-badge.checking {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   background: transparent;
   border: 0;
   color: #536f81;
@@ -62,13 +62,13 @@
   border-radius: 24px;
 }
 .workspace-login h1 {
-  font-size: 25px;
+  font-size: calc(25px * var(--ui-font-scale, 1.18));
   color: #50768f;
   margin: 12px 0 15px;
   font-weight: 600;
 }
 .workspace-login p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   color: #536f81;
 }
@@ -78,11 +78,11 @@
   gap: 8px;
   border-radius: 10px;
   padding: 11px 17px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   text-decoration: none;
 }
 .workspace-login > small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #536f81;
 }
 .research-heading {
@@ -93,13 +93,13 @@
   gap: 15px;
 }
 .research-heading h1 {
-  font-size: 24px;
+  font-size: calc(24px * var(--ui-font-scale, 1.18));
   margin: 7px 0;
   color: #466d87;
   font-weight: 600;
 }
 .research-heading p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin: 0;
 }
@@ -138,7 +138,7 @@
   gap: 8px;
   padding: 10px;
   width: 100%;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   text-decoration: none;
   text-align: left;
@@ -169,7 +169,7 @@
   justify-content: space-between;
   padding: 0 7px 13px;
   color: #536f81;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .research-list > header > button {
   display: grid;
@@ -200,19 +200,19 @@
   flex: 1;
 }
 .workspace-item strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
 .workspace-item small {
   display: block;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin-top: 5px;
 }
 .workspace-empty-list {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #536f81;
   margin: 15px 8px;
@@ -227,7 +227,7 @@
   width: 100%;
   min-width: 0;
   padding: 9px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   background: #fbfdff;
   border: 1px solid #e0edf5;
   resize: vertical;
@@ -235,7 +235,7 @@
 .workspace-create > button {
   border-radius: 8px;
   padding: 8px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .workspace-list-loading {
   color: #536f81;
@@ -257,13 +257,13 @@
   gap: 15px;
 }
 .research-project-title h2 {
-  font-size: 20px;
+  font-size: calc(20px * var(--ui-font-scale, 1.18));
   font-weight: 600;
   color: #50758f;
   margin: 0 0 7px;
 }
 .research-project-title p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin: 0;
   line-height: 1.8;
@@ -272,7 +272,7 @@
   padding: 8px 10px;
   gap: 5px;
   border-radius: 8px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   white-space: nowrap;
 }
 .research-members {
@@ -287,7 +287,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #536f81;
 }
 .research-members i {
@@ -301,7 +301,7 @@
   place-items: center;
 }
 .research-members small {
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-font-scale, 1.18));
   color: #536f81;
 }
 .research-note-form {
@@ -316,7 +316,7 @@
 .research-note-form label {
   display: grid;
   gap: 7px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #536f81;
 }
 .research-note-form input,
@@ -327,14 +327,14 @@
   border: 1px solid #dfebf4;
   background: #fff;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #536f81;
   resize: vertical;
 }
 .research-note-form .research-body-input {
   min-height: 190px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .research-source-fields {
   display: grid;
@@ -351,7 +351,7 @@
   gap: 10px;
 }
 .research-note-form footer small {
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-font-scale, 1.18));
   color: #536f81;
   line-height: 1.9;
 }
@@ -361,7 +361,7 @@
   gap: 10px;
 }
 .research-note-form footer button {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #536f81;
   white-space: nowrap;
 }
@@ -384,13 +384,13 @@
 }
 .research-empty h2,
 .research-empty h3 {
-  font-size: 17px;
+  font-size: calc(17px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin: 0;
   font-weight: 500;
 }
 .research-empty p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   line-height: 1.9;
   margin: 0;
@@ -410,14 +410,14 @@
   color: #536f81;
 }
 .research-artifact-heading strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   color: #536f81;
   font-weight: 500;
   line-height: 1.8;
   display: block;
 }
 .research-artifact-heading small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin-top: 5px;
   display: block;
@@ -426,10 +426,10 @@
   padding: 4px 4px 17px;
 }
 .research-artifact-body .answer-markdown {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .research-source-note {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   line-height: 1.9;
   white-space: pre-wrap;
@@ -442,7 +442,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin-top: 8px;
 }
@@ -459,7 +459,7 @@
   gap: 10px;
 }
 .research-inline h2 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin: 0 0 7px;
 }
@@ -468,7 +468,7 @@
   padding: 5px;
 }
 .research-inline > p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #536f81;
   line-height: 1.8;
 }
@@ -476,7 +476,7 @@
   display: grid;
   gap: 7px;
   color: #536f81;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   margin: 12px 0;
 }
 .research-inline input {
@@ -484,12 +484,12 @@
   border: 1px solid #dfeaf3;
   background: #fbfdff;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .research-inline > .btn-regular {
   padding: 8px 13px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .invite-token {
   display: flex;
@@ -504,7 +504,7 @@
   flex: 1;
   min-width: 0;
   font:
-    10px/1.7 Consolas,
+    calc(10px * var(--ui-font-scale, 1.18))/1.7 Consolas,
     monospace;
   overflow-wrap: anywhere;
   color: #536f81;
@@ -513,12 +513,12 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #536f81;
   white-space: nowrap;
 }
 .revoke-invite {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #536f81;
   margin-top: 10px;
 }
@@ -527,7 +527,7 @@
   border-radius: 8px;
   background: #fff7f2;
   color: #536f81;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   margin: 0 0 15px;
   line-height: 1.8;
 }
@@ -536,12 +536,12 @@
   align-items: center;
   gap: 5px;
   color: #536f81;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   margin-top: 12px;
   padding: 5px 0;
 }
 .answer-completion-notice {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #536f81;
   padding: 8px 10px;
@@ -573,10 +573,10 @@
     padding: 11px 4px 18px;
   }
   .research-heading h1 {
-    font-size: 22px;
+    font-size: calc(22px * var(--ui-font-scale, 1.18));
   }
   .research-heading p {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .research-layout {
     display: flex;
@@ -604,10 +604,10 @@
     min-height: 400px;
   }
   .workspace-login h1 {
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-font-scale, 1.18));
   }
   .workspace-login p {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .workspace-login p br {
     display: none;
@@ -626,10 +626,10 @@
     align-self: flex-end;
   }
   .research-project-title h2 {
-    font-size: 18px;
+    font-size: calc(18px * var(--ui-font-scale, 1.18));
   }
   .research-project-title > button {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
     padding: 7px;
   }
   .research-inline {
@@ -640,6 +640,6 @@
     flex-direction: column;
   }
   .research-empty p {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
 }

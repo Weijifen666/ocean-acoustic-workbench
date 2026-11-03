@@ -3,7 +3,7 @@
   color: #203742;
   background: #f4f7f8;
   font-synthesis: none;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 * {
   box-sizing: border-box;
@@ -66,17 +66,17 @@ p {
   margin-top: 0;
 }
 h1 {
-  font-size: 25px;
+  font-size: calc(25px * var(--ui-font-scale, 1.18));
   letter-spacing: -0.7px;
   margin: 9px 0 8px;
   font-weight: 650;
 }
 h2 {
-  font-size: 19px;
+  font-size: calc(19px * var(--ui-font-scale, 1.18));
   margin: 8px 0;
 }
 h3 {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   font-weight: 600;
 }
 .app {
@@ -99,7 +99,7 @@ h3 {
   gap: 10px;
   align-items: center;
   padding: 0 5px;
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-font-scale, 1.18));
   font-weight: 650;
   color: white;
 }
@@ -115,14 +115,14 @@ h3 {
 .brand div span {
   display: block;
   color: #91afb9;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   font-weight: 400;
   letter-spacing: 1.4px;
   margin-top: 5px;
 }
 .side-label {
   text-transform: uppercase;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   letter-spacing: 1px;
   color: #819da9;
   margin: 42px 12px 14px;
@@ -137,7 +137,7 @@ h3 {
   border-radius: 7px;
   color: #aec6cf;
   margin: 4px 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   transition: 0.15s;
 }
 .nav-item:hover {
@@ -152,7 +152,7 @@ h3 {
   color: #72d4d0;
 }
 .nav-count {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   margin-left: auto;
   border-radius: 4px;
   background: #2c646c;
@@ -165,13 +165,13 @@ h3 {
   padding: 21px 10px;
   display: flex;
   gap: 9px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #b7cbd2;
 }
 .sidebar-note span {
   display: block;
   color: #7898a7;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   margin-top: 7px;
 }
 .side-bottom {
@@ -181,7 +181,7 @@ h3 {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   padding: 16px 11px 9px;
 }
 .local-status small {
@@ -189,7 +189,7 @@ h3 {
   color: #7994a0;
 }
 .team {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #7e9ba7;
   padding: 5px 11px;
   line-height: 1.7;
@@ -212,7 +212,7 @@ header {
   gap: 12px;
   align-items: center;
   color: #8b9ba2;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .breadcrumb strong {
   font-weight: 500;
@@ -222,7 +222,7 @@ header {
   display: flex;
   gap: 22px;
   align-items: center;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #6d838d;
 }
 .header-status > span,
@@ -259,14 +259,14 @@ main {
   margin-bottom: 25px;
 }
 .eyebrow {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   font-weight: 650;
   color: #6e939b;
   letter-spacing: 1.6px;
 }
 .page-title p {
   margin-bottom: 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #81939b;
 }
 .page-actions {
@@ -284,7 +284,7 @@ main {
   border-radius: 6px;
   background: #fff;
   color: #49616d;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   white-space: nowrap;
   transition: 0.15s;
 }
@@ -313,7 +313,7 @@ main {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #63828b;
 }
 .summary-chip span {
@@ -329,7 +329,7 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   font-weight: 600;
   min-height: 49px;
   padding: 16px 20px;
@@ -342,7 +342,7 @@ main {
   gap: 8px;
 }
 .panel-heading span:not(:first-child) {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #94a6ae;
   font-weight: 400;
 }
@@ -375,7 +375,7 @@ main {
   min-width: 0;
   background: none;
   border: 0;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #3b5560;
   box-shadow: none;
 }
@@ -388,7 +388,7 @@ main {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   text-align: left;
   padding: 10px;
   border-radius: 5px;
@@ -412,11 +412,11 @@ main {
   display: inline-block;
 }
 .categories small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #97a9b1;
 }
 .index-label {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   letter-spacing: 0.5px;
   color: #99aab1;
   padding: 17px 19px 7px;
@@ -436,14 +436,14 @@ main {
   padding: 11px 9px;
   text-align: left;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .node-list button > span {
   flex: 1;
 }
 .node-list button small {
   display: block;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a8b7bd;
   margin-top: 4px;
 }
@@ -456,7 +456,7 @@ main {
   color: #087880;
 }
 .index-foot {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #96a9b2;
   display: flex;
   gap: 6px;
@@ -476,7 +476,7 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #65838d;
   z-index: 2;
   padding: 17px 17px;
@@ -492,7 +492,7 @@ main {
   display: flex;
   gap: 5px;
   align-items: center;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .graph-toolbar input {
   accent-color: #13838a;
@@ -528,7 +528,7 @@ main {
   display: flex;
   gap: 15px;
   color: #8097a0;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .graph-legend span {
   display: flex;
@@ -540,7 +540,7 @@ main {
   bottom: 15px;
   left: 17px;
   color: #99abb3;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .node-detail {
   padding: 21px 19px;
@@ -552,7 +552,7 @@ main {
   color: #a1b5bd;
 }
 .tag {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   background: #edf7f6;
   padding: 4px 7px;
   border-radius: 4px;
@@ -564,11 +564,11 @@ main {
   color: #ac8044;
 }
 .node-detail h2 {
-  font-size: 20px;
+  font-size: calc(20px * var(--ui-font-scale, 1.18));
   margin-top: 14px;
 }
 .node-id {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9aadb5;
   font-family: Consolas, monospace;
   margin: 0 0 22px;
@@ -581,7 +581,7 @@ main {
   display: flex;
   justify-content: space-between;
   color: #68818b;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   letter-spacing: 0.4px;
   margin-bottom: 12px;
 }
@@ -589,13 +589,13 @@ main {
   font-weight: 400;
 }
 .claim p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   color: #3d5864;
   margin-bottom: 9px;
 }
 .conditions {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #8a9da6;
   line-height: 1.7;
   border-left: 2px solid #dceae9;
@@ -606,7 +606,7 @@ main {
   display: flex;
   gap: 5px;
   align-items: center;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   line-height: 1.6;
   flex-wrap: wrap;
 }
@@ -621,13 +621,13 @@ main {
   align-items: center;
 }
 .related small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9bacb4;
   display: block;
   margin-bottom: 4px;
 }
 .related span {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .source-image {
   width: 100%;
@@ -651,7 +651,7 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 8px;
+  font-size: calc(8px * var(--ui-font-scale, 1.18));
   line-height: 1.5;
   color: #839aa3;
   padding: 8px;
@@ -668,7 +668,7 @@ main {
   border-radius: 6px;
   padding: 12px;
   margin-bottom: 15px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .relation-card p {
   margin: 7px 0;
@@ -692,7 +692,7 @@ main {
   gap: 12px;
   z-index: 200;
   max-width: 70vw;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .toast button {
   color: #d0e1e5;
@@ -721,7 +721,7 @@ main {
   justify-content: space-between;
   align-items: center;
   padding: 4px 2px 14px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   color: #65828e;
 }
 .modal-title button {
@@ -751,7 +751,7 @@ main {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #8197a1;
   border-radius: 5px;
 }
@@ -781,7 +781,7 @@ main {
   justify-content: space-between;
   gap: 16px;
   padding: 17px 15px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #607b89;
 }
@@ -806,19 +806,19 @@ main {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .user .avatar {
   background: #edf0f6;
   color: #7381a4;
 }
 .message-label {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #90a4af;
   margin: 2px 0 9px;
 }
 .message-text {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   white-space: pre-wrap;
   color: #3e5a68;
@@ -840,7 +840,7 @@ main {
   height: 66px;
   background: none;
   line-height: 1.7;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   color: #3d5b69;
 }
 .composer > div {
@@ -852,13 +852,13 @@ main {
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #93a7af;
 }.thinking {
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #6295a0;
   padding: 10px;
 }
@@ -908,15 +908,15 @@ main {
 }
 .template-card h3 {
   margin: 0 0 7px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .template-card p {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #7c9aa4;
   margin: 0 0 3px;
 }
 .template-card small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #91abb3;
 }
 .template-card > svg {
@@ -926,7 +926,7 @@ main {
 .inline-note {
   display: flex;
   gap: 7px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a18655;
   background: #fffaf1;
   border: 1px solid #f0e9d9;
@@ -952,12 +952,12 @@ main {
 .field > span {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #587482;
   margin-bottom: 9px;
 }
 .field small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9daeb7;
 }
 .field input,
@@ -969,11 +969,11 @@ main {
   padding: 10px 11px;
   color: #3d5867;
   min-width: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .field em {
   font-style: normal;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a0b0b9;
   display: block;
   margin-top: 7px;
@@ -988,7 +988,7 @@ main {
   margin-top: 27px;
 }
 .form-footer span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a0b1b9;
 }
 .plan-panel {
@@ -999,13 +999,13 @@ main {
   padding-right: 0;
 }
 .case-number {
-  font-size: 42px;
+  font-size: calc(42px * var(--ui-font-scale, 1.18));
   color: #0b808b;
   font-weight: 500;
   margin: 25px 0;
 }
 .case-number span {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #8ca2ac;
   margin-left: 10px;
 }
@@ -1015,13 +1015,13 @@ main {
   align-items: center;
   padding: 13px 0;
   border-bottom: 1px solid #edf1f3;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #5e7e8c;
 }
 .case-list small {
   font-family: Consolas, monospace;
   color: #a5b6be;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .case-list span:last-child {
   margin-left: auto;
@@ -1032,7 +1032,7 @@ main {
 .plan-notes p {
   display: flex;
   gap: 7px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #92a4ad;
   margin-bottom: 10px;
   line-height: 1.7;
@@ -1043,7 +1043,7 @@ main {
 }
 .plan-foot {
   margin-top: 22px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a1b2bb;
   display: flex;
   gap: 6px;
@@ -1066,7 +1066,7 @@ main {
   margin: 0;
 }
 .empty p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   max-width: 360px;
   margin: 0;
 }
@@ -1103,15 +1103,15 @@ main {
   margin-bottom: 8px;
 }
 .job-list strong {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   font-weight: 500;
 }
 .job-list small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9aaeb8;
 }
 .badge {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   padding: 4px 7px;
   border-radius: 4px;
   background: #eef2f6;
@@ -1150,7 +1150,7 @@ main {
   align-items: center;
 }
 .job-detail-header h2 {
-  font-size: 19px;
+  font-size: calc(19px * var(--ui-font-scale, 1.18));
   margin: 9px 0 0;
 }
 .job-actions {
@@ -1161,12 +1161,12 @@ main {
 }
 .job-actions > span {
   margin-right: auto;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #90a6b1;
 }
 .job-actions .button {
   padding: 7px 9px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .tabs {
   display: flex;
@@ -1175,7 +1175,7 @@ main {
   border-bottom: 1px solid #e6edef;
 }
 .tabs button {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding: 14px 1px;
   color: #89a0ac;
   border-bottom: 2px solid transparent;
@@ -1200,12 +1200,12 @@ main {
 }
 .result-metrics span {
   display: block;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #8fa4af;
   margin-bottom: 10px;
 }
 .result-metrics strong {
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   color: #396574;
 }
@@ -1223,7 +1223,7 @@ main {
   display: block;
 }
 .result-note {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a0adb5;
   line-height: 1.7;
   margin-bottom: 0;
@@ -1232,7 +1232,7 @@ main {
   margin: 0;
   white-space: pre-wrap;
   font:
-    11px/1.9 Consolas,
+    calc(11px * var(--ui-font-scale, 1.18))/1.9 Consolas,
     "Microsoft YaHei",
     monospace;
   color: #4c737f;
@@ -1246,7 +1246,7 @@ main {
   min-height: 360px;
   color: #b9d8da;
   background: #14333f;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .artifact-list {
   padding: 18px 23px;
@@ -1257,13 +1257,13 @@ main {
   align-items: center;
   padding: 13px;
   border-bottom: 1px solid #eaf0f2;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .artifact-list a svg:last-child {
   margin-left: auto;
 }
 .project-root {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #8c9eaa;
   display: flex;
   align-items: center;
@@ -1277,7 +1277,7 @@ main {
 }
 .project-root span {
   margin-left: auto;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #86a6ad;
   white-space: nowrap;
 }
@@ -1297,7 +1297,7 @@ main {
   gap: 10px;
   padding: 13px 10px;
   width: 100%;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   text-align: left;
   border-radius: 5px;
   color: #7894a1;
@@ -1309,7 +1309,7 @@ main {
   gap: 9px;
 }
 .file-list small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #afbdc4;
 }
 .file-list .selected {
@@ -1327,7 +1327,7 @@ main {
   user-select: none;
 }
 .editor-foot {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a8b6be;
   padding: 13px 20px;
   border-top: 1px solid #e6eef0;
@@ -1349,7 +1349,7 @@ main {
   margin-bottom: 19px;
 }
 .settings-panel .field input {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .settings-panel .inline-note {
   margin-top: 5px;
@@ -1372,13 +1372,13 @@ main {
   color: #6cac9e;
 }
 .check-item strong {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   color: #65808e;
 }
 .check-item small {
   display: block;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #a2b0b7;
   overflow-wrap: anywhere;
   margin-top: 6px;
@@ -1386,7 +1386,7 @@ main {
 }
 .check-item > span {
   margin-left: auto;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   white-space: nowrap;
 }
 .ok {
@@ -1405,7 +1405,7 @@ main {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 th {
   font-weight: 500;
@@ -1427,7 +1427,7 @@ td:nth-child(2) {
 td small {
   display: block;
   color: #a8b6bf;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   margin-top: 6px;
 }
 ::-webkit-scrollbar {
@@ -1482,7 +1482,7 @@ td small {
     gap: 10px;
   }
   .page-title h1 {
-    font-size: 23px;
+    font-size: calc(23px * var(--ui-font-scale, 1.18));
   }
   .jobs-layout {
     grid-template-columns: 230px 1fr;
@@ -1576,13 +1576,13 @@ td small {
     gap: 15px;
   }
   .page-title h1 {
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-font-scale, 1.18));
   }
   .header-status > span {
     display: none;
   }
   .breadcrumb {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
     gap: 7px;
   }
   .graph-layout {
@@ -1616,7 +1616,7 @@ td small {
   .node-list button {
     width: auto;
     padding: 8px;
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .node-list button small {
     display: none;
@@ -1666,7 +1666,7 @@ td small {
     grid-template-columns: 1fr;
   }
   .project-root {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
   }
   .project-root span {
     display: none;
@@ -1688,7 +1688,7 @@ td small {
     padding: 13px;
   }
   .page-title .description {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
 }
 
@@ -1715,10 +1715,10 @@ td small {
   }
   .header-status button {
     max-width: 160px;
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
   }
   .page-title h1 {
-    font-size: 20px;
+    font-size: calc(20px * var(--ui-font-scale, 1.18));
   }
   .graph-page {
     min-width: 0;

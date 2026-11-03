@@ -65,11 +65,11 @@ export default function MatlabPanel({ cfg, setCfg, onSave, busy, notify }) {
             <Terminal size={20} />
             MATLAB 与声学计算工具箱
           </h2>
-          <p>配置本机 MATLAB 内核与 Acoustics Toolbox (AT) 路径，支持一键自检与候选路径自动探测。</p>
+          <p>配置本机 MATLAB 内核与 Acoustics Toolbox (AT) 路径，支持程序与文件路径检查及候选路径探测。此检查不启动 MATLAB；许可证和计算是否可用，需通过实际运行确认。</p>
         </div>
         <span className={'matlab-status-badge ' + (isReady ? 'ready' : 'pending')}>
           {isReady ? <ShieldCheck size={14} /> : <AlertCircle size={14} />}
-          {isReady ? '计算环境已就绪' : '等待检测或配置'}
+          {isReady ? '基础路径检查通过' : '等待路径检查'}
         </span>
       </div>
 
@@ -99,7 +99,7 @@ export default function MatlabPanel({ cfg, setCfg, onSave, busy, notify }) {
               </button>
             ))
           ) : (
-            <span style={{ fontSize: 11, color: '#889ea8' }}>未探测到常见目录下的 MATLAB，请在下方直接输入完整路径</span>
+            <span style={{ fontSize: 14, color: '#889ea8' }}>未探测到常见目录下的 MATLAB，请在下方直接输入完整路径</span>
           )}
 
           {detected?.detected_toolbox && detected.detected_toolbox.length > 0 ? (
@@ -170,7 +170,7 @@ export default function MatlabPanel({ cfg, setCfg, onSave, busy, notify }) {
       <div className="matlab-actions-row">
         <button className="matlab-test-btn" disabled={checking} onClick={runCheck}>
           {checking ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
-          {checking ? '正在检测计算环境…' : '一键检测计算环境'}
+          {checking ? '正在检查程序与文件…' : '检查 MATLAB / AT 路径'}
         </button>
 
         <button
@@ -191,8 +191,8 @@ export default function MatlabPanel({ cfg, setCfg, onSave, busy, notify }) {
         <div className={'matlab-test-result ' + (checkResult.ok ? 'success' : 'error')}>
           {checkResult.ok ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
           <div>
-            <strong>{checkResult.ok ? '环境自检全部通过' : '环境检测发现异常'}</strong>
-            <p style={{ margin: '4px 0 0', fontSize: 11 }}>{checkResult.summary}</p>
+            <strong>{checkResult.ok ? '基础文件已找到；请运行示例验证' : '路径检查发现异常'}</strong>
+            <p style={{ margin: '4px 0 0', fontSize: 14 }}>{checkResult.summary}</p>
           </div>
         </div>
       )}

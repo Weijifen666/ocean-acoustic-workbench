@@ -24,7 +24,7 @@
   box-shadow: none;
   outline: none;
   height: 30px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   cursor: pointer;
 }
 .composer-model-picker select {
@@ -51,12 +51,12 @@
   align-items: center;
   gap: 5px;
   color: #7b919f;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .composer-context-picker > span {
   display: block;
   color: #7b919f;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .composer-context-picker select {
   width: 103px;
@@ -104,7 +104,7 @@
 .composer-control-error {
   margin: 8px 0 0;
   color: #a15f4d;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -128,18 +128,18 @@
   min-width: 65px;
 }
 .composer-controls.compact .composer-model-picker select {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   padding-right: 14px;
 }
 .composer-controls.compact .composer-context-picker {
   gap: 3px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .composer-controls.compact .composer-context-picker > span {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .composer-controls.compact .composer-context-picker select {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   width: 90px;
   padding-right: 12px;
 }
@@ -161,7 +161,7 @@
   background: #fff;
   box-shadow: 0 8px 28px #26465c1a;
   color: #3f5f74;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   scrollbar-width: thin;
   scrollbar-color: #d0dde6 transparent;
 }
@@ -171,7 +171,7 @@
   justify-content: space-between;
   gap: 15px;
   padding-bottom: 13px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .composer-more-heading button {
   display: flex;
@@ -184,7 +184,7 @@
   justify-content: space-between;
   gap: 15px;
   margin: 0 0 11px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .composer-more-field > span {
   color: #526e80;
@@ -196,12 +196,12 @@
   border-radius: 4px;
   background: #fcfdfe;
   color: #4b6c82;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .composer-more-note {
   margin: 6px 0 12px;
   color: #526e80;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
 }
 .composer-menu-action {
@@ -210,7 +210,7 @@
   gap: 8px;
   padding: 10px 0;
   color: #547d96;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   text-align: left;
   width: 100%;
   border-top: 1px solid #edf1f5;
@@ -218,13 +218,13 @@
 .composer-menu-action > span {
   margin-left: auto;
   color: #526e80;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .composer-info-section {
   margin: 0;
   padding: 11px 0;
   border-top: 1px solid #edf1f5;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .composer-info-section > summary {
   color: #526e80;
@@ -232,14 +232,14 @@
 }
 .composer-info-section p {
   color: #526e80;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   margin: 10px 0;
 }
 .composer-info-section small {
   display: block;
   color: #526e80;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
   margin: 8px 0;
 }
@@ -248,7 +248,7 @@
   align-items: center;
   gap: 5px;
   color: #356886;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   margin-right: 12px;
 }
 .composer-info-section dl {
@@ -260,7 +260,7 @@
   gap: 15px;
   padding: 6px 0;
   color: #526e80;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .composer-info-section dd {
   margin: 0;
@@ -272,7 +272,7 @@
   color: #5a7c93;
   padding: 10px 0;
   width: 100%;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
   border-bottom: 1px solid #edf1f5;
 }
@@ -281,11 +281,11 @@
 }
 .message-trace {
   margin-top: 11px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #8297a6;
 }
 .message-trace > summary {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #8398a7;
   cursor: pointer;
 }
@@ -299,7 +299,7 @@
   margin-top: 12px;
 }
 .message-trace .answer-sources p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 @media (max-width: 520px) {
   .composer-controls-row {
@@ -311,17 +311,17 @@
     min-width: 65px;
   }
   .composer-model-picker select {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
     padding-right: 13px;
   }
   .composer-context-picker {
     gap: 3px;
   }
   .composer-context-picker > span {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .composer-context-picker select {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
     width: 87px;
     padding-right: 12px;
   }
@@ -348,7 +348,7 @@
   gap: 7px;
   margin: 3px 0 9px;
   color: #78909f;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .message-provenance span {
   padding: 2px 5px;
@@ -357,7 +357,7 @@
 }
 .answer-coverage-notice {
   margin: 9px 0 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   color: #7a6c52;
   line-height: 1.6;
 }
@@ -369,7 +369,7 @@
   margin: 16px 0;
   padding-top: 15px;
   border-top: 1px solid #dbe7ed;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
 }
 .knowledge-growth-note a {
@@ -390,7 +390,7 @@
 }
 .knowledge-gap-list small {
   display: block;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #849aa7;
 }
 .visitor-loading {
@@ -404,7 +404,7 @@
 .source-coverage-table table {
   width: 100%;
   min-width: 580px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .source-coverage-table td:first-child {
   max-width: 350px;
@@ -412,6 +412,6 @@
   overflow-wrap: anywhere;
 }
 .resource-indexed {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #49828c;
 }

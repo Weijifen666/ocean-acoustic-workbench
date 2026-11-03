@@ -1,7 +1,7 @@
 @import 'katex/dist/katex.min.css';
 
 .markdown-body {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #264350;
   overflow-wrap: anywhere;
@@ -25,10 +25,10 @@
   line-height: 1.4;
 }
 
-.markdown-body h1 { font-size: 18px; }
-.markdown-body h2 { font-size: 16px; }
-.markdown-body h3 { font-size: 14px; color: #1c6b7d; }
-.markdown-body h4 { font-size: 13px; color: #2e6274; }
+.markdown-body h1 { font-size: calc(18px * var(--ui-font-scale, 1.18)); }
+.markdown-body h2 { font-size: calc(16px * var(--ui-font-scale, 1.18)); }
+.markdown-body h3 { font-size: calc(14px * var(--ui-font-scale, 1.18)); color: #1c6b7d; }
+.markdown-body h4 { font-size: calc(13px * var(--ui-font-scale, 1.18)); color: #2e6274; }
 
 .markdown-body p {
   margin: 7px 0;
@@ -48,7 +48,7 @@
   width: 100%;
   border-collapse: collapse;
   margin: 12px 0;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--ui-font-scale, 1.18));
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid #d4e3e8;
@@ -103,7 +103,7 @@
   padding: 2px 6px;
   border-radius: 4px;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   border: 1px solid #dbe6ec;
 }
 
@@ -122,7 +122,7 @@
   border: 0;
   padding: 0;
   color: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.6;
 }
 
@@ -134,7 +134,7 @@
   background: #f2f8f9;
   color: #3d5e6c;
   border-radius: 0 6px 6px 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 
 /* Links */
@@ -182,14 +182,14 @@
   padding: 8px 14px;
   background: #f7fafb;
   border-top: 1px solid #e6eff2;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #436473;
 }
 
 .chat-md-zoom-hint {
   color: #17838e;
   font-weight: 500;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--ui-font-scale, 1.18));
 }
 
 /* Math (KaTeX) */

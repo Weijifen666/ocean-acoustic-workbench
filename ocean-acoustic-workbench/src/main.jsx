@@ -102,7 +102,7 @@ const relationName = {
 const pages = [
   ["graph", "知识图谱", Network],
   ["chat", "对话工作台", MessageSquare],
-  ["code", "代码与分析", Terminal],
+  ["code", "MATLAB 与代码", Terminal],
   ["ocean", "海洋环境数据", Waves],
   ["simulation", "声场仿真", FlaskConical],
   ["jobs", "任务与结果", Activity],
@@ -234,12 +234,18 @@ function App() {
   const navigate = useCallback((id) => {
     setPage(id);
     setSidebarOpen(false);
+    const hash=id==='code'&&/^#code(?:\/|$)/.test(window.location.hash)?window.location.hash:'#'+id;
+    if(window.location.hash!==hash)window.history.replaceState(null,'',window.location.pathname+window.location.search+hash);
   }, []);
   useEffect(() => {
     const open = event => {
       const match=window.location.hash.match(/^#code(?:\/([A-Za-z0-9_-]{8,100}))?$/);
       const id=event?.detail?.artifact_id||match?.[1]||null;
-      if(event?.type!=='ocean-open-code-artifact'&&!match)return;
+      if(event?.type!=='ocean-open-code-artifact'&&!match){
+        const target=window.location.hash.slice(1);
+        if(target==='settings'||pages.some(row=>row[0]===target))navigate(target);
+        return;
+      }
       if(id&&!/^[A-Za-z0-9_-]{8,100}$/.test(id))return;
       setInitialCodeId(id);navigate('code');
     };
@@ -390,7 +396,7 @@ function App() {
             <span
               title={
                 connected
-                  ? "共享计算节点已连接"
+                  ? "已发现本机 MATLAB 程序；实际运行与许可证以任务结果为准"
                   : "节点离线时仍可浏览云端课程图谱"
               }
             >
@@ -398,7 +404,7 @@ function App() {
               {health === null
                 ? "正在检测计算节点"
                 : connected
-                  ? "MATLAB 已连接"
+                  ? "已发现本机 MATLAB"
                   : "计算节点离线"}
             </span>
           </div>
@@ -438,7 +444,7 @@ function App() {
             />
           )}
           {page === "ocean" && <div className="studio-page"><OceanData notify={setToast} onSimulate={draft=>{setOceanPlan(draft);navigate("simulation")}}/></div>}
-          {chat.ready && page === "code" && <div className="studio-page"><CodeWorkbench key={initialCodeId||'code-default'} api={api} publicMode={false} initialArtifactId={initialCodeId} onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate('chat')}} onRunLocal={async value=>{
+          {chat.ready && page === "code" && <div className="studio-page"><CodeWorkbench key={initialCodeId||'code-default'} api={api} publicMode={false} initialArtifactId={initialCodeId} onOpenSimulation={()=>navigate('simulation')} onOpenSettings={()=>navigate('settings')} onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate('chat')}} onRunLocal={async value=>{
             const run=await api('/research/code/artifacts/'+encodeURIComponent(value.artifact_id)+'/run-local',{method:'POST',body:JSON.stringify({expected_revision:value.expected_revision})});
             const id=run.job_id||run.id;if(!id)throw Error('本地执行器未返回任务编号，请查看运行日志');
             setActiveJob(id);navigate('jobs');setToast('本地任务 '+id+'：'+(stateName[run.state]||run.state||'已返回，等待核对状态')+(run.artifact_linked===false?'；代码版本已变化，旧结果未关联到新代码，请重新载入草稿。':''));return run;
@@ -489,7 +495,7 @@ function App() {
             {health === null
               ? "正在检测计算节点"
               : connected
-                ? "共享 MATLAB 计算节点在线"
+                ? "本机 MATLAB 程序已配置"
                 : "课程图谱可用 · 计算节点待连接"}
           </span>
           <span>
@@ -695,7 +701,7 @@ function Config({ notify, onSaved }) {
       <PageTitle
         eyebrow="ENVIRONMENT"
         title="模型与环境"
-        description="填写你自己的模型密钥；MATLAB 由共享计算节点执行。"
+        description="配置模型接口，以及本机 MATLAB、Acoustics Toolbox 和授权项目目录。"
       >
         <Button variant="primary" disabled={busy} onClick={save}>
           <Save size={15} />

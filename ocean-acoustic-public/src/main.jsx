@@ -101,7 +101,7 @@ const relationName = {
 const pages = [
   ["graph", "知识图谱", Network],
   ["chat", "对话工作台", MessageSquare],
-  ["code", "代码与分析", Terminal],
+  ["code", "MATLAB 与代码", Terminal],
   ["ocean", "海洋环境数据", Waves],
   ["simulation", "声场仿真", FlaskConical],
   ["jobs", "任务与结果", Activity],
@@ -234,12 +234,18 @@ function App() {
   const navigate = useCallback((id) => {
     setPage(id);
     setSidebarOpen(false);
+    const hash=id==='code'&&/^#code(?:\/|$)/.test(window.location.hash)?window.location.hash:'#'+id;
+    if(window.location.hash!==hash)window.history.replaceState(null,'',window.location.pathname+window.location.search+hash);
   }, []);
   useEffect(() => {
     const open = event => {
       const match=window.location.hash.match(/^#code(?:\/([A-Za-z0-9_-]{8,100}))?$/);
       const id=event?.detail?.artifact_id||match?.[1]||null;
-      if(event?.type!=='ocean-open-code-artifact'&&!match)return;
+      if(event?.type!=='ocean-open-code-artifact'&&!match){
+        const target=window.location.hash.slice(1);
+        if(target==='settings'||pages.some(row=>row[0]===target))navigate(target);
+        return;
+      }
       if(id&&!/^[A-Za-z0-9_-]{8,100}$/.test(id))return;
       setInitialCodeId(id);navigate('code');
     };
@@ -438,7 +444,7 @@ function App() {
             />
           )}
           {page === "ocean" && <div className="studio-page"><OceanData notify={setToast} onSimulate={draft=>{setOceanPlan(draft);navigate("simulation")}}/></div>}
-          {chat.ready && page === "code" && <div className="studio-page"><CodeWorkbench key={initialCodeId||'code-default'} api={api} publicMode initialArtifactId={initialCodeId} onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate('chat')}}/></div>}
+          {chat.ready && page === "code" && <div className="studio-page"><CodeWorkbench key={initialCodeId||'code-default'} api={api} publicMode initialArtifactId={initialCodeId} onOpenSimulation={()=>navigate('simulation')} onOpenSettings={()=>navigate('settings')} onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate('chat')}}/></div>}
           {page === "simulation" && (
             <div className="studio-page"><Simulation
               onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate("chat")}}

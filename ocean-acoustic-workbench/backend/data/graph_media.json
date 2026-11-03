@@ -1,0 +1,191 @@
+{
+  "schema_version": "1",
+  "note": "补充教材页已对照S17原文及渲染页核对；不替换原知识来源，不将原创示意当作教材或计算结果。",
+  "nodes": {
+    "wave_equation": {
+      "diagram": "wave-equation",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 86
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 90
+        }
+      ]
+    },
+    "integral_transform": {
+      "diagram": "spectral-transform",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 103
+        }
+      ]
+    },
+    "wavenumber_integration": {
+      "diagram": "spectral-transform",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 254
+        }
+      ]
+    },
+    "depth_separated": {
+      "diagram": "spectral-transform",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 254
+        }
+      ]
+    },
+    "fft_spectral": {
+      "diagram": "spectral-transform",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 284
+        }
+      ]
+    },
+    "propagator_matrix": {
+      "diagram": "spectral-transform",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 264
+        },
+        {
+          "source_id": "S17",
+          "pdf_page": 270
+        }
+      ]
+    },
+    "image_method": {
+      "diagram": "image-source",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 37
+        }
+      ]
+    },
+    "pekeris_waveguide": {
+      "diagram": "pekeris-waveguide",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 138
+        }
+      ]
+    },
+    "modal_orthogonality": {
+      "diagram": "modal-basis",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 362
+        }
+      ]
+    },
+    "sturm_liouville": {
+      "diagram": "modal-basis",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 357
+        }
+      ]
+    },
+    "perturbation": {
+      "diagram": "modal-basis",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 404
+        }
+      ]
+    },
+    "contour_residue": {
+      "diagram": "spectral-residues",
+      "supplementary_pages": []
+    },
+    "wkb": {
+      "diagram": "wkb-approximation",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 162
+        }
+      ]
+    },
+    "paraxial": {
+      "diagram": "pe-marching",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 478
+        }
+      ]
+    },
+    "pade_wideangle": {
+      "diagram": "pe-marching",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 482
+        }
+      ]
+    },
+    "initial_field": {
+      "diagram": "pe-marching",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 493
+        }
+      ]
+    },
+    "split_step": {
+      "diagram": "pe-marching",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 506
+        }
+      ]
+    },
+    "absorbing_layer": {
+      "diagram": "pe-marching",
+      "supplementary_pages": [
+        {
+          "source_id": "S17",
+          "pdf_page": 512
+        }
+      ]
+    },
+    "scooter": {
+      "diagram": "at-models",
+      "supplementary_pages": []
+    },
+    "krakenc": {
+      "diagram": "at-models",
+      "supplementary_pages": []
+    },
+    "sparc": {
+      "diagram": "at-models",
+      "supplementary_pages": []
+    },
+    "bellhop3d": {
+      "diagram": "at-models",
+      "supplementary_pages": []
+    },
+    "krakel": {
+      "diagram": "at-models",
+      "supplementary_pages": []
+    }
+  }
+}

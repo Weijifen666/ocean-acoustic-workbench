@@ -22,7 +22,13 @@ def config():return json.loads(CONFIG.read_text(encoding='utf-8')) if CONFIG.exi
 def stamp():return datetime.now().astimezone().isoformat(timespec='seconds')
 def kbfile(name):return LOCAL/'kb'/name
 def claims():return knowledge.knowledge_cards()
-def sources():return json.loads(kbfile('source_registry.json').read_text(encoding='utf-8'))['sources']
+def sources():
+    # Checked-in metadata includes newly referenced course handouts; their
+    # presence here does not claim that a private PDF has been supplied.
+    registered={s['id']:s for s in json.loads((ROOT/'backend/data/course_sources.json').read_text(encoding='utf-8'))['sources']}
+    private=kbfile('source_registry.json')
+    if private.is_file():registered.update({s['id']:s for s in json.loads(private.read_text(encoding='utf-8'))['sources']})
+    return list(registered.values())
 def job(id):
     value=STORE.get(id) or RESEARCH.get(id)
     if not value:raise HTTPException(404,'任务不存在')
@@ -268,7 +274,8 @@ def source_file(source_id:str):
 def source_image(source_id:str,page:int):
     if source_id not in [s['id'] for s in sources()]:raise HTTPException(404)
     path=LOCAL/'sources'/(source_id+'.pdf');cache=LOCAL/'page-images'/f'{source_id}-{page}.png'
-    if not path.is_file():raise HTTPException(404)
+    if page<1:raise HTTPException(404,'教材页码不存在')
+    if not path.is_file():raise HTTPException(404,'此教材原页尚未接入资料节点；原课件未随项目分发。可先查看原理示意和补充教材页。')
     # PDFium is not thread-safe. A drawer requests several pages simultaneously.
     with PDFLOCK:
         if not cache.exists():

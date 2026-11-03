@@ -189,6 +189,7 @@ const projectFiles = Object.values(projectContents).map(({content,...file}) => f
 // Preserve public image/code-link shape while replacing the older 39-card graph with 69 cards.
 const graphSource = read('backend/data/course_graph.json');
 const graph = JSON.parse(redact(graphSource.raw));
+const graphMedia = JSON.parse(read('backend/data/graph_media.json').raw).nodes;
 // Export source metadata only. A clone can rebuild from the checked-in public registry;
 // a maintainer may supply a private registry at build time, but its paths never leave here.
 const publicSourcesFile = path.join(publicRoot, 'data/sources.json');
@@ -224,15 +225,23 @@ const knowledgeCode = {};
 for (const node of graph.nodes) {
   if (node.kind !== 'knowledge') continue;
   const old = oldNodes.get(node.id);
-  node.images = structuredClone(old?.images || []);
-  if (!node.images.length && node.diagram && fs.existsSync(path.join(publicRoot, 'public/assets/knowledge', node.diagram + '.svg')))
-    node.images.push({url: '/assets/knowledge/' + node.diagram + '.svg', caption: '课程原理示意 · 非求解器声场结果'});
+  const media = graphMedia[node.id] || {};
+  node.diagram ||= media.diagram || '';
+  node.images = [];
+  if (node.diagram && fs.existsSync(path.join(publicRoot, 'public/assets/knowledge', node.diagram + '.svg')))
+    node.images.push({url: '/assets/knowledge/' + node.diagram + '.svg', caption: '本项目原创原理示意 · 非教材原图、非仿真结果', kind: 'authored_diagram'});
   for (const ref of node.references) {
     if (ref.pdf_page) {
       const url = '/api/source/' + encodeURIComponent(ref.source_id) + '/page/' + ref.pdf_page;
-      if (!node.images.some(image => image.url === url)) node.images.push({url, caption: ref.source_id + ' · 教材原页 ' + ref.pdf_page, source_url: url});
+      if (!node.images.some(image => image.url === url)) node.images.push({url, caption: `教材原页 · ${ref.source_id} · PDF 第 ${ref.pdf_page} 页`, kind: 'source_page', source_id: ref.source_id, pdf_page: ref.pdf_page, source_url: url});
     }
   }
+  for (const ref of media.supplementary_pages || []) {
+    const url = '/api/source/' + encodeURIComponent(ref.source_id) + '/page/' + ref.pdf_page;
+    if (!node.images.some(image => image.url === url)) node.images.push({url, caption: `补充教材原页 · ${ref.source_id} · PDF 第 ${ref.pdf_page} 页`, kind: 'supplementary_source_page', source_id: ref.source_id, pdf_page: ref.pdf_page, source_url: url});
+  }
+  // Retain any explicitly curated legacy media rather than silently deleting it.
+  for (const image of old?.images || []) if (!node.images.some(current => current.url === image.url)) node.images.push(structuredClone(image));
   node.references.forEach((ref, index) => {
     if (!['S20', 'PROJECT'].includes(ref.source_id)) return;
     ref.code_url = '/api/knowledge/code?node=' + encodeURIComponent(node.id) + '&reference=' + index;

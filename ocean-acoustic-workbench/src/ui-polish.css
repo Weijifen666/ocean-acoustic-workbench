@@ -8,6 +8,8 @@
  *   外壳 18 ｜ 面板 16 ｜ 面板内卡片 12 ｜ 控件 8 ｜ 标签 6
  */
 :root {
+  /* Scale authored pixel typography only; layout, font families and zoom stay unchanged. */
+  --ui-font-scale: 1.18;
   --radius-shell: 18px;
   --radius-panel: 16px;
   --radius-card: 12px;

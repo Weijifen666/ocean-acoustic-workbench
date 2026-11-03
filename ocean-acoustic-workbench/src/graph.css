@@ -46,7 +46,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   position: relative;
 }
@@ -84,7 +84,7 @@
   justify-content: space-between;
   align-items: center;
   margin: 0 5px 15px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .directory-title button {
   background: none;
@@ -112,7 +112,7 @@
   border: 0;
   color: var(--text);
   outline: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding: 0;
 }
 .course-search button {
@@ -129,7 +129,7 @@
   text-align: left;
   padding: 10px 9px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .directory-home small {
   margin-left: auto;
@@ -160,7 +160,7 @@
   padding: 9px 3px;
   display: flex;
   align-items: center;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .unit-heading .unit-name {
   flex: 1;
@@ -177,7 +177,7 @@
 .unit-name small {
   color: var(--muted);
   margin-left: auto;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .unit-children {
   border-left: 1px solid var(--line);
@@ -192,7 +192,7 @@
   border: 0;
   background: none;
   text-align: left;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding: 8px 5px;
   width: 100%;
   border-radius: 4px;
@@ -218,7 +218,7 @@
   height: 11px;
 }
 .search-count {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   padding: 10px 5px;
 }
@@ -230,7 +230,7 @@
 .directory-progress > div:first-child {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .directory-progress strong {
   color: #7bb9ff;
@@ -248,7 +248,7 @@
   background: #79b6ff;
 }
 .directory-progress small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
 }
 .course-workspace {
@@ -282,7 +282,7 @@
   border: 0;
   padding: 6px 9px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: var(--muted);
 }
 .view-switch button.active {
@@ -302,12 +302,12 @@
   border: 1px solid var(--line);
   padding: 7px;
   border-radius: 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .graph-view-options button {
   border: 0;
   background: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   display: flex;
   gap: 5px;
@@ -336,7 +336,7 @@
   bottom: 10px;
   left: 18px;
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   display: flex;
   gap: 6px;
   align-items: center;
@@ -356,11 +356,11 @@
   pointer-events: none;
 }
 .canvas-heading span {
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-font-scale, 1.18));
   display: block;
 }
 .canvas-heading small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   display: block;
   margin-top: 7px;
@@ -394,7 +394,7 @@
   gap: 17px;
   padding: 13px 18px;
   border-top: 1px solid var(--line);
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   flex-wrap: wrap;
 }
 .relation-legend button {
@@ -403,7 +403,7 @@
   align-items: center;
   border: 0;
   background: none;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   opacity: 0.45;
 }
 .relation-legend button.checked {
@@ -451,14 +451,14 @@
   border-radius: 4px;
   padding: 7px 10px;
   color: #fff;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .connection-result {
   display: flex;
   gap: 5px;
   align-items: center;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   width: 100%;
 }
 .connection-result button {
@@ -466,7 +466,7 @@
   border: 0;
   color: #b6d5ff;
   padding: 2px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .connection-result small {
   color: var(--muted);
@@ -494,11 +494,11 @@
   align-items: flex-start;
 }
 .drawer-header span {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   filter: brightness(0.7);
 }
 .drawer-header h2 {
-  font-size: 21px;
+  font-size: calc(21px * var(--ui-font-scale, 1.18));
   line-height: 1.5;
   margin: 7px 0 0;
 }
@@ -515,7 +515,7 @@
   padding: 0 23px 15px;
 }
 .knowledge-tags span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   background: #e9eff7;
   color: #647b98;
   padding: 4px 7px;
@@ -531,7 +531,7 @@
 .drawer-tabs button {
   border: 0;
   background: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding: 11px 0;
   color: #6b7f98;
   border-bottom: 2px solid transparent;
@@ -549,7 +549,7 @@
   scrollbar-color: #c9d7e6 transparent;
 }
 .knowledge-overview {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.95;
   margin: 0 0 15px;
   color: #415976;
@@ -573,7 +573,7 @@
   justify-content: flex-end;
   gap: 5px;
   padding: 8px;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #6a85a1;
 }
 .knowledge-formula {
@@ -584,23 +584,23 @@
   border-radius: 3px;
 }
 .knowledge-formula small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #6688b3;
 }
 .knowledge-formula div {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   margin-top: 5px;
   overflow-wrap: anywhere;
 }
 .drawer-scroll h3 {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   margin: 22px 0 10px;
 }
 .knowledge-points {
   padding-left: 18px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   color: #48607c;
 }
@@ -614,11 +614,11 @@
   background: #edf3f8;
   border-radius: 5px;
   margin-top: 13px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .knowledge-note strong,
 .knowledge-example strong {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #3c729e;
 }
 .knowledge-note p,
@@ -652,7 +652,7 @@
   border-radius: 4px;
   padding: 10px;
   margin-top: 7px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   text-align: left;
 }
 .knowledge-source-links a > span,
@@ -690,7 +690,7 @@
   border-radius: 5px;
   padding: 8px 10px;
   color: #567491;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .drawer-footer button.marked {
   color: #24816a;
@@ -705,7 +705,7 @@
   background: #edf4fc;
 }
 .drawer-help {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   color: #8294ab;
   margin: 0 0 13px;
@@ -723,17 +723,17 @@
   text-align: left;
 }
 .knowledge-relation small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #7b93ae;
 }
 .knowledge-relation strong {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   margin: 5px 0;
 }
 .knowledge-relation span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9aaabb;
 }
 .edge-explanation {
@@ -741,7 +741,7 @@
   background: #ebf3fe;
   border: 1px solid #caddf2;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   margin-bottom: 15px;
 }
 .edge-explanation p {
@@ -773,7 +773,7 @@
   justify-content: space-between;
   gap: 7px;
   text-align: left;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #6f87a1;
   padding: 10px;
   line-height: 1.5;
@@ -792,12 +792,12 @@
   margin-bottom: 23px;
 }
 .map-heading h2 {
-  font-size: 20px;
+  font-size: calc(20px * var(--ui-font-scale, 1.18));
   margin: 0 0 9px;
   font-weight: 500;
 }
 .map-heading p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   margin: 0;
   line-height: 1.7;
@@ -813,11 +813,11 @@
   margin-bottom: 22px;
 }
 .path-intro strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   display: block;
 }
 .path-intro span {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   display: block;
   margin-top: 7px;
@@ -827,7 +827,7 @@
   margin-left: auto;
   white-space: nowrap;
   color: #87b3ea;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .learning-steps {
   display: grid;
@@ -856,26 +856,26 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   flex-shrink: 0;
 }
 .learning-step small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: var(--node-color);
 }
 .learning-step h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   margin: 6px 0 10px;
 }
 .learning-step p {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   line-height: 1.85;
   margin: 0;
 }
 .learning-step div > span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9ebcdd;
   display: flex;
   gap: 4px;
@@ -887,10 +887,10 @@
 }
 .unit-map-heading {
   margin: 29px 0 14px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .unit-map-heading small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
   margin-left: 10px;
 }
@@ -913,16 +913,16 @@
 }
 .unit-map-card small {
   color: var(--unit-color);
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .unit-map-card strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   font-weight: 500;
 }
 .unit-map-card span {
   margin-left: auto;
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .unit-map-card button {
   display: flex;
@@ -932,7 +932,7 @@
   background: none;
   padding: 7px 0;
   width: 100%;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   text-align: left;
   color: var(--muted);
 }
@@ -979,23 +979,23 @@
   color: #a3c1df;
 }
 .resource-cover span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .course-resource-card > div:last-child {
   min-width: 0;
 }
 .course-resource-card small {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: var(--muted);
 }
 .course-resource-card h3 {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   line-height: 1.8;
   margin: 5px 0;
 }
 .course-resource-card p {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
 }
 .resource-node-links {
@@ -1009,19 +1009,19 @@
   border: 1px solid var(--line);
   border-radius: 3px;
   background: none;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   color: #9fbfe2;
 }
 .course-resource-card a {
   color: #89b9f6;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   display: flex;
   align-items: center;
   gap: 5px;
   text-decoration: none;
 }
 .resource-pending {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: var(--muted);
 }
 .graph-fullscreen {
@@ -1100,7 +1100,7 @@
     gap: 15px;
   }
   .course-tabs button {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-font-scale, 1.18));
   }
   .relation-legend {
     gap: 10px;
@@ -1132,17 +1132,17 @@
   top: 187px;
 }
 .public-ocean-resources { margin: 16px 0 24px; padding: 18px 20px; border: 1px solid #d9e6ec; border-radius: 6px; background: #fff; }
-.public-ocean-resources h2 { margin: 0 0 8px; font-size: 17px; color: #31576e; }
-.public-ocean-resources > p { font-size: 12px; line-height: 1.8; color: #617b8c; }
-.public-ocean-resources summary { color: #326980; font-size: 12px; cursor: pointer; padding: 8px 0; }
+.public-ocean-resources h2 { margin: 0 0 8px; font-size: calc(17px * var(--ui-font-scale, 1.18)); color: #31576e; }
+.public-ocean-resources > p { font-size: calc(12px * var(--ui-font-scale, 1.18)); line-height: 1.8; color: #617b8c; }
+.public-ocean-resources summary { color: #326980; font-size: calc(12px * var(--ui-font-scale, 1.18)); cursor: pointer; padding: 8px 0; }
 .public-source-table { overflow: auto; margin: 8px 0; }
-.public-source-table table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 11px; }
+.public-source-table table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: calc(11px * var(--ui-font-scale, 1.18)); }
 .public-source-table th,.public-source-table td { text-align: left; vertical-align: top; padding: 10px; border-bottom: 1px solid #e4edf1; }
 .public-source-table td:first-child { width: 48%; min-width: 250px; }
 .public-source-table a { display: inline-flex; gap: 4px; align-items: center; color: #276883; }
 .public-source-table small { display: block; margin-top: 5px; color: #8295a1; }
 .public-source-table p { margin: 6px 0 0; line-height: 1.7; color: #69828f; }
-.public-ocean-resources .public-source-note { margin-bottom: 0; font-size: 11px; color: #8c805f; }
+.public-ocean-resources .public-source-note { margin-bottom: 0; font-size: calc(11px * var(--ui-font-scale, 1.18)); color: #8c805f; }
 /* 课程总览在固定高度的舞台内滚动，避免下方单元卡被裁切 */
 .course-overview {
   height: 100%;

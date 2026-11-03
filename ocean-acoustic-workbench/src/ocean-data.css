@@ -1,54 +1,54 @@
 .ocean-data-page { --ocean-data-text: #27485f; --ocean-data-muted: #657c89; --ocean-data-line: #dce7eb; --ocean-data-soft: #f4f9fb; color: var(--ocean-data-text); }
 .ocean-data-page .panel { background: #fff; border: 1px solid var(--ocean-data-line); border-radius: 12px; overflow: hidden; }
 .ocean-data-page .panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; border-bottom: 1px solid var(--ocean-data-line); font-weight: 600; }
-.ocean-data-page .panel-heading > span:last-child { font-weight: 400; font-size: 12px; }
-.ocean-data-page .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 12px; border: 1px solid var(--ocean-data-line); border-radius: 7px; background: #fff; color: var(--ocean-data-text); font-size: 12px; }
+.ocean-data-page .panel-heading > span:last-child { font-weight: 400; font-size: calc(12px * var(--ui-font-scale, 1.18)); }
+.ocean-data-page .button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 12px; border: 1px solid var(--ocean-data-line); border-radius: 7px; background: #fff; color: var(--ocean-data-text); font-size: calc(12px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .button.primary { background: #247c88; border-color: #247c88; color: white; }
 .ocean-data-page .ocean-input form { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 16px; padding: 8px 22px; }
-.ocean-data-page .ocean-input label { display: flex; flex: 1; min-width: 150px; flex-direction: column; gap: 8px; font-size: 12px; color: var(--ocean-data-muted); }
+.ocean-data-page .ocean-input label { display: flex; flex: 1; min-width: 150px; flex-direction: column; gap: 8px; font-size: calc(12px * var(--ui-font-scale, 1.18)); color: var(--ocean-data-muted); }
 .ocean-data-page .ocean-input input, .ocean-data-page .ocean-input select { width: 100%; padding: 10px 12px; border: 1px solid var(--ocean-data-line); border-radius: 8px; color: var(--ocean-data-text); background: #fff; }
-.ocean-data-page .ocean-data-path, .ocean-data-page .ocean-hint { margin: 12px 22px; color: var(--ocean-data-muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.ocean-data-page .ocean-data-path, .ocean-data-page .ocean-hint { margin: 12px 22px; color: var(--ocean-data-muted); font-size: calc(12px * var(--ui-font-scale, 1.18)); line-height: 1.8; overflow-wrap: anywhere; }
 .ocean-data-page .ocean-error { margin: 18px 22px; color: #a34238; }
 .ocean-data-page .ocean-result { margin-top: 20px; }
 .ocean-data-page .ocean-result .panel-heading > div { display: flex; flex-wrap: wrap; gap: 8px; }
-.ocean-data-page .ocean-summary { display: flex; flex-wrap: wrap; gap: 18px; margin: 20px 22px; font-size: 12px; }
+.ocean-data-page .ocean-summary { display: flex; flex-wrap: wrap; gap: 18px; margin: 20px 22px; font-size: calc(12px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-results-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 0 22px; }
 .ocean-data-page .ocean-curve { width: 100%; border-radius: 12px; background: var(--ocean-data-soft); }
-.ocean-data-page .ocean-curve text { font-size: 12px; fill: var(--ocean-data-text); }
+.ocean-data-page .ocean-curve text { font-size: calc(12px * var(--ui-font-scale, 1.18)); fill: var(--ocean-data-text); }
 .ocean-data-page .ocean-table { max-height: 440px; overflow: auto; }
-.ocean-data-page .ocean-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ocean-data-page .ocean-table table { width: 100%; border-collapse: collapse; font-size: calc(12px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-table th, .ocean-data-page .ocean-table td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--ocean-data-line); white-space: nowrap; }
 .ocean-data-page .ocean-table th { position: sticky; top: 0; background: #edf5f8; }
-.ocean-data-page .ocean-notes { margin: 20px 22px; padding: 16px; border-radius: 8px; background: var(--ocean-data-soft); color: var(--ocean-data-muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.ocean-data-page .ocean-notes { margin: 20px 22px; padding: 16px; border-radius: 8px; background: var(--ocean-data-soft); color: var(--ocean-data-muted); font-size: calc(12px * var(--ui-font-scale, 1.18)); line-height: 1.8; overflow-wrap: anywhere; }
 .ocean-data-page .ocean-notes p { margin-bottom: 8px; }
 .ocean-data-page .ocean-map-panel { margin-top: 20px; padding-bottom: 10px; }
-.ocean-data-page .ocean-map-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 22px; font-size: 12px; }
+.ocean-data-page .ocean-map-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 22px; font-size: calc(12px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-map-frame { width: calc(100% - 44px); border: 1px solid var(--ocean-data-line); border-radius: 8px; overflow: hidden; }
 .ocean-data-page .ocean-map-surface { position: relative; overflow: hidden; touch-action: pan-y; user-select: none; background: #dce8ed; }
 .ocean-data-page .ocean-map-layer { position: absolute; inset: 0; will-change: transform; pointer-events: none; }
 .ocean-data-page .ocean-map-surface canvas { display: block; width: 100%; height: 100%; image-rendering: auto; }
 .ocean-data-page .ocean-map-grid { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; stroke: #fff; stroke-opacity: .3; stroke-width: 1; }
 .ocean-data-page .ocean-map-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #edf6f9df; color: #234a60; padding: 20px; text-align: center; }
-.ocean-data-page .ocean-map-updating { position: absolute; top: 8px; right: 8px; padding: 5px 9px; border-radius: 6px; background: #ffffffdd; font-size: 12px; }
+.ocean-data-page .ocean-map-updating { position: absolute; top: 8px; right: 8px; padding: 5px 9px; border-radius: 6px; background: #ffffffdd; font-size: calc(12px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-map-marker { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; border: 2px solid #fff; background: #e0783b; box-shadow: 0 1px 5px #203b5666; }
-.ocean-data-page .ocean-map-marker > span { position: absolute; top: 12px; left: 0; padding: 2px 4px; color: #173d50; background: #ffffffdf; border-radius: 3px; white-space: nowrap; font-size: 11px; }
+.ocean-data-page .ocean-map-marker > span { position: absolute; top: 12px; left: 0; padding: 2px 4px; color: #173d50; background: #ffffffdf; border-radius: 3px; white-space: nowrap; font-size: calc(11px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-map-marker.selected { background: #f3d46d; }
 .ocean-data-page .ocean-map-marker.selected > span { top: -23px; }
-.ocean-data-page .ocean-map-axis { display: flex; justify-content: space-between; padding: 7px 10px; font-size: 12px; background: #f7fafb; }
-.ocean-data-page .ocean-map-lat { padding: 0 10px 8px; font-size: 12px; color: var(--ocean-data-muted); background: #f7fafb; }
-.ocean-data-page .ocean-depth-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 16px 22px 0; color: var(--ocean-data-muted); font-size: 11px; }
+.ocean-data-page .ocean-map-axis { display: flex; justify-content: space-between; padding: 7px 10px; font-size: calc(12px * var(--ui-font-scale, 1.18)); background: #f7fafb; }
+.ocean-data-page .ocean-map-lat { padding: 0 10px 8px; font-size: calc(12px * var(--ui-font-scale, 1.18)); color: var(--ocean-data-muted); background: #f7fafb; }
+.ocean-data-page .ocean-depth-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 16px 22px 0; color: var(--ocean-data-muted); font-size: calc(11px * var(--ui-font-scale, 1.18)); }
 .ocean-data-page .ocean-depth-legend > i { width: 140px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, #d2eeed, #88cdd8, #379bb9, #1a689d, #13376e, #0a163c); }
 .ocean-data-page .land-key::before { content: ''; display: inline-block; width: 12px; height: 10px; margin-right: 5px; background: #cfd5af; }
 .ocean-explorer-layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 18px; align-items: start; }
 .ocean-selection-aside { position: sticky; top: 16px; margin-top: 20px; }
-.ocean-point-summary { padding: 16px; border: 1px solid #c9dfe5; border-radius: 10px; background: #fff; color: #27485f; font-size: 12px; box-shadow: 0 3px 14px #173c5010; }
-.ocean-point-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
-.ocean-point-summary p { margin: 9px 0 0; font-size: 12px; line-height: 1.65; }
+.ocean-point-summary { padding: 16px; border: 1px solid #c9dfe5; border-radius: 10px; background: #fff; color: #27485f; font-size: calc(12px * var(--ui-font-scale, 1.18)); box-shadow: 0 3px 14px #173c5010; }
+.ocean-point-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(14px * var(--ui-font-scale, 1.18)); }
+.ocean-point-summary p { margin: 9px 0 0; font-size: calc(12px * var(--ui-font-scale, 1.18)); line-height: 1.65; }
 .ocean-point-coordinate, .ocean-point-grid { color: #657c89; overflow-wrap: anywhere; }
 .ocean-point-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
 .ocean-point-values div { min-width: 0; }
-.ocean-point-values dt { color: #657c89; font-size: 11px; }
-.ocean-point-values dd { margin: 4px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.ocean-point-values dt { color: #657c89; font-size: calc(11px * var(--ui-font-scale, 1.18)); }
+.ocean-point-values dd { margin: 4px 0 0; font-size: calc(12px * var(--ui-font-scale, 1.18)); overflow-wrap: anywhere; }
 .ocean-point-summary.error { border-color: #e6bcb2; }
 .ocean-point-error { color: #a34238; }
 .ocean-data-page .ocean-view-profile { width: 100%; margin-top: 6px; }
@@ -63,12 +63,12 @@
   .ocean-data-page .ocean-explorer-layout .ocean-map-surface { min-height: 260px; }
   .ocean-map-point-preview { display: block; position: absolute; bottom: 10px; left: 10px; right: 10px; max-width: 360px; max-height: calc(100% - 20px); overflow: auto; z-index: 2; cursor: auto; }
   .ocean-map-point-preview .ocean-point-summary { padding: 10px; background: #ffffffed; }
-  .ocean-map-point-preview .ocean-point-heading { font-size: 12px; }
-  .ocean-map-point-preview .ocean-point-summary p { font-size: 10px; margin-top: 5px; }
+  .ocean-map-point-preview .ocean-point-heading { font-size: calc(12px * var(--ui-font-scale, 1.18)); }
+  .ocean-map-point-preview .ocean-point-summary p { font-size: calc(10px * var(--ui-font-scale, 1.18)); margin-top: 5px; }
   .ocean-map-point-preview .ocean-point-values { gap: 6px; margin: 7px 0; }
-  .ocean-map-point-preview .ocean-point-values dd { font-size: 10px; margin-top: 2px; }
-  .ocean-map-point-preview .ocean-point-values dt { font-size: 10px; }
-  .ocean-map-point-preview .ocean-view-profile { margin-top: 3px; padding: 6px 8px; font-size: 11px; }
+  .ocean-map-point-preview .ocean-point-values dd { font-size: calc(10px * var(--ui-font-scale, 1.18)); margin-top: 2px; }
+  .ocean-map-point-preview .ocean-point-values dt { font-size: calc(10px * var(--ui-font-scale, 1.18)); }
+  .ocean-map-point-preview .ocean-view-profile { margin-top: 3px; padding: 6px 8px; font-size: calc(11px * var(--ui-font-scale, 1.18)); }
 }
 @media (max-width: 950px) { .ocean-data-page .ocean-results-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 580px) { .ocean-data-page .panel-heading { padding: 15px; } .ocean-data-page .ocean-input form { padding: 8px 15px; } .ocean-data-page .ocean-map-tools { margin: 14px 15px; } .ocean-data-page .ocean-map-frame { width: calc(100% - 30px); } .ocean-data-page .ocean-results-grid { padding: 0 15px; } }

@@ -1,0 +1,125 @@
+{
+  "baseline": {
+    "public": {
+      "unique": 76,
+      "successful": 48,
+      "missing_original_pages": 28
+    },
+    "local": {
+      "unique": 76,
+      "successful": 48,
+      "missing_original_pages": 28
+    }
+  },
+  "updated_assets": {
+    "knowledge_nodes": 69,
+    "nodes_with_authored_first_image": 69,
+    "unique_image_urls": 100,
+    "authored_diagrams": 19,
+    "textbook_page_urls": 81,
+    "new_supplemental_pages": 18,
+    "supplemental_actual_http_checks": 36,
+    "supplemental_valid_png_checks": 36
+  },
+  "missing_originals": {
+    "ids": [
+      "S21",
+      "S22",
+      "S23",
+      "S24"
+    ],
+    "unique_page_urls": 28,
+    "restored": false,
+    "refs_retained": true,
+    "ui": "Unavailable cards collapse into a disclosure and cannot open an empty lightbox. Authored diagrams and genuine supplemental S17 pages retain separate labels."
+  },
+  "visual_check": {
+    "new_authored_svg_count": 9,
+    "svg_renderer": "MuPDF",
+    "checked_rendered_supplemental_source_pages": 18
+  },
+  "tests": {
+    "new_public_image_and_ui": {
+      "passed": 6,
+      "failed": 0
+    },
+    "new_local_real_pdf_render": {
+      "passed": 2,
+      "failed": 0
+    },
+    "public_research_graph_knowledge_related": {
+      "passed": 50,
+      "failed": 0
+    },
+    "local_knowledge_related": {
+      "passed": 28,
+      "failed": 0
+    },
+    "local_provider_protocol_32k": {
+      "passed": 7,
+      "failed": 0
+    },
+    "vite_builds": [
+      "public passed",
+      "local passed"
+    ]
+  },
+  "production_restarted_by_this_agent": false,
+  "production_updated_by_this_agent": false,
+  "date": "2026-11-03",
+  "full_automated_checks": {
+    "cloud": {
+      "total": 216,
+      "passed": 216,
+      "failed": 0
+    },
+    "local": {
+      "total": 331,
+      "passed": 330,
+      "skipped": 1,
+      "failed": 0,
+      "skip_reason": "Windows account cannot create a symlink"
+    }
+  },
+  "font_check": {
+    "scale": 1.18,
+    "actual_browser_body_px": 16.52,
+    "actual_browser_sidebar_px": 15.34,
+    "actual_browser_editor_px": 15.34,
+    "desktop_viewport_width": 1275,
+    "desktop_content_width": 1275,
+    "mobile_content_width": 385,
+    "mobile_viewport_width": 385,
+    "mobile_heading_px": 28.32
+  },
+  "matlab_actual_check": {
+    "job_id": "7d129b357c19",
+    "title": "MATLAB运行自检",
+    "state": "SUCCEEDED",
+    "seconds": 56.937,
+    "version": "24.1.0.2537033 (R2024a)",
+    "numeric_assertion": "sum([1 2 3]) == 6",
+    "output": "profile.png",
+    "output_bytes": 30714,
+    "source_sha256": "71eedc397721ec73462b3881e1559c562f707b050b69dd0e18367adcd22f9cb3"
+  },
+  "matlab_environment_check": {
+    "check_type": "filesystem_only",
+    "matlab_started": false,
+    "license_checked": false,
+    "basic_paths_ok": true
+  },
+  "actual_local_ui": {
+    "wave_equation_authored_image_opened": true,
+    "wave_equation_supplemental_page_opened": true,
+    "supplemental_page": "S17/86",
+    "supplemental_image_natural_size": [
+      549,
+      833
+    ],
+    "unavailable_originals_collapsed": true,
+    "matlab_first_default": true,
+    "matlab_environment_shortcut_worked": true
+  },
+  "publication": "pending"
+}

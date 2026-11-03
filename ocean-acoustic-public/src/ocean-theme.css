@@ -5,7 +5,7 @@
   --ocean-teal: #3b8292;
   --ocean-gold: #c5a16d;
   --ocean-paper: #f3f8fb;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app {
   color: #27485f;
@@ -35,7 +35,7 @@
   color: #f0f7fa;
   padding: 0 7px;
   gap: 9px;
-  font-size: 17px;
+  font-size: calc(17px * var(--ui-font-scale, 1.18));
   letter-spacing: 0.2px;
 }
 .workbench-app .brand-icon {
@@ -46,20 +46,20 @@
 }
 .workbench-app .brand div span {
   color: #9ab9cc;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   letter-spacing: 0.7px;
 }
 .workbench-app .side-label {
   margin: 35px 12px 14px;
   color: #7198b2;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .nav-item {
   color: #b4cede;
   gap: 11px;
   border-radius: 4px;
   padding: 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .nav-item:hover {
   color: #eef8fc;
@@ -76,18 +76,18 @@
 .workbench-app .nav-count {
   color: #cce6ef;
   background: #3d6b85;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .sidebar-note {
   border-color: #31536d;
   margin-top: 28px;
   padding: 19px 11px;
   color: #c0d5e2;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .sidebar-note span {
   color: #7fa4bb;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
 }
 .workbench-app .repository-link {
@@ -98,12 +98,12 @@
 }
 .workbench-app .team {
   color: #87a7bc;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 2;
 }
 .workbench-app .course-purpose {
   color: #7298b0;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .main {
   margin-left: 204px;
@@ -117,14 +117,14 @@
 }
 .workbench-app .breadcrumb {
   color: #829aaa;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .breadcrumb strong {
   color: #365b77;
 }
 .workbench-app .header-status {
   color: #7290a5;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .header-status button {
   border-color: #dae8ef;
@@ -149,24 +149,24 @@
 .workbench-app .panel-heading {
   color: #3d627b;
   border-color: #e2edf2;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   background: #fbfdfe;
 }
 .workbench-app .page-title h1 {
-  font-size: 23px;
+  font-size: calc(23px * var(--ui-font-scale, 1.18));
   color: #234c6a;
   font-weight: 600;
 }
 .workbench-app .page-title p {
   color: #7c95a7;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
 }
 .workbench-app .button {
   color: #436e89;
   border-color: #ccdfe8;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .button:hover {
   border-color: #93b7ca;
@@ -196,15 +196,15 @@
 }
 .workbench-app .course-banner h1 {
   color: #28536f;
-  font-size: 23px;
+  font-size: calc(23px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .course-banner p {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
   color: #7e98ab;
 }
 .workbench-app .course-stats {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   color: #7896aa;
 }
 .workbench-app .course-tabs {
@@ -212,7 +212,7 @@
   height: 45px;
 }
 .workbench-app .course-tabs button {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .course-tabs button.active {
   color: #2b7193;
@@ -226,7 +226,7 @@
 }
 .workbench-app .directory-title {
   color: #436c88;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .course-search {
   background: #fff;
@@ -234,10 +234,10 @@
   padding: 9px 10px;
 }
 .workbench-app .course-search input {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .directory-home {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .directory-home.active,
 .workbench-app .unit-heading.current {
@@ -245,12 +245,12 @@
   color: #346f93;
 }
 .workbench-app .unit-heading button {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   padding-top: 11px;
   padding-bottom: 11px;
 }
 .workbench-app .unit-children button {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.65;
   padding-top: 9px;
   padding-bottom: 9px;
@@ -267,30 +267,30 @@
   padding: 23px 24px 38px;
 }
 .workbench-app .overview-intro h2 {
-  font-size: 18px;
+  font-size: calc(18px * var(--ui-font-scale, 1.18));
   color: #305b79;
 }
 .workbench-app .overview-intro p {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   color: #7d98ab;
 }
 .workbench-app .overview-table-head {
   background: #f6fafc;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .overview-unit-main {
   padding-top: 20px;
 }
 .workbench-app .overview-unit-main h3 {
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-font-scale, 1.18));
   color: #315e7b;
 }
 .workbench-app .overview-unit-main p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
 }
 .workbench-app .overview-knowledge-links button {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding-top: 5px;
   padding-bottom: 5px;
   color: #5a87a2;
@@ -303,89 +303,89 @@
   color: #31536b;
 }
 .workbench-app .drawer-header h2 {
-  font-size: 21px;
+  font-size: calc(21px * var(--ui-font-scale, 1.18));
   color: #2e5874;
 }
 .workbench-app .drawer-tabs button {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .knowledge-overview,
 .workbench-app .knowledge-points {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   line-height: 1.9;
   color: #486b82;
 }
 .workbench-app .drawer-scroll h3 {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   color: #3a6684;
 }
 .workbench-app .knowledge-note,
 .workbench-app .knowledge-example {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
 }
 .workbench-app .knowledge-source-image span,
 .workbench-app .knowledge-source-links a {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .knowledge-formula {
   background: #f1f7fa;
   border-color: #77a7bc;
 }
 .workbench-app .knowledge-formula div {
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .knowledge-relation {
   border-color: #dbe8ef;
   background: #f9fcfd;
 }
 .workbench-app .knowledge-relation strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .map-heading h2 {
   color: #315e7b;
-  font-size: 19px;
+  font-size: calc(19px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .learning-step p,
 .workbench-app .knowledge-index-status p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .knowledge-index-status {
   background: #f6fafc;
   border-color: #d8e6ed;
 }
 .workbench-app .knowledge-index-status h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .course-resource-card h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   color: #365f7b;
 }
 .workbench-app .course-resource-card p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .course-resource-card small {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .resource-cover {
   background: #eff6fa;
   color: #79a3b8;
 }
 .workbench-app .resource-pending {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .field > span {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   color: #3f6782;
 }
 .workbench-app .field input,
 .workbench-app .field select {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   padding: 11px 12px;
   border-color: #d2e3ec;
 }
 .workbench-app .field em {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #8ba2b1;
 }
 .workbench-app .template-card {
@@ -398,67 +398,67 @@
   background: #e0f0f5;
 }
 .workbench-app .template-card h3 {
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-font-scale, 1.18));
   color: #355f7d;
 }
 .workbench-app .template-card p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .inline-note {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
 }
 .workbench-app .case-list > div {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .exercise-heading strong {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .exercise-question {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .exercise-body p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .chat-welcome h2 {
-  font-size: 21px;
+  font-size: calc(21px * var(--ui-font-scale, 1.18));
   color: #315f7c;
 }
 .workbench-app .chat-welcome p,
 .workbench-app .prompt-grid button {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .message-text {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   line-height: 1.95;
   color: #365c75;
 }
 .workbench-app .composer textarea {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #3c6680;
 }
 .workbench-app .context-item {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .context-note {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .model-panel-heading h2 {
-  font-size: 19px;
+  font-size: calc(19px * var(--ui-font-scale, 1.18));
   color: #315d7b;
 }
 .workbench-app .model-panel-heading p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .provider-tabs strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .model-choice strong {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .model-choice p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .model-choice.selected {
   background: #edf5f9;
@@ -472,23 +472,23 @@
   background: #2c7196;
 }
 .workbench-app .model-field {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .selected-model {
   background: #eff6fa;
 }
 .workbench-app .job-list strong {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .job-detail-header h2 {
   color: #335f7b;
 }
 .workbench-app .result-note,
 .workbench-app .scientific-analysis ul {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .scientific-analysis h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .code {
   color: #416780;
@@ -499,7 +499,7 @@
   color: #c0d8e6;
 }
 .workbench-app .file-list button {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
 }
 .workbench-app .file-list .selected {
   color: #3b789b;
@@ -540,12 +540,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #7895a8;
 }
 .ocean-npu-mark {
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   font-weight: 700;
   letter-spacing: 0.7px;
   color: #3a749b;
@@ -557,7 +557,7 @@
 .ocean-banner h2 {
   margin: 9px 0 8px;
   color: #2b5673;
-  font-size: 23px;
+  font-size: calc(23px * var(--ui-font-scale, 1.18));
   font-weight: 600;
   letter-spacing: 1.2px;
 }
@@ -566,7 +566,7 @@
   align-items: center;
   gap: 10px;
   color: #8da4b3;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .ocean-banner-caption > span:first-child {
   color: #b18f5b;
@@ -579,7 +579,7 @@
 }
 .ocean-banner-caption small {
   color: #a0b5c3;
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   margin-left: 6px;
 }
 .ocean-banner-art {
@@ -604,11 +604,11 @@
     left: 186px;
   }
   .workbench-app .brand {
-    font-size: 15px;
+    font-size: calc(15px * var(--ui-font-scale, 1.18));
     padding: 0 4px;
   }
   .workbench-app .nav-item {
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-directory {
     width: 212px;
@@ -628,7 +628,7 @@
     margin-right: -42px;
   }
   .ocean-banner h2 {
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-stats {
     display: none;
@@ -654,14 +654,14 @@
     padding-top: 13px;
   }
   .workbench-app .nav-item {
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-font-scale, 1.18));
     padding: 13px 12px;
   }
   .workbench-app .brand {
-    font-size: 17px;
+    font-size: calc(17px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-purpose {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .ocean-banner {
     height: 100px;
@@ -669,22 +669,22 @@
     padding: 13px 16px;
   }
   .ocean-school-line {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
     gap: 6px;
   }
   .ocean-npu-mark {
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale, 1.18));
   }
   .ocean-school-divider {
     margin: 0 5px;
   }
   .ocean-banner h2 {
-    font-size: 20px;
+    font-size: calc(20px * var(--ui-font-scale, 1.18));
     letter-spacing: 0.8px;
     margin: 9px 0 8px;
   }
   .ocean-banner-caption {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
     gap: 8px;
   }
   .ocean-banner-caption small {
@@ -704,17 +704,17 @@
     padding: 16px;
   }
   .workbench-app .course-banner h1 {
-    font-size: 21px;
+    font-size: calc(21px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-banner p {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-tabs {
     padding-left: 14px;
     padding-right: 14px;
   }
   .workbench-app .course-tabs button {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-directory {
     width: 210px;
@@ -723,13 +723,13 @@
     padding: 20px 16px 35px;
   }
   .workbench-app .overview-unit-main h3 {
-    font-size: 14px;
+    font-size: calc(14px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .overview-unit-main p {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .overview-knowledge-links button {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-body {
     height: calc(100dvh - 365px);
@@ -740,33 +740,33 @@
     min-height: 430px;
   }
   .workbench-app .page-title h1 {
-    font-size: 22px;
+    font-size: calc(22px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .page-title p {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .message-text,
   .workbench-app .composer textarea {
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .header-status button {
     max-width: 117px;
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
     padding: 6px;
   }
 }
 @media (max-width: 400px) {
   .ocean-school-line {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
   }
   .ocean-banner h2 {
-    font-size: 19px;
+    font-size: calc(19px * var(--ui-font-scale, 1.18));
   }
   .ocean-banner-caption {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .course-tabs button {
-    font-size: 11px;
+    font-size: calc(11px * var(--ui-font-scale, 1.18));
   }
   .workbench-app .header-status button {
     max-width: 96px;
@@ -846,7 +846,7 @@
   gap: 15px;
   padding: 11px 11px 15px;
   color: #6c8b9e;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
 }
 .agent-chat-heading > span {
   display: flex;
@@ -855,7 +855,7 @@
 }
 .agent-chat-heading small {
   color: #9eb3c1;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   letter-spacing: 0.3px;
 }
 .workbench-app[data-page="chat"] .chat-scroll {
@@ -873,14 +873,14 @@
   max-width: 650px;
 }
 .workbench-app[data-page="chat"] .chat-welcome h2 {
-  font-size: 26px;
+  font-size: calc(26px * var(--ui-font-scale, 1.18));
   font-weight: 500;
   color: #335d77;
   margin-bottom: 15px;
   letter-spacing: 0.3px;
 }
 .workbench-app[data-page="chat"] .chat-welcome p {
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   color: #91a7b7;
 }
 .workbench-app[data-page="chat"] .prompt-grid {
@@ -897,7 +897,7 @@
   padding: 9px 12px;
   background: #fbfdfe;
   color: #7898ad;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .workbench-app[data-page="chat"] .prompt-grid button:hover {
   color: #547f99;
@@ -913,7 +913,7 @@
   border-radius: 4px;
   width: 28px;
   height: 28px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .workbench-app[data-page="chat"] .user .avatar {
   color: #8b9fb1;
@@ -924,7 +924,7 @@
   flex: 1;
 }
 .workbench-app[data-page="chat"] .message-text {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   color: #3a6179;
   line-height: 1.95;
 }
@@ -946,7 +946,7 @@
 .workbench-app[data-page="chat"] .agent-composer textarea {
   display: block;
   height: 78px;
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   border: 0;
   background: transparent;
@@ -965,10 +965,10 @@
   }
   .agent-chat-heading {
     padding: 11px 8px 10px;
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale, 1.18));
   }
   .agent-chat-heading small {
-    font-size: 9px;
+    font-size: calc(9px * var(--ui-font-scale, 1.18));
   }
   .workbench-app[data-page="chat"] .chat-scroll {
     padding: 24px 13px;
@@ -977,16 +977,16 @@
     margin-top: 10vh;
   }
   .workbench-app[data-page="chat"] .chat-welcome h2 {
-    font-size: 23px;
+    font-size: calc(23px * var(--ui-font-scale, 1.18));
   }
   .workbench-app[data-page="chat"] .chat-welcome p {
-    font-size: 12px;
+    font-size: calc(12px * var(--ui-font-scale, 1.18));
   }
   .workbench-app[data-page="chat"] .prompt-grid button {
-    font-size: 10px;
+    font-size: calc(10px * var(--ui-font-scale, 1.18));
   }
   .workbench-app[data-page="chat"] .message-text {
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale, 1.18));
   }
   .workbench-app[data-page="chat"] .message {
     gap: 9px;
@@ -997,7 +997,7 @@
   }
   .workbench-app[data-page="chat"] .agent-composer textarea {
     height: 70px;
-    font-size: 13px;
+    font-size: calc(13px * var(--ui-font-scale, 1.18));
   }
 }
 @media (max-height: 500px) {

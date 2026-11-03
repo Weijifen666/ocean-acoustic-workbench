@@ -61,42 +61,54 @@ async def check_matlab(request: Request):
         data = await request.json()
     except Exception:
         data = {}
+    if not isinstance(data, dict):
+        raise HTTPException(422, '路径检测请求须为JSON对象')
+    if any(key in data and data[key] is not None and not isinstance(data[key], str) for key in ('matlab_path', 'toolbox_path')):
+        raise HTTPException(422, 'MATLAB与工具包路径须为文本')
     cfg = config()
     m_path = data.get('matlab_path') or cfg.get('matlab_path', '')
     tb_path = data.get('toolbox_path') or cfg.get('toolbox_path', '')
+    if not isinstance(m_path, str) or not isinstance(tb_path, str):
+        raise HTTPException(422, 'MATLAB与工具包路径须为文本')
 
     exe_p = Path(m_path) if m_path else None
     tb_p = Path(tb_path) if tb_path else None
 
     matlab_ok = bool(exe_p and exe_p.is_file())
     ver_match = re.search(r'R202\d[ab]', m_path, re.I) if m_path else None
-    matlab_ver = ver_match.group(0).upper() if ver_match else ('可用' if matlab_ok else '未检测到')
+    matlab_ver = ver_match.group(0).upper() if ver_match else ('文件存在' if matlab_ok else '未检测到')
 
     kraken_ok = bool(tb_p and (tb_p / 'bin' / 'kraken.exe').is_file())
     bellhop_ok = bool(tb_p and (tb_p / 'bin' / 'bellhop.exe').is_file())
     field_ok = bool(tb_p and (tb_p / 'bin' / 'field.exe').is_file())
     scooter_ok = bool(tb_p and (tb_p / 'bin' / 'scooter.exe').is_file())
-    bounce_ok = bool(tb_p and (tb_p / 'bin' / 'bounce.exe').is_file())
     read_ok = bool(tb_p and (tb_p / 'ReadWrite' / 'read_modes.m').is_file())
     shd_ok = bool(tb_p and (tb_p / 'ReadWrite' / 'read_shd.m').is_file())
     env_ok = bool(tb_p and (tb_p / 'tests' / 'Munk' / 'MunkK.env').is_file())
+    flp_ok = bool(tb_p and (tb_p / 'tests' / 'Munk' / 'MunkK.flp').is_file())
 
     components = [
-        {'id': 'matlab', 'name': 'MATLAB 核心引擎', 'path': m_path, 'ok': matlab_ok, 'desc': f'版本: {matlab_ver}' if matlab_ok else '可执行文件不存在'},
-        {'id': 'kraken', 'name': 'KRAKEN 简正波求解器', 'path': str(tb_p / 'bin' / 'kraken.exe') if tb_p else '', 'ok': kraken_ok, 'desc': 'KRAKEN / KRAKENC 二进制求解器'},
+        {'id': 'matlab', 'name': 'MATLAB 核心引擎', 'path': m_path, 'ok': matlab_ok, 'desc': f'路径推定版本: {matlab_ver}；未启动验证' if matlab_ok else '可执行文件不存在'},
+        {'id': 'kraken', 'name': 'KRAKEN 简正波求解器', 'path': str(tb_p / 'bin' / 'kraken.exe') if tb_p else '', 'ok': kraken_ok, 'desc': 'kraken.exe 文件存在性'},
         {'id': 'bellhop', 'name': 'BELLHOP 射线求解器', 'path': str(tb_p / 'bin' / 'bellhop.exe') if tb_p else '', 'ok': bellhop_ok, 'desc': '高斯光束与声线追踪求解器'},
         {'id': 'field', 'name': 'FIELD 场分布合成器', 'path': str(tb_p / 'bin' / 'field.exe') if tb_p else '', 'ok': field_ok, 'desc': '声压场与传播损失合成'},
         {'id': 'scooter', 'name': 'SCOOTER 快速场求解器', 'path': str(tb_p / 'bin' / 'scooter.exe') if tb_p else '', 'ok': scooter_ok, 'desc': 'FFP 快速场积分计算'},
         {'id': 'readwrite', 'name': 'AT 数据读写库', 'path': str(tb_p / 'ReadWrite') if tb_p else '', 'ok': read_ok and shd_ok, 'desc': 'read_modes.m, read_shd.m 数据读取函数'},
-        {'id': 'testcases', 'name': '基准测试算例', 'path': str(tb_p / 'tests' / 'Munk') if tb_p else '', 'ok': env_ok, 'desc': 'Munk 深海 5000m 环境文件'}
+        {'id': 'testcases', 'name': '基准测试算例', 'path': str(tb_p / 'tests' / 'Munk') if tb_p else '', 'ok': env_ok and flp_ok, 'desc': 'MunkK.env 与 MunkK.flp 成对输入文件'}
     ]
 
-    all_ok = matlab_ok and kraken_ok and field_ok and read_ok
+    basic_ok = matlab_ok and kraken_ok and field_ok and read_ok and shd_ok and env_ok and flp_ok
     return {
-        'ok': all_ok,
+        'ok': basic_ok,
+        'basic_components_present': basic_ok,
+        'all_components_present': all(component['ok'] for component in components),
+        'check_type': 'filesystem_only',
+        'matlab_started': False,
+        'license_checked': False,
         'matlab_version': matlab_ver,
         'components': components,
-        'summary': 'MATLAB 与 Acoustics Toolbox 计算环境检测全部通过，可执行全套声学仿真。' if all_ok else '部分计算组件缺失，请检查路径配置。'
+        'summary': ('基础 KRAKEN/FIELD 所需文件路径齐备。' if basic_ok else '基础 KRAKEN/FIELD 所需文件缺失，请检查各项路径。')
+                   + '本次仅检查文件存在性，未启动 MATLAB；许可证及实际运行需通过任务验证，不能据此判断全部模型可运行。'
     }
 
 

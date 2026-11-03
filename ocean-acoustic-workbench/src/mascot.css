@@ -35,14 +35,14 @@
   justify-content: center;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 18px;
   font-weight: 600;
   color: #284f69;
   text-shadow: 0 1px #fff;
 }
 .mascot-name > span {
-  font-size: 9px;
+  font-size: calc(9px * var(--ui-font-scale, 1.18));
   font-weight: 400;
   color: #5c7b8d;
   background: #f7fbfce8;
@@ -87,7 +87,7 @@
   color: #3d627b;
 }
 .mascot-preferences > strong {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   display: block;
   padding: 0 4px 8px;
 }
@@ -96,7 +96,7 @@
   align-items: center;
   gap: 7px;
   padding: 8px 4px;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   width: 100%;
   text-align: left;
 }
@@ -110,7 +110,7 @@
   padding-top: 9px;
   margin-top: 4px;
   color: #8197a6;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
 }
 .mascot-restore {
@@ -126,7 +126,7 @@
   border-radius: 5px;
   background: #f7fbfc;
   color: #47748d;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .mascot-body {
   transform-origin: 91px 132px;
@@ -256,12 +256,12 @@
 }
 .mascot-chat-heading strong {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--ui-font-scale, 1.18));
   font-weight: 600;
 }
 .mascot-chat-heading div div > span {
   display: block;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #8a9faa;
   margin-top: 4px;
 }
@@ -295,12 +295,12 @@
   scrollbar-color: #c3d8e3 transparent;
 }
 .mascot-chat-empty h3 {
-  font-size: 14px;
+  font-size: calc(14px * var(--ui-font-scale, 1.18));
   margin: 8px 0 10px;
   color: #365970;
 }
 .mascot-chat-empty p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.8;
   color: #7893a5;
   margin-bottom: 17px;
@@ -309,7 +309,7 @@
   display: block;
   width: 100%;
   text-align: left;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   padding: 10px 0;
   color: #447893;
   border-bottom: 1px solid #e6eef2;
@@ -327,14 +327,14 @@
   justify-content: space-between;
   gap: 12px;
   color: #7994a5;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .mascot-message-label > span:last-child {
   text-align: right;
   overflow-wrap: anywhere;
 }
 .mascot-message > p {
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.85;
   margin: 8px 0 0;
   white-space: pre-wrap;
@@ -354,12 +354,12 @@
   border-left: 2px solid #cbbf9d;
   margin-top: 10px;
   padding: 8px 9px;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
 }
 .mascot-answer-sources {
   margin-top: 10px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #68879b;
 }
 .mascot-answer-sources summary {
@@ -375,13 +375,13 @@
   margin-top: 8px;
 }
 .mascot-answer-sources strong {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   display: block;
   color: #4b728a;
 }
 .mascot-answer-sources small {
   display: block;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #8a9fae;
   margin-top: 5px;
 }
@@ -397,13 +397,13 @@
   align-items: center;
   color: #427c98;
   padding: 3px 0;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .mascot-thinking {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   color: #668c9f;
   padding: 6px 0;
 }
@@ -426,7 +426,7 @@
   animation-delay: 0.4s;
 }
 .mascot-load-error {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
   color: #9a785b;
   padding: 9px;
@@ -446,7 +446,7 @@
   border: 0;
   outline: none;
   resize: none;
-  font-size: 12px;
+  font-size: calc(12px * var(--ui-font-scale, 1.18));
   line-height: 1.75;
   color: #34576d;
   background: transparent;
@@ -462,7 +462,7 @@
   gap: 12px;
 }
 .mascot-chat-composer small {
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   color: #8ca2af;
 }
 .mascot-chat-composer button {
@@ -549,16 +549,16 @@
 .mascot-message-trace {
   margin-top: 9px;
   color: #8ba1ae;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .mascot-message-trace > summary {
   cursor: pointer;
   color: #8ba1ae;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
 }
 .mascot-message-trace > p {
   color: #7e98aa;
-  font-size: 10px;
+  font-size: calc(10px * var(--ui-font-scale, 1.18));
   line-height: 1.7;
   margin: 9px 0;
   overflow-wrap: anywhere;
@@ -567,14 +567,14 @@
   margin-top: 8px;
 }
 .mascot-chat-empty h3 {
-  font-size: 15px;
+  font-size: calc(15px * var(--ui-font-scale, 1.18));
   font-weight: 500;
 }
 .mascot-chat-empty p {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
 }
 .mascot-chat-empty button {
-  font-size: 11px;
+  font-size: calc(11px * var(--ui-font-scale, 1.18));
   padding: 9px 0;
 }
 @media (max-height: 500px) {

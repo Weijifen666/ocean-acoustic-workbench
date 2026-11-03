@@ -1,0 +1,220 @@
+{
+  "sources": [
+    {
+      "id": "S01",
+      "name": "1-绪论.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 2、4 页",
+      "sha256": "2392834CD28DBAE33BD1A04D36407C30E3C459C4F38D6061456445489A5BA8C4"
+    },
+    {
+      "id": "S02",
+      "name": "声场量子计算方法.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "摘要、方法框架；出版信息复核",
+      "sha256": "7FFB4DC3181BF77F0136032E4BA1276C744353A75FFD55C0C5D628FCEFB3CFE0"
+    },
+    {
+      "id": "S03",
+      "name": "计算海洋声学-2版.pdf",
+      "type": ".pdf",
+      "extraction_state": "needs_ocr",
+      "duplicate_of": null,
+      "reading_scope": "中文目录及对应第 5 章重点页；需 OCR",
+      "sha256": "FC3CA8BFFD05910C0D201B791EBFEA8BCF7A2D058213C7F12F75ED505B1668E8"
+    },
+    {
+      "id": "S04",
+      "name": "教学补充-讲0-Acoustic Forecasting Capabilities and Environmental Sensivities-Heaney K. OASIS.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 5～6 页",
+      "sha256": "9F1914F38D7D0D76C5C4A7E02034B0F869BE30E3168C24C4C3788CC8741CF63B"
+    },
+    {
+      "id": "S05",
+      "name": "教学补充-菲律宾海声学实验-Worcester_NPAL_PhilSea_2013_JASA.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 1 页摘要、实验布设",
+      "sha256": "C6DF6C8BBBB67469BB92CEBD0800A0EA1B5FDE7C59FD121DC101C543FA1C6603"
+    },
+    {
+      "id": "S06",
+      "name": "教学补充-菲律宾海声学实验-philsea ocean acoustic experiment.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 3 页摘要、第 4～5 页目录、第 6 章",
+      "sha256": "264ABF6B5E00586C5CE56AA67863DACDEB6963512D24BCA2FBE684BBAFB49C8E"
+    },
+    {
+      "id": "S07",
+      "name": "教学补充-SW06-acoustic and oceanographic observations and configuration information for the whoi moorings from the sw06 experiment.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 2～7、84～90 页",
+      "sha256": "5CE4A25273050CB48892289D22CA6342599162F5B8DDEA033C870784475A039B"
+    },
+    {
+      "id": "S08",
+      "name": "教学补充-模型overview of selected underwater acoustic propagation models.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "模型类别与能力表，1993 年历史综述",
+      "sha256": "6DBD8EC7F43929BF39C37C9D8FE533FE167EF324E767F79824EF4D5E5DEE8318"
+    },
+    {
+      "id": "S09",
+      "name": "2.P2：KRAKEN使用方法(Av757491887,P2).mp4",
+      "type": ".mp4",
+      "extraction_state": "not_applicable",
+      "duplicate_of": null,
+      "reading_scope": "约 10:31；2:38 env、7:22 声场画面",
+      "sha256": "3723B838B36636482B0961C48C59A20B3A4315218FD793F45BEBB34AA6388DBB"
+    },
+    {
+      "id": "S10",
+      "name": "教学补充-Sound Propagation through the Stochastic Ocean by John A. Colosi (z-lib.org)-v2.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "目录与第 2 章",
+      "sha256": "1F19886FFA682DB3F3D582002D21C7CA6BEF1E27AA2B00A8E65307EDF78C674B"
+    },
+    {
+      "id": "S11",
+      "name": "3.P3：BELLHOP使用方法(Av757491887,P3).mp4",
+      "type": ".mp4",
+      "extraction_state": "not_applicable",
+      "duplicate_of": null,
+      "reading_scope": "约 08:53；2:13 env、6:13 操作画面",
+      "sha256": "A155F947779127C5253482BF88A34F3D2585EFEE6C895386788F900746CAD221"
+    },
+    {
+      "id": "S12",
+      "name": "教学补充-overview of selected underwater acoustic propagation models.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": "S08",
+      "reading_scope": "同 S08",
+      "sha256": "6DBD8EC7F43929BF39C37C9D8FE533FE167EF324E767F79824EF4D5E5DEE8318"
+    },
+    {
+      "id": "S13",
+      "name": "1.P1：KRAKEN、BELLHOP、RAM原理和使用的场景区别(Av757491887,P1).mp4",
+      "type": ".mp4",
+      "extraction_state": "not_applicable",
+      "duplicate_of": null,
+      "reading_scope": "约 03:19；0:50 目录、2:20 射线模型画面",
+      "sha256": "F5FB1145836392A1BC10101D15B6081E2B9F17B101785F0E7C0EA7CB7F5F3701"
+    },
+    {
+      "id": "S14",
+      "name": "4.P4：RAM使用方法(Av757491887,P4).mp4",
+      "type": ".mp4",
+      "extraction_state": "not_applicable",
+      "duplicate_of": null,
+      "reading_scope": "约 06:32；1:38 ram.in、4:35 操作画面",
+      "sha256": "728F7AB7C629F2BFF80F16CC227F718EEB1A147BFDF11195371F43CA7D1BEE57"
+    },
+    {
+      "id": "S15",
+      "name": "教学补充-ASIAEX2001实验-preliminary acoustic and oceanographic observations from the asiaex 2001 south china sea experiment.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 7、54、72 页起",
+      "sha256": "9C68B533673BAE44FA11CB75047129B383AA7D79F977FF14C456C4494057083B"
+    },
+    {
+      "id": "S16",
+      "name": "教学补充-shallow water 06 nonlinear internal waves physics experiment.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "摘要、实验布设、内波讨论",
+      "sha256": "0A1A6B24985CE39475AA8348119095D04085A9E4F0C4D88AB038DB82E75F9DE4"
+    },
+    {
+      "id": "S17",
+      "name": "Computational Ocean Acoustics 2nd_Edition.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 12～19 页目录、第 356 页起第 5 章",
+      "sha256": "7AC704FC9A2B6503D304A3FBE8EB0239A2A1CC8C6453D203A906ADB3025D753B"
+    },
+    {
+      "id": "S18",
+      "name": "Principles of Sonar Performance Modelling.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 83 页起第 3 章、第 88 页量定义",
+      "sha256": "6FFF8159DA53A63322E56B8C1B367E36BC308673483E8DDAAF41E5F94ED0457A"
+    },
+    {
+      "id": "S19",
+      "name": "国防科技著作精品译丛  声呐性能建模原理_13794696-压缩.pdf",
+      "type": ".pdf",
+      "extraction_state": "needs_ocr",
+      "duplicate_of": null,
+      "reading_scope": "目录和对应中文章节；需 OCR",
+      "sha256": "013C09088E66AABE84953617E1798FA3BABA0D173F77F67E17F67C606B6A0C79"
+    },
+    {
+      "id": "S20",
+      "name": "at.zip",
+      "type": ".zip",
+      "extraction_state": "not_applicable",
+      "duplicate_of": null,
+      "reading_scope": "kraken.m、读写函数、Munk 成对输入",
+      "sha256": "3DF9C36A1F08E005C90F0736A952D64B46263FE36D4CF31A9ECCF98E0A3DB942"
+    },
+    {
+      "id": "S21",
+      "name": "2-波动方程基本理论.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 1-54 页",
+      "sha256": "C7A9DAB0799F2A7DA53C18B2852138CF844A9798CB2B471A0BC4C38032824D1E"
+    },
+    {
+      "id": "S22",
+      "name": "3-波数积分方法.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 1-66 页",
+      "sha256": "D68AF3BCDF1A0D513D30A3DCDB4F89AD4E2BDC0D0ECF9839C09F6F13DA25AA9A"
+    },
+    {
+      "id": "S23",
+      "name": "4-简正波方法.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 1-56 页",
+      "sha256": "64D1F5DC2FD80ECD1AB8E222C34754EEDF6329F36998F1DE7F2AE5ADF6D5B68C"
+    },
+    {
+      "id": "S24",
+      "name": "5-抛物方程.pdf",
+      "type": ".pdf",
+      "extraction_state": "text_available",
+      "duplicate_of": null,
+      "reading_scope": "PDF 第 1-46 页",
+      "sha256": "33CC2DB65A89BBBFDFE9E5ACC1DC42F74CF8171DE81F3022C896F80B50DCDF66"
+    }
+  ]
+}

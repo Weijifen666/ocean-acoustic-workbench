@@ -153,16 +153,23 @@
       "images": [
         {
           "url": "/assets/knowledge/quantities.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/29",
-          "caption": "S17 · 教材原页 29",
+          "caption": "教材原页 · S17 · PDF 第 29 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 29,
           "source_url": "/api/source/S17/page/29"
         },
         {
           "url": "/api/source/S17/page/30",
-          "caption": "S17 · 教材原页 30",
+          "caption": "教材原页 · S17 · PDF 第 30 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 30,
           "source_url": "/api/source/S17/page/30"
         }
       ]
@@ -205,16 +212,23 @@
       "images": [
         {
           "url": "/assets/knowledge/quantities.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/31",
-          "caption": "S17 · 教材原页 31",
+          "caption": "教材原页 · S17 · PDF 第 31 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 31,
           "source_url": "/api/source/S17/page/31"
         },
         {
           "url": "/api/source/S17/page/32",
-          "caption": "S17 · 教材原页 32",
+          "caption": "教材原页 · S17 · PDF 第 32 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 32,
           "source_url": "/api/source/S17/page/32"
         }
       ]
@@ -257,16 +271,23 @@
       "images": [
         {
           "url": "/assets/knowledge/quantities.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/32",
-          "caption": "S17 · 教材原页 32",
+          "caption": "教材原页 · S17 · PDF 第 32 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 32,
           "source_url": "/api/source/S17/page/32"
         },
         {
           "url": "/api/source/S17/page/33",
-          "caption": "S17 · 教材原页 33",
+          "caption": "教材原页 · S17 · PDF 第 33 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 33,
           "source_url": "/api/source/S17/page/33"
         }
       ]
@@ -309,16 +330,23 @@
       "images": [
         {
           "url": "/assets/knowledge/spreading.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/32",
-          "caption": "S17 · 教材原页 32",
+          "caption": "教材原页 · S17 · PDF 第 32 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 32,
           "source_url": "/api/source/S17/page/32"
         },
         {
           "url": "/api/source/S17/page/33",
-          "caption": "S17 · 教材原页 33",
+          "caption": "教材原页 · S17 · PDF 第 33 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 33,
           "source_url": "/api/source/S17/page/33"
         }
       ]
@@ -356,11 +384,15 @@
       "images": [
         {
           "url": "/assets/knowledge/spreading.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/33",
-          "caption": "S17 · 教材原页 33",
+          "caption": "教材原页 · S17 · PDF 第 33 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 33,
           "source_url": "/api/source/S17/page/33"
         }
       ]
@@ -398,11 +430,15 @@
       "images": [
         {
           "url": "/assets/knowledge/spreading.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/34",
-          "caption": "S17 · 教材原页 34",
+          "caption": "教材原页 · S17 · PDF 第 34 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 34,
           "source_url": "/api/source/S17/page/34"
         }
       ]
@@ -445,16 +481,23 @@
       "images": [
         {
           "url": "/assets/knowledge/methods.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/90",
-          "caption": "S17 · 教材原页 90",
+          "caption": "教材原页 · S17 · PDF 第 90 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 90,
           "source_url": "/api/source/S17/page/90"
         },
         {
           "url": "/api/source/S17/page/91",
-          "caption": "S17 · 教材原页 91",
+          "caption": "教材原页 · S17 · PDF 第 91 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 91,
           "source_url": "/api/source/S17/page/91"
         }
       ]
@@ -497,16 +540,23 @@
       "images": [
         {
           "url": "/assets/knowledge/ssp.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/22",
-          "caption": "S17 · 教材原页 22",
+          "caption": "教材原页 · S17 · PDF 第 22 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 22,
           "source_url": "/api/source/S17/page/22"
         },
         {
           "url": "/api/source/S17/page/23",
-          "caption": "S17 · 教材原页 23",
+          "caption": "教材原页 · S17 · PDF 第 23 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 23,
           "source_url": "/api/source/S17/page/23"
         }
       ]
@@ -544,11 +594,15 @@
       "images": [
         {
           "url": "/assets/knowledge/ssp.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/22",
-          "caption": "S17 · 教材原页 22",
+          "caption": "教材原页 · S17 · PDF 第 22 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 22,
           "source_url": "/api/source/S17/page/22"
         }
       ]
@@ -596,21 +650,31 @@
       "images": [
         {
           "url": "/assets/knowledge/ssp.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/23",
-          "caption": "S17 · 教材原页 23",
+          "caption": "教材原页 · S17 · PDF 第 23 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 23,
           "source_url": "/api/source/S17/page/23"
         },
         {
           "url": "/api/source/S17/page/43",
-          "caption": "S17 · 教材原页 43",
+          "caption": "教材原页 · S17 · PDF 第 43 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 43,
           "source_url": "/api/source/S17/page/43"
         },
         {
           "url": "/api/source/S17/page/44",
-          "caption": "S17 · 教材原页 44",
+          "caption": "教材原页 · S17 · PDF 第 44 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 44,
           "source_url": "/api/source/S17/page/44"
         }
       ]
@@ -653,16 +717,23 @@
       "images": [
         {
           "url": "/assets/knowledge/ssp.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/44",
-          "caption": "S17 · 教材原页 44",
+          "caption": "教材原页 · S17 · PDF 第 44 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 44,
           "source_url": "/api/source/S17/page/44"
         },
         {
           "url": "/api/source/S17/page/45",
-          "caption": "S17 · 教材原页 45",
+          "caption": "教材原页 · S17 · PDF 第 45 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 45,
           "source_url": "/api/source/S17/page/45"
         }
       ]
@@ -700,11 +771,15 @@
       "images": [
         {
           "url": "/assets/knowledge/boundary.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/357",
-          "caption": "S17 · 教材原页 357",
+          "caption": "教材原页 · S17 · PDF 第 357 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 357,
           "source_url": "/api/source/S17/page/357"
         }
       ]
@@ -742,11 +817,15 @@
       "images": [
         {
           "url": "/assets/knowledge/boundary.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/357",
-          "caption": "S17 · 教材原页 357",
+          "caption": "教材原页 · S17 · PDF 第 357 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 357,
           "source_url": "/api/source/S17/page/357"
         }
       ]
@@ -789,16 +868,23 @@
       "images": [
         {
           "url": "/assets/knowledge/boundary.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/27",
-          "caption": "S17 · 教材原页 27",
+          "caption": "教材原页 · S17 · PDF 第 27 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 27,
           "source_url": "/api/source/S17/page/27"
         },
         {
           "url": "/api/source/S17/page/28",
-          "caption": "S17 · 教材原页 28",
+          "caption": "教材原页 · S17 · PDF 第 28 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 28,
           "source_url": "/api/source/S17/page/28"
         }
       ]
@@ -846,21 +932,31 @@
       "images": [
         {
           "url": "/assets/knowledge/methods.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/51",
-          "caption": "S17 · 教材原页 51",
+          "caption": "教材原页 · S17 · PDF 第 51 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 51,
           "source_url": "/api/source/S17/page/51"
         },
         {
           "url": "/api/source/S17/page/52",
-          "caption": "S17 · 教材原页 52",
+          "caption": "教材原页 · S17 · PDF 第 52 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 52,
           "source_url": "/api/source/S17/page/52"
         },
         {
           "url": "/api/source/S17/page/53",
-          "caption": "S17 · 教材原页 53",
+          "caption": "教材原页 · S17 · PDF 第 53 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 53,
           "source_url": "/api/source/S17/page/53"
         }
       ]
@@ -908,16 +1004,23 @@
       "images": [
         {
           "url": "/assets/knowledge/ssp.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/375",
-          "caption": "S17 · 教材原页 375",
+          "caption": "教材原页 · S17 · PDF 第 375 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 375,
           "source_url": "/api/source/S17/page/375"
         },
         {
           "url": "/api/source/S17/page/376",
-          "caption": "S17 · 教材原页 376",
+          "caption": "教材原页 · S17 · PDF 第 376 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 376,
           "source_url": "/api/source/S17/page/376"
         }
       ]
@@ -965,21 +1068,31 @@
       "images": [
         {
           "url": "/assets/knowledge/modes.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/356",
-          "caption": "S17 · 教材原页 356",
+          "caption": "教材原页 · S17 · PDF 第 356 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 356,
           "source_url": "/api/source/S17/page/356"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         },
         {
           "url": "/api/source/S17/page/421",
-          "caption": "S17 · 教材原页 421",
+          "caption": "教材原页 · S17 · PDF 第 421 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 421,
           "source_url": "/api/source/S17/page/421"
         }
       ]
@@ -1017,11 +1130,15 @@
       "images": [
         {
           "url": "/assets/knowledge/modes.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1059,11 +1176,15 @@
       "images": [
         {
           "url": "/assets/knowledge/modes.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1101,11 +1222,15 @@
       "images": [
         {
           "url": "/assets/knowledge/modes.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1143,11 +1268,15 @@
       "images": [
         {
           "url": "/assets/knowledge/modes.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1190,16 +1319,23 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/175",
-          "caption": "S17 · 教材原页 175",
+          "caption": "教材原页 · S17 · PDF 第 175 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 175,
           "source_url": "/api/source/S17/page/175"
         },
         {
           "url": "/api/source/S17/page/194",
-          "caption": "S17 · 教材原页 194",
+          "caption": "教材原页 · S17 · PDF 第 194 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 194,
           "source_url": "/api/source/S17/page/194"
         }
       ]
@@ -1242,16 +1378,23 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/176",
-          "caption": "S17 · 教材原页 176",
+          "caption": "教材原页 · S17 · PDF 第 176 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 176,
           "source_url": "/api/source/S17/page/176"
         },
         {
           "url": "/api/source/S17/page/217",
-          "caption": "S17 · 教材原页 217",
+          "caption": "教材原页 · S17 · PDF 第 217 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 217,
           "source_url": "/api/source/S17/page/217"
         }
       ]
@@ -1289,11 +1432,15 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/194",
-          "caption": "S17 · 教材原页 194",
+          "caption": "教材原页 · S17 · PDF 第 194 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 194,
           "source_url": "/api/source/S17/page/194"
         }
       ]
@@ -1336,16 +1483,23 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/199",
-          "caption": "S17 · 教材原页 199",
+          "caption": "教材原页 · S17 · PDF 第 199 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 199,
           "source_url": "/api/source/S17/page/199"
         },
         {
           "url": "/api/source/S17/page/201",
-          "caption": "S17 · 教材原页 201",
+          "caption": "教材原页 · S17 · PDF 第 201 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 201,
           "source_url": "/api/source/S17/page/201"
         }
       ]
@@ -1388,16 +1542,23 @@
       "images": [
         {
           "url": "/assets/knowledge/methods.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/477",
-          "caption": "S17 · 教材原页 477",
+          "caption": "教材原页 · S17 · PDF 第 477 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 477,
           "source_url": "/api/source/S17/page/477"
         },
         {
           "url": "/api/source/S17/page/478",
-          "caption": "S17 · 教材原页 478",
+          "caption": "教材原页 · S17 · PDF 第 478 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 478,
           "source_url": "/api/source/S17/page/478"
         }
       ]
@@ -1440,16 +1601,23 @@
       "images": [
         {
           "url": "/assets/knowledge/methods.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/421",
-          "caption": "S17 · 教材原页 421",
+          "caption": "教材原页 · S17 · PDF 第 421 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 421,
           "source_url": "/api/source/S17/page/421"
         },
         {
           "url": "/api/source/S17/page/427",
-          "caption": "S17 · 教材原页 427",
+          "caption": "教材原页 · S17 · PDF 第 427 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 427,
           "source_url": "/api/source/S17/page/427"
         }
       ]
@@ -1492,7 +1660,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1539,16 +1708,23 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/175",
-          "caption": "S17 · 教材原页 175",
+          "caption": "教材原页 · S17 · PDF 第 175 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 175,
           "source_url": "/api/source/S17/page/175"
         },
         {
           "url": "/api/source/S17/page/199",
-          "caption": "S17 · 教材原页 199",
+          "caption": "教材原页 · S17 · PDF 第 199 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 199,
           "source_url": "/api/source/S17/page/199"
         }
       ]
@@ -1596,16 +1772,23 @@
       "images": [
         {
           "url": "/assets/knowledge/methods.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/477",
-          "caption": "S17 · 教材原页 477",
+          "caption": "教材原页 · S17 · PDF 第 477 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 477,
           "source_url": "/api/source/S17/page/477"
         },
         {
           "url": "/api/source/S17/page/478",
-          "caption": "S17 · 教材原页 478",
+          "caption": "教材原页 · S17 · PDF 第 478 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 478,
           "source_url": "/api/source/S17/page/478"
         }
       ]
@@ -1653,7 +1836,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1695,7 +1879,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1732,7 +1917,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1774,7 +1960,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1816,7 +2003,8 @@
       "images": [
         {
           "url": "/assets/knowledge/pipeline.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1863,16 +2051,23 @@
       "images": [
         {
           "url": "/assets/knowledge/spreading.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/33",
-          "caption": "S17 · 教材原页 33",
+          "caption": "教材原页 · S17 · PDF 第 33 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 33,
           "source_url": "/api/source/S17/page/33"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1915,11 +2110,15 @@
       "images": [
         {
           "url": "/assets/knowledge/grid.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/359",
-          "caption": "S17 · 教材原页 359",
+          "caption": "教材原页 · S17 · PDF 第 359 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 359,
           "source_url": "/api/source/S17/page/359"
         }
       ]
@@ -1957,7 +2156,8 @@
       "images": [
         {
           "url": "/assets/knowledge/grid.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -1999,11 +2199,15 @@
       "images": [
         {
           "url": "/assets/knowledge/grid.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/357",
-          "caption": "S17 · 教材原页 357",
+          "caption": "教材原页 · S17 · PDF 第 357 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 357,
           "source_url": "/api/source/S17/page/357"
         }
       ]
@@ -2046,7 +2250,8 @@
       "images": [
         {
           "url": "/assets/knowledge/grid.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         }
       ]
     },
@@ -2093,21 +2298,31 @@
       "images": [
         {
           "url": "/assets/knowledge/rays.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/40",
-          "caption": "S17 · 教材原页 40",
+          "caption": "教材原页 · S17 · PDF 第 40 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 40,
           "source_url": "/api/source/S17/page/40"
         },
         {
           "url": "/api/source/S17/page/41",
-          "caption": "S17 · 教材原页 41",
+          "caption": "教材原页 · S17 · PDF 第 41 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 41,
           "source_url": "/api/source/S17/page/41"
         },
         {
           "url": "/api/source/S17/page/42",
-          "caption": "S17 · 教材原页 42",
+          "caption": "教材原页 · S17 · PDF 第 42 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 42,
           "source_url": "/api/source/S17/page/42"
         }
       ]
@@ -2150,16 +2365,23 @@
       "images": [
         {
           "url": "/assets/knowledge/observation.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S15/page/54",
-          "caption": "S15 · 教材原页 54",
+          "caption": "教材原页 · S15 · PDF 第 54 页",
+          "kind": "source_page",
+          "source_id": "S15",
+          "pdf_page": 54,
           "source_url": "/api/source/S15/page/54"
         },
         {
           "url": "/api/source/S07/page/84",
-          "caption": "S07 · 教材原页 84",
+          "caption": "教材原页 · S07 · PDF 第 84 页",
+          "kind": "source_page",
+          "source_id": "S07",
+          "pdf_page": 84,
           "source_url": "/api/source/S07/page/84"
         }
       ]
@@ -2197,11 +2419,15 @@
       "images": [
         {
           "url": "/assets/knowledge/observation.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S15/page/54",
-          "caption": "S15 · 教材原页 54",
+          "caption": "教材原页 · S15 · PDF 第 54 页",
+          "kind": "source_page",
+          "source_id": "S15",
+          "pdf_page": 54,
           "source_url": "/api/source/S15/page/54"
         }
       ]
@@ -2239,11 +2465,15 @@
       "images": [
         {
           "url": "/assets/knowledge/observation.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S07/page/84",
-          "caption": "S07 · 教材原页 84",
+          "caption": "教材原页 · S07 · PDF 第 84 页",
+          "kind": "source_page",
+          "source_id": "S07",
+          "pdf_page": 84,
           "source_url": "/api/source/S07/page/84"
         }
       ]
@@ -2291,21 +2521,31 @@
       "images": [
         {
           "url": "/assets/knowledge/observation.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/22",
-          "caption": "S17 · 教材原页 22",
+          "caption": "教材原页 · S17 · PDF 第 22 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 22,
           "source_url": "/api/source/S17/page/22"
         },
         {
           "url": "/api/source/S15/page/54",
-          "caption": "S15 · 教材原页 54",
+          "caption": "教材原页 · S15 · PDF 第 54 页",
+          "kind": "source_page",
+          "source_id": "S15",
+          "pdf_page": 54,
           "source_url": "/api/source/S15/page/54"
         },
         {
           "url": "/api/source/S07/page/84",
-          "caption": "S07 · 教材原页 84",
+          "caption": "教材原页 · S07 · PDF 第 84 页",
+          "kind": "source_page",
+          "source_id": "S07",
+          "pdf_page": 84,
           "source_url": "/api/source/S07/page/84"
         }
       ]
@@ -2353,16 +2593,23 @@
       "images": [
         {
           "url": "/assets/knowledge/observation.svg",
-          "caption": "课程原理示意 · 非求解器声场结果"
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
         },
         {
           "url": "/api/source/S17/page/52",
-          "caption": "S17 · 教材原页 52",
+          "caption": "教材原页 · S17 · PDF 第 52 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 52,
           "source_url": "/api/source/S17/page/52"
         },
         {
           "url": "/api/source/S17/page/53",
-          "caption": "S17 · 教材原页 53",
+          "caption": "教材原页 · S17 · PDF 第 53 页",
+          "kind": "source_page",
+          "source_id": "S17",
+          "pdf_page": 53,
           "source_url": "/api/source/S17/page/53"
         }
       ]
@@ -2394,7 +2641,7 @@
       "conditions": "距离无关（水平分层）时严格；距离相关需分段或与耦合/PE 结合。",
       "misconception": "不要把波数积分当成简正波的替代品：两者数学基础相同，只是积分求法不同。",
       "example": "SCOOTER 就是波数积分的 AT 实现。",
-      "diagram": "",
+      "diagram": "spectral-transform",
       "tags": [
         "理论方法"
       ],
@@ -2404,14 +2651,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-transform.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S22/page/2",
-          "caption": "S22 · 教材原页 2",
+          "caption": "教材原页 · S22 · PDF 第 2 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 2,
           "source_url": "/api/source/S22/page/2"
         },
         {
           "url": "/api/source/S22/page/5",
-          "caption": "S22 · 教材原页 5",
+          "caption": "教材原页 · S22 · PDF 第 5 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 5,
           "source_url": "/api/source/S22/page/5"
+        },
+        {
+          "url": "/api/source/S17/page/254",
+          "caption": "补充教材原页 · S17 · PDF 第 254 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 254,
+          "source_url": "/api/source/S17/page/254"
         }
       ]
     },
@@ -2437,7 +2703,7 @@
       "conditions": "水平分层假设：声速/密度只随深度变化。",
       "misconception": "深度分离方程不是简正波独有，波数积分也用它。",
       "example": "",
-      "diagram": "",
+      "diagram": "spectral-transform",
       "tags": [
         "理论方法"
       ],
@@ -2447,9 +2713,25 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-transform.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S22/page/5",
-          "caption": "S22 · 教材原页 5",
+          "caption": "教材原页 · S22 · PDF 第 5 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 5,
           "source_url": "/api/source/S22/page/5"
+        },
+        {
+          "url": "/api/source/S17/page/254",
+          "caption": "补充教材原页 · S17 · PDF 第 254 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 254,
+          "source_url": "/api/source/S17/page/254"
         }
       ]
     },
@@ -2480,7 +2762,7 @@
       "conditions": "需要足够的波数采样与合适的围线。",
       "misconception": "把 FFT 混叠当成物理泄漏。",
       "example": "",
-      "diagram": "",
+      "diagram": "spectral-transform",
       "tags": [
         "理论方法"
       ],
@@ -2490,14 +2772,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-transform.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S22/page/53",
-          "caption": "S22 · 教材原页 53",
+          "caption": "教材原页 · S22 · PDF 第 53 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 53,
           "source_url": "/api/source/S22/page/53"
         },
         {
           "url": "/api/source/S22/page/54",
-          "caption": "S22 · 教材原页 54",
+          "caption": "教材原页 · S22 · PDF 第 54 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 54,
           "source_url": "/api/source/S22/page/54"
+        },
+        {
+          "url": "/api/source/S17/page/284",
+          "caption": "补充教材原页 · S17 · PDF 第 284 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 284,
+          "source_url": "/api/source/S17/page/284"
         }
       ]
     },
@@ -2528,7 +2829,7 @@
       "conditions": "层数多或层很薄时需注意数值稳定性。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "spectral-transform",
       "tags": [
         "理论方法"
       ],
@@ -2538,14 +2839,41 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-transform.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S22/page/19",
-          "caption": "S22 · 教材原页 19",
+          "caption": "教材原页 · S22 · PDF 第 19 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 19,
           "source_url": "/api/source/S22/page/19"
         },
         {
           "url": "/api/source/S22/page/29",
-          "caption": "S22 · 教材原页 29",
+          "caption": "教材原页 · S22 · PDF 第 29 页",
+          "kind": "source_page",
+          "source_id": "S22",
+          "pdf_page": 29,
           "source_url": "/api/source/S22/page/29"
+        },
+        {
+          "url": "/api/source/S17/page/264",
+          "caption": "补充教材原页 · S17 · PDF 第 264 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 264,
+          "source_url": "/api/source/S17/page/264"
+        },
+        {
+          "url": "/api/source/S17/page/270",
+          "caption": "补充教材原页 · S17 · PDF 第 270 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 270,
+          "source_url": "/api/source/S17/page/270"
         }
       ]
     },
@@ -2576,7 +2904,7 @@
       "conditions": "距离无关；距离相关需分段或用 PE。",
       "misconception": "不要把 SCOOTER 与 KRAKEN 的模态文件混用。",
       "example": "SCOOTER 在自由场已验证 0.000 dB。",
-      "diagram": "",
+      "diagram": "at-models",
       "tags": [
         "工具链"
       ],
@@ -2584,7 +2912,13 @@
       "source_claim_ids": [
         "K051"
       ],
-      "images": []
+      "images": [
+        {
+          "url": "/assets/knowledge/at-models.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        }
+      ]
     },
     {
       "id": "wave_equation",
@@ -2613,7 +2947,7 @@
       "conditions": "线性、无流、静态介质。",
       "misconception": "不要把波动方程与 Helmholtz 方程混为一谈（后者是频域形式）。",
       "example": "",
-      "diagram": "",
+      "diagram": "wave-equation",
       "tags": [
         "理论方法"
       ],
@@ -2623,14 +2957,41 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/wave-equation.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S21/page/2",
-          "caption": "S21 · 教材原页 2",
+          "caption": "教材原页 · S21 · PDF 第 2 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 2,
           "source_url": "/api/source/S21/page/2"
         },
         {
           "url": "/api/source/S21/page/3",
-          "caption": "S21 · 教材原页 3",
+          "caption": "教材原页 · S21 · PDF 第 3 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 3,
           "source_url": "/api/source/S21/page/3"
+        },
+        {
+          "url": "/api/source/S17/page/86",
+          "caption": "补充教材原页 · S17 · PDF 第 86 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 86,
+          "source_url": "/api/source/S17/page/86"
+        },
+        {
+          "url": "/api/source/S17/page/90",
+          "caption": "补充教材原页 · S17 · PDF 第 90 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 90,
+          "source_url": "/api/source/S17/page/90"
         }
       ]
     },
@@ -2661,7 +3022,7 @@
       "conditions": "水平分层假设。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "spectral-transform",
       "tags": [
         "理论方法"
       ],
@@ -2671,14 +3032,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-transform.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S21/page/21",
-          "caption": "S21 · 教材原页 21",
+          "caption": "教材原页 · S21 · PDF 第 21 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 21,
           "source_url": "/api/source/S21/page/21"
         },
         {
           "url": "/api/source/S21/page/26",
-          "caption": "S21 · 教材原页 26",
+          "caption": "教材原页 · S21 · PDF 第 26 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 26,
           "source_url": "/api/source/S21/page/26"
+        },
+        {
+          "url": "/api/source/S17/page/103",
+          "caption": "补充教材原页 · S17 · PDF 第 103 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 103,
+          "source_url": "/api/source/S17/page/103"
         }
       ]
     },
@@ -2709,7 +3089,7 @@
       "conditions": "平面边界、理想反射条件。",
       "misconception": "把镜面法用于粗糙或复杂边界。",
       "example": "Lloyd 镜像就是镜面法的典型例子。",
-      "diagram": "",
+      "diagram": "image-source",
       "tags": [
         "理论方法"
       ],
@@ -2719,14 +3099,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/image-source.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S21/page/2",
-          "caption": "S21 · 教材原页 2",
+          "caption": "教材原页 · S21 · PDF 第 2 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 2,
           "source_url": "/api/source/S21/page/2"
         },
         {
           "url": "/api/source/S21/page/35",
-          "caption": "S21 · 教材原页 35",
+          "caption": "教材原页 · S21 · PDF 第 35 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 35,
           "source_url": "/api/source/S21/page/35"
+        },
+        {
+          "url": "/api/source/S17/page/37",
+          "caption": "补充教材原页 · S17 · PDF 第 37 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 37,
+          "source_url": "/api/source/S17/page/37"
         }
       ]
     },
@@ -2757,7 +3156,7 @@
       "conditions": "两层均匀介质、平面边界。",
       "misconception": "把 Pekeris 解当成任意海底的通用解。",
       "example": "AT 的 tests/PekerisRD 就是它。",
-      "diagram": "",
+      "diagram": "pekeris-waveguide",
       "tags": [
         "理论方法"
       ],
@@ -2767,14 +3166,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pekeris-waveguide.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S21/page/2",
-          "caption": "S21 · 教材原页 2",
+          "caption": "教材原页 · S21 · PDF 第 2 页",
+          "kind": "source_page",
+          "source_id": "S21",
+          "pdf_page": 2,
           "source_url": "/api/source/S21/page/2"
         },
         {
           "url": "/api/source/S23/page/2",
-          "caption": "S23 · 教材原页 2",
+          "caption": "教材原页 · S23 · PDF 第 2 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 2,
           "source_url": "/api/source/S23/page/2"
+        },
+        {
+          "url": "/api/source/S17/page/138",
+          "caption": "补充教材原页 · S17 · PDF 第 138 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 138,
+          "source_url": "/api/source/S17/page/138"
         }
       ]
     },
@@ -2805,7 +3223,7 @@
       "conditions": "对应 Sturm-Liouville 型本征值问题。",
       "misconception": "忽略权重函数（密度）的正交关系。",
       "example": "",
-      "diagram": "",
+      "diagram": "modal-basis",
       "tags": [
         "理论方法"
       ],
@@ -2815,14 +3233,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/modal-basis.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S23/page/4",
-          "caption": "S23 · 教材原页 4",
+          "caption": "教材原页 · S23 · PDF 第 4 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 4,
           "source_url": "/api/source/S23/page/4"
         },
         {
           "url": "/api/source/S23/page/5",
-          "caption": "S23 · 教材原页 5",
+          "caption": "教材原页 · S23 · PDF 第 5 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 5,
           "source_url": "/api/source/S23/page/5"
+        },
+        {
+          "url": "/api/source/S17/page/362",
+          "caption": "补充教材原页 · S17 · PDF 第 362 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 362,
+          "source_url": "/api/source/S17/page/362"
         }
       ]
     },
@@ -2848,7 +3285,7 @@
       "conditions": "围线选择决定哪些极点被计入。",
       "misconception": "把留数之和当成完整解（忽略连续谱）。",
       "example": "",
-      "diagram": "",
+      "diagram": "spectral-residues",
       "tags": [
         "理论方法"
       ],
@@ -2858,8 +3295,16 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/spectral-residues.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S23/page/17",
-          "caption": "S23 · 教材原页 17",
+          "caption": "教材原页 · S23 · PDF 第 17 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 17,
           "source_url": "/api/source/S23/page/17"
         }
       ]
@@ -2886,7 +3331,7 @@
       "conditions": "高频、缓变剖面；转折点需特殊处理。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "wkb-approximation",
       "tags": [
         "理论方法"
       ],
@@ -2896,9 +3341,25 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/wkb-approximation.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S23/page/24",
-          "caption": "S23 · 教材原页 24",
+          "caption": "教材原页 · S23 · PDF 第 24 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 24,
           "source_url": "/api/source/S23/page/24"
+        },
+        {
+          "url": "/api/source/S17/page/162",
+          "caption": "补充教材原页 · S17 · PDF 第 162 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 162,
+          "source_url": "/api/source/S17/page/162"
         }
       ]
     },
@@ -2924,7 +3385,7 @@
       "conditions": "自伴算符 + 适当边界条件。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "modal-basis",
       "tags": [
         "理论方法"
       ],
@@ -2934,9 +3395,25 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/modal-basis.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S23/page/27",
-          "caption": "S23 · 教材原页 27",
+          "caption": "教材原页 · S23 · PDF 第 27 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 27,
           "source_url": "/api/source/S23/page/27"
+        },
+        {
+          "url": "/api/source/S17/page/357",
+          "caption": "补充教材原页 · S17 · PDF 第 357 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 357,
+          "source_url": "/api/source/S17/page/357"
         }
       ]
     },
@@ -2967,7 +3444,7 @@
       "conditions": "扰动足够小、模态不交叉。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "modal-basis",
       "tags": [
         "理论方法"
       ],
@@ -2977,14 +3454,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/modal-basis.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S23/page/31",
-          "caption": "S23 · 教材原页 31",
+          "caption": "教材原页 · S23 · PDF 第 31 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 31,
           "source_url": "/api/source/S23/page/31"
         },
         {
           "url": "/api/source/S23/page/38",
-          "caption": "S23 · 教材原页 38",
+          "caption": "教材原页 · S23 · PDF 第 38 页",
+          "kind": "source_page",
+          "source_id": "S23",
+          "pdf_page": 38,
           "source_url": "/api/source/S23/page/38"
+        },
+        {
+          "url": "/api/source/S17/page/404",
+          "caption": "补充教材原页 · S17 · PDF 第 404 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 404,
+          "source_url": "/api/source/S17/page/404"
         }
       ]
     },
@@ -3015,7 +3511,7 @@
       "conditions": "近轴、前向传播；不处理后向散射与陡坡。",
       "misconception": "把 PE 用于强后向散射或大角度问题。",
       "example": "",
-      "diagram": "",
+      "diagram": "pe-marching",
       "tags": [
         "理论方法"
       ],
@@ -3025,14 +3521,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pe-marching.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S24/page/4",
-          "caption": "S24 · 教材原页 4",
+          "caption": "教材原页 · S24 · PDF 第 4 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 4,
           "source_url": "/api/source/S24/page/4"
         },
         {
           "url": "/api/source/S24/page/6",
-          "caption": "S24 · 教材原页 6",
+          "caption": "教材原页 · S24 · PDF 第 6 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 6,
           "source_url": "/api/source/S24/page/6"
+        },
+        {
+          "url": "/api/source/S17/page/478",
+          "caption": "补充教材原页 · S17 · PDF 第 478 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 478,
+          "source_url": "/api/source/S17/page/478"
         }
       ]
     },
@@ -3063,7 +3578,7 @@
       "conditions": "近轴假设放宽到较大角度，但仍不处理后向散射。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "pe-marching",
       "tags": [
         "理论方法"
       ],
@@ -3073,14 +3588,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pe-marching.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S24/page/9",
-          "caption": "S24 · 教材原页 9",
+          "caption": "教材原页 · S24 · PDF 第 9 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 9,
           "source_url": "/api/source/S24/page/9"
         },
         {
           "url": "/api/source/S24/page/27",
-          "caption": "S24 · 教材原页 27",
+          "caption": "教材原页 · S24 · PDF 第 27 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 27,
           "source_url": "/api/source/S24/page/27"
+        },
+        {
+          "url": "/api/source/S17/page/482",
+          "caption": "补充教材原页 · S17 · PDF 第 482 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 482,
+          "source_url": "/api/source/S17/page/482"
         }
       ]
     },
@@ -3111,7 +3645,7 @@
       "conditions": "初始场需与频率、源深、环境匹配。",
       "misconception": "",
       "example": "",
-      "diagram": "",
+      "diagram": "pe-marching",
       "tags": [
         "理论方法"
       ],
@@ -3121,14 +3655,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pe-marching.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S24/page/17",
-          "caption": "S24 · 教材原页 17",
+          "caption": "教材原页 · S24 · PDF 第 17 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 17,
           "source_url": "/api/source/S24/page/17"
         },
         {
           "url": "/api/source/S24/page/19",
-          "caption": "S24 · 教材原页 19",
+          "caption": "教材原页 · S24 · PDF 第 19 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 19,
           "source_url": "/api/source/S24/page/19"
+        },
+        {
+          "url": "/api/source/S17/page/493",
+          "caption": "补充教材原页 · S17 · PDF 第 493 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 493,
+          "source_url": "/api/source/S17/page/493"
         }
       ]
     },
@@ -3159,7 +3712,7 @@
       "conditions": "步长与网格需满足采样要求。",
       "misconception": "把数值频散误认为物理频散。",
       "example": "",
-      "diagram": "",
+      "diagram": "pe-marching",
       "tags": [
         "理论方法"
       ],
@@ -3169,14 +3722,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pe-marching.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S24/page/27",
-          "caption": "S24 · 教材原页 27",
+          "caption": "教材原页 · S24 · PDF 第 27 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 27,
           "source_url": "/api/source/S24/page/27"
         },
         {
           "url": "/api/source/S24/page/28",
-          "caption": "S24 · 教材原页 28",
+          "caption": "教材原页 · S24 · PDF 第 28 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 28,
           "source_url": "/api/source/S24/page/28"
+        },
+        {
+          "url": "/api/source/S17/page/506",
+          "caption": "补充教材原页 · S17 · PDF 第 506 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 506,
+          "source_url": "/api/source/S17/page/506"
         }
       ]
     },
@@ -3207,7 +3779,7 @@
       "conditions": "吸收层需足够厚、衰减足够强。",
       "misconception": "把吸收层当成真实海底损耗。",
       "example": "",
-      "diagram": "",
+      "diagram": "pe-marching",
       "tags": [
         "理论方法"
       ],
@@ -3217,14 +3789,33 @@
       ],
       "images": [
         {
+          "url": "/assets/knowledge/pe-marching.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        },
+        {
           "url": "/api/source/S24/page/16",
-          "caption": "S24 · 教材原页 16",
+          "caption": "教材原页 · S24 · PDF 第 16 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 16,
           "source_url": "/api/source/S24/page/16"
         },
         {
           "url": "/api/source/S24/page/43",
-          "caption": "S24 · 教材原页 43",
+          "caption": "教材原页 · S24 · PDF 第 43 页",
+          "kind": "source_page",
+          "source_id": "S24",
+          "pdf_page": 43,
           "source_url": "/api/source/S24/page/43"
+        },
+        {
+          "url": "/api/source/S17/page/512",
+          "caption": "补充教材原页 · S17 · PDF 第 512 页",
+          "kind": "supplementary_source_page",
+          "source_id": "S17",
+          "pdf_page": 512,
+          "source_url": "/api/source/S17/page/512"
         }
       ]
     },
@@ -3255,7 +3846,7 @@
       "conditions": "复根搜索需给足相速范围。",
       "misconception": "不要把 KRAKENC 当成 KRAKEN 的自动替代。",
       "example": "Pekeris 上与 KRAKEN 差 0.000 dB。",
-      "diagram": "",
+      "diagram": "at-models",
       "tags": [
         "工具链"
       ],
@@ -3263,7 +3854,13 @@
       "source_claim_ids": [
         "K066"
       ],
-      "images": []
+      "images": [
+        {
+          "url": "/assets/knowledge/at-models.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        }
+      ]
     },
     {
       "id": "sparc",
@@ -3292,7 +3889,7 @@
       "conditions": "时域步进需满足稳定性与色散要求。",
       "misconception": "把时域输出当成多源深结果。",
       "example": "head 测试头部波到达 0.112 s（理论 0.111 s）。",
-      "diagram": "",
+      "diagram": "at-models",
       "tags": [
         "工具链"
       ],
@@ -3300,7 +3897,13 @@
       "source_claim_ids": [
         "K067"
       ],
-      "images": []
+      "images": [
+        {
+          "url": "/assets/knowledge/at-models.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        }
+      ]
     },
     {
       "id": "bellhop3d",
@@ -3329,7 +3932,7 @@
       "conditions": "三维几何与方位采样需足够密。",
       "misconception": "把三维结果当成二维结果解释。",
       "example": "自由场 3D 与解析解差 -0.009 dB。",
-      "diagram": "",
+      "diagram": "at-models",
       "tags": [
         "工具链"
       ],
@@ -3337,7 +3940,13 @@
       "source_claim_ids": [
         "K068"
       ],
-      "images": []
+      "images": [
+        {
+          "url": "/assets/knowledge/at-models.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        }
+      ]
     },
     {
       "id": "krakel",
@@ -3366,7 +3975,7 @@
       "conditions": "krakelM 仅支持 V/R 边界；弹性场后处理需匹配版本。",
       "misconception": "把 KRAKENC 的输出当 KRAKEL 用。",
       "example": "Ahmad 弹性算例 MATLAB 路径中位 TL 62.1 dB。",
-      "diagram": "",
+      "diagram": "at-models",
       "tags": [
         "工具链"
       ],
@@ -3374,7 +3983,13 @@
       "source_claim_ids": [
         "K069"
       ],
-      "images": []
+      "images": [
+        {
+          "url": "/assets/knowledge/at-models.svg",
+          "caption": "本项目原创原理示意 · 非教材原图、非仿真结果",
+          "kind": "authored_diagram"
+        }
+      ]
     }
   ],
   "edges": [

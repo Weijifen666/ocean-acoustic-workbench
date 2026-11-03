@@ -1,4 +1,4 @@
-import ResourceImage from './ResourceImage';
+import {KnowledgeImageButton,KnowledgeImageGallery} from './ResourceImage';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import cytoscape from "cytoscape";
 import {
@@ -874,19 +874,13 @@ export default function GraphExplorer({
               {detailTab === "overview" ? (
                 <>
                   <p className="knowledge-overview">{node.overview}</p>
-                  {node.diagram && (
-                    <button
+                  {node.images?.find(im=>im.kind==='authored_diagram'||im.url===`/assets/knowledge/${node.diagram}.svg`) && (
+                    <KnowledgeImageButton
+                      image={node.images.find(im=>im.kind==='authored_diagram'||im.url===`/assets/knowledge/${node.diagram}.svg`)}
+                      caption={node.label+' · 本项目原创原理示意'}
                       className="knowledge-diagram"
-                      onClick={() => setImage(node.images[0])}
-                    >
-                      <ResourceImage
-                        src={node.images[0].url}
-                        alt={node.label + "原理示意"}
-                      />
-                      <span>
-                        查看完整示意图 <Maximize2 size={12} />
-                      </span>
-                    </button>
+                      onOpen={setImage}
+                    />
                   )}
                   {node.formula && (
                     <div className="knowledge-formula">
@@ -989,22 +983,7 @@ export default function GraphExplorer({
                 </>
               ) : (
                 <>
-                  <p className="drawer-help">
-                    相关图片用于理解知识点，点击可放大查看。
-                  </p>
-                  {node.images.map((im, i) => (
-                    <button
-                      className="knowledge-source-image"
-                      key={i}
-                      onClick={() => setImage({...im, caption: im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption})}
-                    >
-                      <ResourceImage loading="lazy" src={im.url} alt={im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption} />
-                      <span>
-                        {im.source_url ? `${node.label} · 图片 ${i + 1}` : im.caption}
-                        <Maximize2 size={14} />
-                      </span>
-                    </button>
-                  ))}
+                  <KnowledgeImageGallery key={node.id} images={node.images} onOpen={setImage}/>
                 </>
               )}
             </div>
@@ -1362,10 +1341,10 @@ function KnowledgeCanvas({
             "border-opacity": 0.8,
             label: "data(label)",
             "font-family": "Microsoft YaHei,Segoe UI,sans-serif",
-            "font-size": 14,
+            "font-size": 16.5,
             color: theme === "light" ? "#355276" : "#d8e7ff",
             "text-wrap": "wrap",
-            "text-max-width": 120,
+            "text-max-width": 142,
             "text-valign": "center",
             "text-margin-y": 0,
             "text-outline-color": theme === "light" ? "#eef4fb" : "#0d213e",
@@ -1379,11 +1358,11 @@ function KnowledgeCanvas({
             height: 44,
             "background-opacity": 1,
             "border-width": 2,
-            "font-size": 14,
+            "font-size": 16.5,
             "font-weight": "bold",
             "text-valign": "center",
             "text-margin-y": 0,
-            "text-max-width": 72,
+            "text-max-width": 85,
           },
         },
         {
@@ -1392,7 +1371,7 @@ function KnowledgeCanvas({
             width: 125,
             height: 46,
             "background-opacity": 1,
-            "font-size": 15,
+            "font-size": 17.7,
             "text-valign": "center",
             "text-margin-y": 0,
             "font-weight": "bold",
@@ -1444,7 +1423,7 @@ function KnowledgeCanvas({
             "line-color": theme === "light" ? "#3b718e" : "#b0cbea",
             "target-arrow-color": theme === "light" ? "#3b718e" : "#b0cbea",
             opacity: 0.9,
-            "font-size": 14,
+            "font-size": 16.5,
             color: theme === "light" ? "#355276" : "#dceaff",
             "text-background-color": theme === "light" ? "#edf3fb" : "#142d4f",
             "text-background-opacity": 1,

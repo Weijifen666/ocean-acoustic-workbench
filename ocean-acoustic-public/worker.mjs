@@ -7,6 +7,7 @@ import {resolveVisitorIdentity,visitorCookie} from './server/identity.mjs';
 import {handleOceanData} from './server/ocean-data.mjs';
 import {handleOceanPublish} from './server/ocean-publish.mjs';
 import {createResearchCatalog} from './server/research-catalog.mjs';
+import {createCoursePageHandler} from './server/course-images.mjs';
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers}});
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const encoder=new TextEncoder();
@@ -18,7 +19,7 @@ async function decrypt(data,secret){const b=bytes64(data);return JSON.parse(new 
 const db=env=>({one:async(sql,...args)=>env.DB.prepare(sql).bind(...args).first(),run:async(sql,...args)=>env.DB.prepare(sql).bind(...args).run(),all:async(sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results});
 const offline=()=>({version:'0.7.0',public_mode:true,matlab_available:false,solver_available:false,model_configured:false,knowledge_cards:GRAPH.nodes.filter(n=>n.kind==='knowledge').length,sources:SOURCES.length,model_name:'选择具体模型',provider_name:'未连接',paused:false,offline:true});
 const researchCatalog=createResearchCatalog(RESEARCH_ASSETS);
-const coursePages=new Set(GRAPH.nodes.flatMap(n=>(n.images||[]).map(i=>i.url)).filter(u=>/^\/api\/source\/S\d{2}\/page\/\d+$/.test(u)));
+const coursePage=createCoursePageHandler(GRAPH,(request,env,ctx,url)=>dynamic(request,env,ctx,url));
 function graphPath(source,target){
  const ids=new Set(GRAPH.nodes.map(n=>n.id));if(!ids.has(source)||!ids.has(target))return null;
  const queue=[{nodes:[source],edges:[]}],visited=new Set([source]);
@@ -91,13 +92,7 @@ export default {async fetch(request,env,ctx){
     if(path===null)return json({detail:'知识点不存在'},404);
     return json(path);
    }
-   if(coursePages.has(url.pathname)){
-    const cached=await env.BUCKET.get('course-pages'+url.pathname);
-    if(cached)return new Response(cached.body,{headers:{'Content-Type':'image/png','Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
-    const response=await dynamic(request,env,ctx,url);
-    if(response.status===200&&response.headers.get('Content-Type')?.startsWith('image/png'))ctx.waitUntil(env.BUCKET.put('course-pages'+url.pathname,response.clone().body,{httpMetadata:{contentType:'image/png'}}));
-    return response;
-   }
+   const page=await coursePage(request,env,ctx);if(page)return page;
   }
   if(url.pathname.startsWith('/api/'))return await dynamic(request,env,ctx,url);
   if(request.method!=='GET'&&request.method!=='HEAD')return json({detail:'不可访问'},405);

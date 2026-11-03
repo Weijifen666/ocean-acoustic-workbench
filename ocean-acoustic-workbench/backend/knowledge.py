@@ -5,15 +5,22 @@ import public_ocean
 from query_planning import plan_query, reciprocal_rank_fusion
 from evidence_policy import annotate_candidates, assess_evidence
 DATA=Path(__file__).resolve().parent/'data/course_graph.json'
+MEDIA=DATA.with_name('graph_media.json')
 CHUNKS=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(Path(__file__).resolve().parents[1]/'.local')))/'kb/chunks.sqlite3'
 def graph_data():
     g=json.loads(DATA.read_text(encoding='utf-8'))
+    media=json.loads(MEDIA.read_text(encoding='utf-8'))['nodes']
     for n in g['nodes']:
+        extra=media.get(n['id'],{})
+        n['diagram']=n.get('diagram') or extra.get('diagram','')
         n['images']=[]
-        if n.get('diagram'):n['images'].append({'url':'/assets/knowledge/'+n['diagram']+'.svg','caption':'课程原理示意 · 非求解器声场结果'})
+        if n.get('diagram'):n['images'].append({'url':'/assets/knowledge/'+n['diagram']+'.svg','caption':'本项目原创原理示意 · 非教材原图、非仿真结果','kind':'authored_diagram'})
         for i,r in enumerate(n.get('references',[])):
-            if r.get('pdf_page'):n['images'].append({'url':f"/api/source/{r['source_id']}/page/{r['pdf_page']}",'caption':f"{r['source_id']} · 教材原页 {r['pdf_page']}",'source_url':f"/api/source/{r['source_id']}#page={r['pdf_page']}"})
+            if r.get('pdf_page'):n['images'].append({'url':f"/api/source/{r['source_id']}/page/{r['pdf_page']}",'caption':f"教材原页 · {r['source_id']} · PDF 第 {r['pdf_page']} 页",'kind':'source_page','source_id':r['source_id'],'pdf_page':r['pdf_page'],'source_url':f"/api/source/{r['source_id']}/page/{r['pdf_page']}"})
             else:r['code_url']=f"/api/knowledge/code?node={n['id']}&reference={i}"
+        for r in extra.get('supplementary_pages',[]):
+            url=f"/api/source/{r['source_id']}/page/{r['pdf_page']}"
+            if not any(im['url']==url for im in n['images']):n['images'].append({'url':url,'caption':f"补充教材原页 · {r['source_id']} · PDF 第 {r['pdf_page']} 页",'kind':'supplementary_source_page','source_id':r['source_id'],'pdf_page':r['pdf_page'],'source_url':url})
     return g
 def knowledge_cards():
     cards=[]

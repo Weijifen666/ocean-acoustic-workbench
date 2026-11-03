@@ -27,6 +27,19 @@ class StudioMigration(unittest.TestCase):
         self.assertEqual(claimed['plan']['batch_id'],batch['batch_id'])
         self.assertEqual(self.client.get('/api/batches/'+batch['batch_id']).status_code,200)
         self.assertEqual(self.client.post('/api/simulation/jobs',json={**body,'frequencies_hz':[100.]},headers={'idempotency-key':'studio-replay-key'}).status_code,409)
+
+    def test_missing_boundary_or_interpolation_layer_cannot_be_filled(self):
+        for target,missing in ((500.,500.),(400.,500.)):
+            profile=self.profile(120,20,0)
+            profile['rows']=[r for r in profile['rows'] if r['depth_m']!=missing]
+            profile['missing_depths_m']=[missing]
+            body=self.base(template='woa18',water_depth_m=target,source_depths_m=[100.],receiver_depth_m=100.)
+            with patch('ocean_data.profile',return_value=profile):
+                for endpoint in ('/api/simulation/plans/preview','/api/simulation/jobs'):
+                    result=self.client.post(endpoint,json=body)
+                    self.assertEqual(result.status_code,422,result.text)
+                    self.assertIn('缺测',result.json()['detail'])
+        self.assertEqual(self.client.get('/api/jobs').json(),[])
     def test_seasons_freeze_distinct_real_profile_inputs_and_env_files(self):
         body=self.base(template='woa18',scenario='seasonal',water_depth_m=500,source_depths_m=[100.],receiver_depth_m=100.)
         with patch('ocean_data.profile',side_effect=self.profile):

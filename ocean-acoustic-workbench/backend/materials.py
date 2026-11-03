@@ -1,6 +1,7 @@
 """Page-level retrieval over authorized, locally cached course PDFs."""
 import json,re,os
 from pathlib import Path
+import retrieval
 ROOT=Path(__file__).resolve().parents[1]
 LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 INDEX=LOCAL/'kb/material_pages.json'
@@ -9,14 +10,35 @@ _version=None
 
 def pages():
     global _cache,_version
-    if not INDEX.exists():return []
-    version=INDEX.stat().st_mtime_ns
+    chunks=LOCAL/'kb/chunks.sqlite3'
+    source=INDEX if INDEX.exists() else chunks
+    if not source.exists():return []
+    version=(str(source.resolve()),source.stat().st_mtime_ns,source.stat().st_size)
     if version!=_version:
-        _cache=json.loads(INDEX.read_text(encoding='utf-8'))['pages'];_version=version
+        if source==INDEX:
+            _cache=json.loads(INDEX.read_text(encoding='utf-8'))['pages']
+        else:
+            # Existing installations use the page-aware ingestion index. Reuse
+            # those actual excerpts instead of reporting an empty textbook.
+            grouped={}
+            for row in retrieval.load_chunks(chunks):
+                if isinstance(row.get('pdf_page'),int):
+                    grouped.setdefault((row['source_id'],row['pdf_page']),[]).append(row)
+            _cache=[]
+            for (identity,page),rows in sorted(grouped.items()):
+                text='';cursor=0
+                for row in sorted(rows,key=lambda r:r.get('char_start',0)):
+                    start=row.get('char_start',0);piece=row['text']
+                    if start>cursor:text+='\n[索引未包含的文字]\n'
+                    text+=piece[max(0,cursor-start):];cursor=max(cursor,start+len(piece))
+                _cache.append({'source_id':identity,'page':page,'name':rows[0].get('label',identity),
+                               'text':text,'text_basis':'ingested_page_excerpts'})
+        _version=version
     return _cache
 
 def catalog():
-    registry=json.loads((LOCAL/'kb/source_registry.json').read_text(encoding='utf-8'))['sources']
+    path=LOCAL/'kb/source_registry.json'
+    registry=json.loads(path.read_text(encoding='utf-8'))['sources'] if path.is_file() else []
     counts={}
     for p in pages():counts[p['source_id']]=counts.get(p['source_id'],0)+1
     return [{'source_id':s['id'],'name':s['name'],'indexed_pages':counts.get(s['id'],0),'pdf_pages':s.get('pdf_pages'),'available':(LOCAL/'sources'/(s['id']+'.pdf')).exists(),'text_status':'可检索提取文字' if counts.get(s['id']) else '未建立可检索文字；扫描版需OCR或查看原页'} for s in registry]
@@ -43,5 +65,5 @@ def read(source_id,page):
             return {**p,'text':p['text'][:12000],'truncated':len(p['text'])>12000,'url':f'/api/source/{source_id}#page={page}','note':'PDF提取文字可能丢失公式结构；可查看原页图片核对。','image_url':f'/api/source/{source_id}/page/{page}'}
     source=next((s for s in catalog() if s['source_id']==source_id),None)
     if source and source['available'] and isinstance(page,int) and page>=1 and page<=int(source.get('pdf_pages') or 0):
-        return {'source_id':source_id,'page':page,'name':source['name'],'text':'','note':'此页没有可检索文字。需要OCR或人工查看原页；不能声称已经读取公式。','url':f'/api/source/{source_id}#page={page}','image_url':f'/api/source/{source_id}/page/{page}'}
+        return {'source_id':source_id,'page':page,'name':source['name'],'text':'','note':'此页尚无可用的文字索引，不能据此断言 PDF 没有文本层；请查看原页并按需重新入库或 OCR。','url':f'/api/source/{source_id}#page={page}','image_url':f'/api/source/{source_id}/page/{page}'}
     return {'error':'来源或页码不可用，请先查看 list_materials。'}

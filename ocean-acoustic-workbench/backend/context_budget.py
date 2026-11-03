@@ -45,13 +45,28 @@ def inactive_context(budget='auto'):
     return {'requested_budget':budget,'budget_tokens':resolved,'budget_limited':resolved is not None,'estimated_input_tokens':0,'estimator':'utf8_bytes_upper_bound_v1','reserve_tokens':CONTEXT_RESERVE,'history_messages_used':0,'dropped_history_messages':0,'evidence_count':0,'dropped_evidence_count':0,'evidence_truncated':False,'template_truncated':False,'applied':False,'provider_prompt_tokens':None,'cached_tokens':None}
 
 def _history_units(history):
-    units=[];pending=None
+    units=[];pending=[]
+    def finish():
+        nonlocal pending
+        if len(pending)>1 and pending[-1]['role']=='assistant' and not pending[-1].get('tool_calls'):units.append(pending)
+        pending=[]
     for item in history or []:
         content=item.get('content') if isinstance(item.get('content'),str) else item.get('text','')
-        if not content or item.get('request_failed') or item.get('status')=='failed':continue
-        if item.get('role')=='user':pending={'role':'user','content':content}
-        elif item.get('role')=='assistant' and pending:
-            units.append([pending,{'role':'assistant','content':content}]);pending=None
+        if item.get('request_failed') or item.get('status')=='failed':continue
+        if item.get('role')=='provider_turn' and isinstance(item.get('messages'),list):
+            import provider_history
+            finish();turn=provider_history.clean_messages(item['messages'])
+            if turn and turn[0]['role']=='user' and turn[-1]['role']=='assistant' and not turn[-1].get('tool_calls'):units.append(turn)
+            continue
+        if item.get('role')=='history_reference' and content:
+            finish();units.append([{'role':'user','content':content}]);continue
+        if item.get('role')=='user':
+            finish()
+            if content:pending=[{'role':'user','content':content}]
+        elif item.get('role')=='assistant' and pending and (content or item.get('tool_calls')):
+            pending.append({'role':'assistant','content':content or None,**({'tool_calls':item['tool_calls']} if item.get('tool_calls') else {}),**({'reasoning_content':item['reasoning_content']} if isinstance(item.get('reasoning_content'),str) else {})})
+        elif item.get('role')=='tool' and pending and isinstance(item.get('tool_call_id'),str):pending.append({'role':'tool','tool_call_id':item['tool_call_id'],'content':content})
+    finish()
     return units
 
 def build_context(*,question,system,evidence=None,history=None,template='',context_budget='auto',tools=None):
@@ -111,7 +126,7 @@ def build_context(*,question,system,evidence=None,history=None,template='',conte
     if not fits():kept_evidence=[];kept_template='';template_truncated=bool(template)
     messages=assemble();estimated=assert_messages_budget(messages,context_budget,tools)
     context={**inactive_context(context_budget),'estimated_input_tokens':estimated,'history_messages_used':sum(map(len,kept_units)),'dropped_history_messages':original_history-sum(map(len,kept_units)),'evidence_count':len(kept_evidence),'dropped_evidence_count':len(all_evidence)-len(kept_evidence),'evidence_truncated':any(row.get('context_truncated') for row in kept_evidence) or len(kept_evidence)<len(all_evidence),'template_truncated':template_truncated,'applied':True}
-    return {'messages':messages,'evidence':kept_evidence,'context':context}
+    return {'messages':messages,'evidence':kept_evidence,'history_turn_lengths':[len(unit) for unit in kept_units],'context':context}
 
 def with_provider_usage(context,usage):
     usage=usage or {}

@@ -31,7 +31,7 @@ def handler(site):
                     self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body)
             except (URLError,TimeoutError,OSError):
                 self.send_error(502,'Cloud API connection failed')
-        do_GET=do_POST=do_PUT=do_DELETE=proxy
+        do_GET=do_POST=do_PUT=do_PATCH=do_DELETE=proxy
         def log_message(self,fmt,*args):print(fmt%args,flush=True)
     return CloudProxy
 

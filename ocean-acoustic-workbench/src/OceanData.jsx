@@ -15,6 +15,22 @@ export function profileCsv(profile) {
   return csvColumns.join(',') + '\n' + profile.rows.map(row => csvColumns.map(key => row[key] ?? '').join(',')).join('\n');
 }
 
+export function profileSimulationDraft(profile) {
+  const rows = Array.isArray(profile.rows) ? profile.rows : [];
+  if (!rows.length || rows[0].depth_m !== 0) return null;
+  const gaps = (Array.isArray(profile.missing_depths_m) ? profile.missing_depths_m : []).filter(Number.isFinite);
+  const firstGap = gaps.length ? Math.min(...gaps) : Infinity;
+  const continuous = rows.filter(row => row.depth_m < firstGap);
+  const limits = [profile.depth_limit_m, rows.at(-1).depth_m,
+    continuous.at(-1)?.depth_m, -profile.bottom?.elevation_m, -profile.grid_bottom?.elevation_m];
+  if (!limits.every(Number.isFinite)) return null;
+  const waterDepth = Math.floor(Math.min(...limits) / 50) * 50;
+  if (waterDepth < 50) return null;
+  return {template: 'woa18', longitude: profile.requested.lon, latitude: profile.requested.lat,
+    period: profile.period_id, water_depth_m: waterDepth,
+    source_depths_m: String(Math.min(500, waterDepth / 2)), receiver_depth_m: Math.min(1000, waterDepth / 2)};
+}
+
 function Curve({rows}) {
   if (!rows.length) return <p className="ocean-hint">该点没有有效剖面。</p>;
   const min = Math.floor(Math.min(...rows.map(row => row.sound_speed_m_s)) / 10) * 10;
@@ -49,19 +65,16 @@ export function OceanSource({catalog}) {
 
 export function ProfileResult({result, onSimulate, onDownload, cloud}) {
   const basename = value => String(value || '').split(/[\\/]/).at(-1);
-  const usableDepth = Math.floor(Math.min(result.depth_limit_m, -result.bottom?.elevation_m, -result.grid_bottom?.elevation_m) / 50) * 50;
-  function simulate() {
-    onSimulate({template: 'woa18', longitude: result.requested.lon, latitude: result.requested.lat, period: result.period_id, water_depth_m: usableDepth, source_depths_m: String(Math.min(500, usableDepth / 2)), receiver_depth_m: Math.min(1000, usableDepth / 2)});
-  }
+  const simulationDraft = profileSimulationDraft(result);
   return <section className="panel ocean-result">
     <div className="panel-heading"><span>{result.period} · {result.rows.length}个有效层</span><div>
-      {onSimulate && Number.isFinite(usableDepth) && usableDepth > 0 && <button className="button primary" onClick={simulate}>用于声场仿真</button>}
+      {onSimulate && simulationDraft && <button className="button primary" onClick={() => onSimulate(simulationDraft)}>用于声场仿真</button>}
       <button className="button" onClick={() => onDownload('csv')}><Download size={14}/>CSV</button>
       <button className="button" onClick={() => onDownload('json')}><Download size={14}/>JSON</button>
     </div></div>
     <div className="ocean-summary"><span>实际温盐格点：{result.selected.lon}°，{result.selected.lat}°</span><span>所选坐标水深：{Number.isFinite(result.bottom?.elevation_m) ? `${-result.bottom.elevation_m} m` : '暂无数据'}</span><span>有效剖面至：{result.rows.at(-1)?.depth_m ?? '—'} m</span></div>
     <div className="ocean-results-grid"><Curve rows={result.rows}/><div className="ocean-table"><table><thead><tr><th>深度 m</th><th>温度 °C</th><th>实用盐度</th><th>声速 m/s</th></tr></thead><tbody>{result.rows.map(row => <tr key={row.depth_m}><td>{row.depth_m}</td><td>{row.temperature_c.toFixed(3)}</td><td>{row.practical_salinity.toFixed(3)}</td><td>{row.sound_speed_m_s.toFixed(2)}</td></tr>)}</tbody></table></div></div>
-    <div className="ocean-notes"><strong>{result.method}</strong>{(result.warnings || []).map(warning => <p key={warning}>{warning}</p>)}{(result.temperature_file || result.salinity_file) && <small>温度文件：{cloud ? basename(result.temperature_file) : result.temperature_file}<br/>盐度文件：{cloud ? basename(result.salinity_file) : result.salinity_file}</small>}</div>
+    <div className="ocean-notes"><strong>{result.method}</strong>{onSimulate && <p>{simulationDraft ? `仿真草案采用连续有效剖面内的 ${simulationDraft.water_depth_m} m 截断水深；海底参数仍需在仿真页确认。` : '海面起连续有效剖面不足50 m，当前不生成声场仿真草案。'}</p>}{(result.warnings || []).map(warning => <p key={warning}>{warning}</p>)}{(result.temperature_file || result.salinity_file) && <small>温度文件：{cloud ? basename(result.temperature_file) : result.temperature_file}<br/>盐度文件：{cloud ? basename(result.salinity_file) : result.salinity_file}</small>}</div>
   </section>;
 }
 

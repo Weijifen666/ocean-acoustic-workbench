@@ -1,12 +1,12 @@
 // Deterministic diagnostics of actual profiles; no density approximation and no
 // claim that a candidate sound-speed structure proves acoustic trapping.
 const finite = Number.isFinite;
-function interpolate(rows, depth, key) {
+function interpolate(rows, depth, key, missing) {
   const exact=rows.find(r=>r.depth_m===depth);
-  if(exact)return exact[key];
+  if(exact)return missing(depth,depth)?null:exact[key];
   for(let i=1;i<rows.length;i++) {
     const a=rows[i-1],b=rows[i];
-    if(a.depth_m<depth&&b.depth_m>depth&&finite(a[key])&&finite(b[key]))return a[key]+(b[key]-a[key])*(depth-a.depth_m)/(b.depth_m-a.depth_m);
+    if(a.depth_m<depth&&b.depth_m>depth&&finite(a[key])&&finite(b[key]))return missing(a.depth_m,b.depth_m)?null:a[key]+(b[key]-a[key])*(depth-a.depth_m)/(b.depth_m-a.depth_m);
   }
   return null;
 }
@@ -14,13 +14,18 @@ export function diagnoseProfile(profile,{reference_depth_m=10,temperature_thresh
   if(!finite(reference_depth_m)||reference_depth_m<0||!finite(temperature_threshold_c)||temperature_threshold_c<=0||temperature_threshold_c>5)throw new Error('混合层判据无效');
   const rows=profile.rows;
   if(!Array.isArray(rows)||rows.length<2||rows.some((r,i)=>!finite(r.depth_m)||(i&&r.depth_m<=rows[i-1].depth_m)))throw new Error('剖面深度坐标无效');
-  const reference=interpolate(rows,reference_depth_m,'temperature_c');
+  // The profile API omits invalid rows and reports their original depths
+  // separately. An increasing retained axis does not prove continuous data.
+  const gaps=(Array.isArray(profile.missing_depths_m)?profile.missing_depths_m:[]).filter(finite);
+  const missing=(a,b)=>gaps.some(depth=>depth>=a&&depth<=b);
+  const reference=interpolate(rows,reference_depth_m,'temperature_c',missing);
   let mld={depth_m:null,status:'reference_unavailable'};
+  if(!finite(reference)&&gaps.some(depth=>depth===reference_depth_m||rows.some((row,i)=>i&&rows[i-1].depth_m<reference_depth_m&&row.depth_m>reference_depth_m&&depth>=rows[i-1].depth_m&&depth<=row.depth_m)))mld={depth_m:null,status:'missing_data'};
   if(finite(reference)) {
     mld={depth_m:null,status:'not_reached_in_observed_profile'};
     let prior={depth_m:reference_depth_m,temperature_c:reference};
     for(const row of rows.filter(r=>r.depth_m>reference_depth_m)) {
-      if(!finite(row.temperature_c)){mld={depth_m:null,status:'missing_data'};break;}
+      if(!finite(row.temperature_c)||missing(prior.depth_m,row.depth_m)){mld={depth_m:null,status:'missing_data'};break;}
       const difference=Math.abs(row.temperature_c-reference),previous=Math.abs(prior.temperature_c-reference);
       if(difference>=temperature_threshold_c) {
         mld={depth_m:prior.depth_m+(row.depth_m-prior.depth_m)*(temperature_threshold_c-previous)/(difference-previous),status:'threshold_crossing'};break;
@@ -33,7 +38,7 @@ export function diagnoseProfile(profile,{reference_depth_m=10,temperature_thresh
     let rising=false;
     for(let i=1;i<rows.length;i++) {
       const a=rows[i-1],b=rows[i];
-      if(!finite(a.sound_speed_m_s)||!finite(b.sound_speed_m_s)){duct={depth_m:null,status:'missing_data'};break;}
+      if(!finite(a.sound_speed_m_s)||!finite(b.sound_speed_m_s)||missing(a.depth_m,b.depth_m)){duct={depth_m:null,status:'missing_data'};break;}
       if(b.sound_speed_m_s>a.sound_speed_m_s){rising=true;duct={depth_m:null,status:'increasing_but_boundary_not_observed'};continue;}
       if(rising&&b.sound_speed_m_s<a.sound_speed_m_s)duct={depth_m:a.depth_m,status:'candidate_local_maximum'};
       else if(rising)duct={depth_m:null,status:'plateau_boundary_unresolved'};

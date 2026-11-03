@@ -135,14 +135,14 @@ export function createCloudModels({catalog,retrieve,encrypt,decrypt,proxy,heartb
   }
   throw Error('配置正在更新，请稍后重试');
  }
- function ownRequest(request,id,path){const headers=new Headers(request.headers);headers.set('cookie','ocean_visitor='+id);return new Request(new URL(path,request.url),{method:'GET',headers})}
+ function ownRequest(request,id,path){const headers=new Headers({origin:new URL(request.url).origin,cookie:'ocean_visitor='+id});const ip=request.headers.get('cf-connecting-ip');if(ip)headers.set('cf-connecting-ip',ip);return new Request(new URL(path,request.url),{method:'GET',headers})}
  async function evidenceFor(q,request,env,ctx,id){
   if(await heartbeat(env)){
    try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return mergeEvidence(rows,publicRetrieve(q),q)}}catch{}
   }
   return mergeEvidence(retrieve(q),publicRetrieve(q),q);
  }
- const researchApi=createCloudResearch({assets:researchAssets,encrypt,decrypt,retrieve,heartbeat,proxy,oceanQuery,remote:async(cfg,body,signal)=>{
+ const researchApi=createCloudResearch({assets:researchAssets,encrypt,decrypt,retrieve,retrieveEvidence:(q,request,env,ctx,identity)=>evidenceFor(q,request,env,ctx,identity.node_id),heartbeat,proxy,oceanQuery,remote:async(cfg,body,signal)=>{
   try{return await remote(cfg,catalog,body,fetcher,signal)}catch(error){if(!error.status)error.status=502;throw error}
  }});
  return async(request,env,ctx,url)=>{

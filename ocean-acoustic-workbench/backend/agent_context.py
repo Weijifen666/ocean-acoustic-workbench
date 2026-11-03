@@ -8,6 +8,13 @@ def tools():
     specs=[('list_project_files','列出授权项目文件',{}),('read_project_file','读取授权项目文本文件',{'path':'string'}),('list_jobs','查询最新100条可见任务的状态、创建时间和输入',{}),('get_job','查询指定任务的真实状态、冻结环境、结果摘要及日志',{'id':'string'}),('get_batch','查询批次结果和稳定性分析',{'id':'string'}),('search_knowledge','查询知识卡和来源',{'query':'string'}),('list_materials','列出教材与全文页索引状态',{}),('search_materials','按专业关键词检索资料原文页，返回定位摘录',{'query':'string'}),('read_material_page','读取教材指定PDF页的提取原文及原页链接',{'source_id':'string','page':'integer'})]
     result=[{'type':'function','function':{'name':name,'description':description,'parameters':{'type':'object','properties':{k:{'type':v} for k,v in fields.items()},'required':list(fields),'additionalProperties':False}}} for name,description,fields in specs]
     next(t for t in result if t['function']['name']=='search_materials')['function']['parameters']['properties']['source_id']={'type':'string','description':'可选，仅搜索指定来源，例如S17；不传则搜索全部索引'}
+    for tool in result:
+        if tool['function']['name']=='list_project_files':
+            tool['function']['description']+='；默认20项，offset为非负目录位置，limit最多50，按next_offset继续'
+            tool['function']['parameters']['properties'].update(offset={'type':'integer'},limit={'type':'integer'})
+        if tool['function']['name']=='read_project_file':
+            tool['function']['description']+='；offset为Unicode字符位置，max_bytes为256–20000的UTF-8字节预算，按next_offset继续'
+            tool['function']['parameters']['properties'].update(offset={'type':'integer'},max_bytes={'type':'integer'})
     return result
 
 def compact(value,detail=False):

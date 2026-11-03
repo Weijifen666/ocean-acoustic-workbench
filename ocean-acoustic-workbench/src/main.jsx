@@ -1,3 +1,4 @@
+import ResourceImage from './ResourceImage';
 import Simulation from './SimulationStudio';
 import {projectCategories,projectCategory} from './projectFiles';
 import './project-files.css';
@@ -503,7 +504,7 @@ function App() {
                 <X />
               </button>
             </div>
-            <img src={image.url} alt={image.caption} />
+            <ResourceImage src={image.url} alt={image.caption} />
             {image.source_url && (
               <a target="_blank" rel="noreferrer" href={image.source_url}>
                 查看原始来源 <ExternalLink size={14} />

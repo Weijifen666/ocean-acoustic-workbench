@@ -6,9 +6,14 @@ const root=resolve(import.meta.dirname,'..'),out=resolve(root,'.local/validation
 mkdirSync(resolve(root,'.local/validation'),{recursive:true});
 await build({stdin:{resolveDir:root,loader:'jsx',contents:`
 import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import assert from 'node:assert/strict';import {readFileSync,existsSync} from 'node:fs';
-import Ocean from './src/OceanData.jsx';import Studio,{initialPlan} from './src/SimulationStudio.jsx';import Results from './src/StudioResults.jsx';
+import Ocean from './src/OceanData.jsx';import OceanMap from './src/OceanMap.jsx';import Studio,{initialPlan} from './src/SimulationStudio.jsx';import Results from './src/StudioResults.jsx';
 const ocean=renderToStaticMarkup(<Ocean notify={()=>{}} onSimulate={()=>{}}/>);
-for(const label of ['海洋环境数据','提取环境剖面','缩放','经度','纬度'])assert(ocean.includes(label),label);
+for(const label of ['海洋环境数据','提取环境剖面','经度','纬度'])assert(ocean.includes(label),label);
+// Catalog loading deliberately hides the data-dependent map. Check the map
+// component separately rather than requiring stale UI text in an offline SSR.
+assert(!ocean.includes('海底水深地图'));
+const map=renderToStaticMarkup(<OceanMap point={{lon:120,lat:20}} onPick={()=>{}}/>);
+for(const label of ['海底水深地图','放大地图','缩小地图','全球','向东','向西'])assert(map.includes(label),label);
 const studio=renderToStaticMarkup(<Studio notify={()=>{}} onSubmit={()=>{}} onAsk={()=>{}}/>);
 for(const label of ['KRAKEN','SCOOTER','BELLHOP','WOA18','经典算例','海洋环境'])assert(studio.includes(label),label);
 const restored={...initialPlan,template:'woa18',longitude:120,latitude:20,water_depth_m:500,source_depths_m:'100',receiver_depth_m:100};

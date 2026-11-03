@@ -34,13 +34,18 @@ export function inactiveContext(budget='auto'){
  return {requested_budget:budget,budget_tokens:resolveBudget(budget),budget_limited:budget!=='unlimited',estimated_input_tokens:0,estimator:'utf8_bytes_upper_bound_v1',reserve_tokens:CONTEXT_RESERVE,history_messages_used:0,dropped_history_messages:0,evidence_count:0,dropped_evidence_count:0,evidence_truncated:false,template_truncated:false,applied:false,provider_prompt_tokens:null,cached_tokens:null};
 }
 function historyUnits(history){
- const units=[];let pending=null;
+ const units=[];let pending=[];
+ const finish=()=>{if(pending.length>1&&pending.at(-1).role==='assistant'&&!pending.at(-1).tool_calls?.length)units.push(pending);pending=[];};
  for(const item of history||[]){
   const content=typeof item.content==='string'?item.content:typeof item.text==='string'?item.text:'';
-  if(!content||item.request_failed||item.status==='failed')continue;
-  if(item.role==='user')pending={role:'user',content};
-  else if(item.role==='assistant'&&pending){units.push([pending,{role:'assistant',content}]);pending=null;}
+  if(item.request_failed||item.status==='failed')continue;
+  if(item.role==='provider_turn'&&Array.isArray(item.messages)){finish();const turn=historyUnits(item.messages).flat();if(turn.length)units.push(turn);continue;}
+  if(item.role==='history_reference'&&content){finish();units.push([{role:'user',content}]);continue;}
+  if(item.role==='user'){finish();if(content)pending=[{role:'user',content}];}
+  else if(item.role==='assistant'&&pending.length&&(content||item.tool_calls?.length))pending.push({role:'assistant',content:item.tool_calls?.length?(content||null):content,...(item.tool_calls?.length?{tool_calls:structuredClone(item.tool_calls)}:{}),...(typeof item.reasoning_content==='string'?{reasoning_content:item.reasoning_content}:{})});
+  else if(item.role==='tool'&&pending.length&&typeof item.tool_call_id==='string')pending.push({role:'tool',tool_call_id:item.tool_call_id,content});
  }
+ finish();
  return units;
 }
 function projectEvidence(rows){return (rows||[]).map(row=>{
@@ -96,7 +101,7 @@ export function buildContext({question,system,evidence=[],history=[],template=''
  if(!fits()){keptEvidence=[];keptTemplate='';templateTruncated=!!template;}
  const messages=assemble(),estimated=assertMessagesBudget(messages,context_budget,tools);
  const context={...inactiveContext(context_budget),estimated_input_tokens:estimated,history_messages_used:keptUnits.reduce((n,u)=>n+u.length,0),dropped_history_messages:originalHistory-keptUnits.reduce((n,u)=>n+u.length,0),evidence_count:keptEvidence.length,dropped_evidence_count:allEvidence.length-keptEvidence.length,evidence_truncated:keptEvidence.some(row=>row.context_truncated)||keptEvidence.length<allEvidence.length,template_truncated:templateTruncated,applied:true};
- return {messages,evidence:keptEvidence,context};
+ return {messages,evidence:keptEvidence,history_turn_lengths:keptUnits.map(unit=>unit.length),context};
 }
 export function withProviderUsage(context,usage){
  const numeric=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0?value:null;

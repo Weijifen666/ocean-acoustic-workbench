@@ -3,8 +3,9 @@ import asyncio, json, math, re, time, uuid
 from pathlib import Path
 import httpx
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 import acoustic_cookbook, code_sandbox, models, ray_tracer
+import provider_history, context_budget, research_context
 
 def detect_matlab():
     cfg = config()
@@ -118,8 +119,15 @@ class PlanRay(BaseModel):
     sound_speed_mps: float = Field(default=1500.0, gt=500, le=3000)
     launch_direction: str = Field(default='both')
 
+    @model_validator(mode='after')
+    def geometry(self):
+        ray_tracer.validate_parameters(self.water_depth_m, self.source_depth_m,
+            self.angles_deg, self.range_max_km, self.sound_speed_mps, self.launch_direction)
+        return self
+
 
 def execute_ray_job(params: dict) -> dict:
+    params = PlanRay(**params).model_dump()
     id = uuid.uuid4().hex[:12]
     folder = run_dir(id)
     folder.mkdir(parents=True, exist_ok=True)
@@ -168,7 +176,8 @@ def execute_code_job(code: str, description: str = "动态声学仿真计算", l
         language=language,
         description=description,
         db_path=DB,
-        runs_dir=LOCAL / 'runs'
+        runs_dir=LOCAL / 'runs',
+        process_context={'registry':PROCESSES,'lock':STATELOCK,'owner':WORKER_OWNER}
     )
 
 
@@ -178,18 +187,27 @@ def submit_ray(plan: PlanRay):
 
 async def submit_code(request: Request):
     data = await request.json()
+    if not isinstance(data, dict):raise HTTPException(422, '脚本请求须为 JSON 对象')
     code = data.get('code', '')
     desc = data.get('description', '动态声学仿真计算')
     lang = data.get('language', 'python')
-    if not code.strip(): raise HTTPException(422, '代码不能为空')
-    return execute_code_job(code, desc, lang)
+    if not isinstance(code,str) or not code.strip(): raise HTTPException(422, '代码须为非空文本')
+    if not isinstance(desc,str) or not isinstance(lang,str):raise HTTPException(422, '脚本说明和语言须为文本')
+    try:return await asyncio.to_thread(execute_code_job, code, desc, lang)
+    except ValueError as exc:raise HTTPException(422,str(exc)) from None
 
 
 def parse_simulation_intent(text: str) -> dict | None:
     text_lower = text.lower()
+    if not any(word in text_lower for word in ['仿真','模拟','计算','运行','跑','画','绘制','追踪']):return None
+    if any(word in text_lower for word in ['如何','怎么','怎样','什么是','为什么']) and not any(word in text_lower for word in ['帮我','请','给我','直接']):return None
+    if any(word in text_lower for word in ['bellhop','scooter','ram','抛物方程']):
+        return {'type':'unsupported','reason':'离线规则解析不能执行指定求解器；请到声场仿真选择对应模型，或配置研究 Agent。未将它替换为解析射线或 KRAKEN。'}
     # 检查是否为射线声学相关指令
-    ray_keywords = ['射线', '声线', '掠射角', '反射次数', 'bellhop', '浅海声线', '海面反射', '海底反射', '轨迹']
+    ray_keywords = ['射线', '声线', '掠射角', '反射次数', '浅海声线', '海面反射', '海底反射', '轨迹']
     if any(k in text_lower for k in ray_keywords):
+        if any(word in text_lower for word in ['梯度','munk','折射','声道']):
+            return {'type':'unsupported','reason':'离线解析射线仅支持等声速平底水层，不能用直线反射代替梯度折射或 Munk 声道；请使用声场仿真或配置研究 Agent。'}
         H = 100.0
         m_H = re.search(r'(?:海底\s*[z=:]*|水深\s*[:：=]?)\s*(\d+(?:\.\d+)?)\s*m', text)
         if m_H: H = float(m_H.group(1))
@@ -305,13 +323,19 @@ async def execute_simulation_and_wait(plan_data:dict, timeout:int=150)->dict:
 
 async def chat(body:Chat):
     cfg=config();evidence=search(body.message)
-    with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
+    with connect() as c:user_message_id=c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp())).lastrowid
+    provider_turn=None
 
     sim_intent = parse_simulation_intent(body.message)
     # 模式一：离线自然语言仿真（当未配置 API Key 时，基于声学意图规则解析器自动提取参数并执行仿真）
     if not cfg.get('api_key') and sim_intent:
+        if sim_intent.get('type')=='unsupported':
+            reply=sim_intent['reason']
+            with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
+            return {'reply':reply,'model_used':False,'evidence_ids':[]}
         if sim_intent.get('type') == 'ray':
-            ray_res = execute_ray_job(sim_intent)
+            try:ray_res = execute_ray_job(sim_intent)
+            except ValueError as exc:ray_res={'status':'error','error':str(exc)}
             if ray_res.get('status') == 'success':
                 jid = ray_res['job_id']
                 summ = ray_res['summary']
@@ -331,7 +355,7 @@ async def chat(body:Chat):
                     f"- **海水环境**：等声速水体 $c = {c:g} \\text{{ m/s}}$，水深 $H = {H:g} \\text{{ m}}$（海面 $z=0\\text{{ m}}$，海底 $z={H:g}\\text{{ m}}$）",
                     f"- **声源参数**：深度 $z_s = {zs:g} \\text{{ m}}$，发射掠射角：{', '.join(f'{a:g}°' for a in angles)}",
                     f"- **水平范围**：$r = 0 \\sim {rmax:g} \\text{{ km}}$（{rmax*1000:g} m）",
-                    "- **仿真引擎**：高精度解析几何与反射相图追踪引擎（支持 BELLHOP 射线格式）",
+                    "- **仿真引擎**：等声速平底水层解析几何射线；未运行 BELLHOP，未计算振幅或传播损失。",
                     "",
                     f"#### 📊 声线反射统计与到达特征分析表（$r = {rmax:g}\\text{{ km}}$，任务标识: `{jid}`）",
                     "| 掠射角 $\\theta$ | $\\tan\\theta$ | 总反射次数 | 向上发射 (海面/海底) | 向下发射 (海面/海底) | 末次反射位置 | 距终点余量 | 终点深度 $z$ |",
@@ -345,8 +369,8 @@ async def chat(body:Chat):
                     tot = u.get('total_bounces', 0)
                     u_sb = f"{u.get('surface_bounces',0)} / {u.get('bottom_bounces',0)}"
                     d_sb = f"{d.get('surface_bounces',0)} / {d.get('bottom_bounces',0)}"
-                    last_r = f"{u.get('last_bounce_r_m', 0):.1f} m"
-                    margin = f"{u.get('margin_to_rmax_m', 0):.1f} m"
+                    last_r = f"{u['last_bounce_r_m']:.1f} m" if u.get('last_bounce_r_m') is not None else '无反射'
+                    margin = f"{u['margin_to_rmax_m']:.1f} m" if u.get('margin_to_rmax_m') is not None else '不适用'
                     end_z = f"上{u.get('end_depth_m',0):.1f}m / 下{d.get('end_depth_m',0):.1f}m"
                     lines.append(f"| **{ang:g}°** | {tan_th:.5f} | **{tot} 次** | {u_sb} | {d_sb} | {last_r} | {margin} | {end_z} |")
 
@@ -355,10 +379,10 @@ async def chat(body:Chat):
                     f"![浅海声线传播轨迹]({ray_res['ray_plot_url']})",
                     "",
                     "💡 **物理机理与特性分析**：",
-                    f"1. **声源居中对称性**：声源深度 $z_s = {zs:g}\\text{{ m}} = H/2$ 恰处波导中心。朝上（向海面）发射与朝下（向海底）发射的声线轨迹关于深度中心完全对称，反射总次数严格一致；当总次数为奇数时，海面与海底反射次数互换（例如 15° 为 7/6 与 6/7）。",
+                    ('1. **几何对称性**：本次声源位于水层中点，向上与向下射线具有中心对称关系。' if abs(zs-H/2)<1e-9 else '1. **非居中声源**：本次声源不在水层中点，不套用上下发射反射次数相同的结论；以实际统计表为准。'),
                     "2. **等声速折射与反射**：等声速介质中折射率恒定，声线严格沿直线传播。海面为自由释放面（声软边界，$V=-1$，反射相位跳变 $\\pi$）；海底为理想镜面全反射，每次反射的掠射角守恒。",
-                    "3. **末次反射的端点敏感性**：掠射角越大，反射跃度越密。例如 60° 声线的第 87 次反射发生在 $r = 4994.1\\text{ m}$，距 5 km 终端仅剩 5.9 米！微小的测距误差可能引起反射计数的跳变。",
-                    "4. **实际浅海与理想模型的差异**：真实浅海中海底沉积物（如砂质、淤泥）存在剪切波与吸收衰减（$\\alpha \\approx 0.5 \\sim 1.0\\text{ dB}/\\lambda$），高掠射角声线经历几十次海底反射后能量迅速衰减耗尽，远场将以小掠射角声线为主导。",
+                    "3. **端点约定**：恰在最大距离处触及边界不计作终点前反射；末次反射与余量使用本次计算值，没有反射时标为不适用。",
+                    "4. **适用范围**：这是理想镜面反射的路径几何，不包含海底吸收、弹性、声速梯度或幅度计算，不能据此判断实际声能衰减。",
                     "",
                     f"[📥 下载本次完整仿真结果包 (含高分辨率图、CSV与JSON数据)]({ray_res['download_url']})",
                     ""
@@ -398,9 +422,9 @@ async def chat(body:Chat):
                             f"![接收深度传播损失曲线]({r['tl_curve_url']})",
                             "",
                             "💡 **物理机理分析**：",
-                            "1. **深海声道约束**：声源位于深海声道轴附近时，声能受到上下水层折射（Snell定律）的反转约束，能量长距离滞留在声道内，避免了海面和海底的反射损耗；",
-                            "2. **模态干涉效应**：随着传播距离增加，各阶简正波模态相位差累积，引起局部周期性的干涉加强与相消（反转点间距约 30~50 km）；",
-                            "3. **传播损失趋势**：远场损失曲线在柱面几何扩展规律的基础上叠加了相干干涉纹波。",
+                            "1. 本次采用理想 Munk 剖面，声源位置与各模态激励共同影响结果；不能只凭模板名称判断本次声能是否避开边界。",
+                            ('2. 本次为相干模态叠加，场中可以包含模态相位干涉。' if s.get('mode_addition')=='coherent' else '2. 本次为非相干模态叠加，不将曲线起伏解释为已计算的相干模态干涉。'),
+                            "3. 以上为执行与结果统计；尚未做网格收敛、独立基准或真实海域验证，不从彩图直接推断固定干涉周期或传播优势。",
                             f"[📥 下载本次完整仿真结果包]({r['download_url']})",
                             ""
                         ])
@@ -450,15 +474,18 @@ async def chat(body:Chat):
             + "【相关知识库卡片】：\n"
             + json.dumps(evidence, ensure_ascii=False)
         )
-        msgs=[{'role':'system','content':sys_prompt}]
-        for m in history(body.session)[-12:]:msgs.append({'role':m['role'],'content':m['text']})
+        private_history=provider_history.load(connect,body.session,cfg,before_id=user_message_id)
+        # Natural-language mode previously had no explicit token budget control.
+        # Preserve that behavior; private history is represented by whole turns.
+        msgs=context_budget.build_context(question=body.message,system=sys_prompt,history=private_history,context_budget='unlimited')['messages']
+        protocol_start=len(msgs)-1
 
         tools = [
             {
                 'type': 'function',
                 'function': {
                     'name': 'run_ray_simulation',
-                    'description': '执行浅海或深海射线声学仿真(计算等声速或梯度波导下的声线轨迹、海面与海底反射次数统计、生成轨迹图)。',
+                    'description': '执行等声速平底水层的解析几何射线，统计理想海面与海底反射并生成轨迹图；不计算梯度折射、BELLHOP声场或传播损失。',
                     'parameters': {
                         'type': 'object',
                         'properties': {
@@ -510,6 +537,9 @@ async def chat(body:Chat):
             {'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},
             {'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}
         ]
+        for tool in tools:
+            if tool['function']['name'] in ('list_project_files','read_project_file'):
+                tool['function']['parameters']['properties'].update(offset={'type':'integer'},**({'limit':{'type':'integer'}} if tool['function']['name']=='list_project_files' else {'max_bytes':{'type':'integer'}}))
         try:
             last_generated_images = []
             async with httpx.AsyncClient(timeout=180) as client:
@@ -520,6 +550,8 @@ async def chat(body:Chat):
                     result=r.json()['choices'][0]['message'];calls=result.get('tool_calls')
                     if not calls:
                         reply=result.get('content') or '模型未返回文字内容'
+                        msgs.append({'role':'assistant',**result})
+                        provider_turn=msgs[protocol_start:]
                         break
                     msgs.append(result)
                     has_successful_sim = False
@@ -528,14 +560,14 @@ async def chat(body:Chat):
                             args=json.loads(call['function']['arguments'])
                             fname=call['function']['name']
                             print(f"[Agent Turn {turn+1}] Calling tool: {fname}")
-                            if fname=='list_project_files':value=files()
-                            elif fname=='read_project_file':value=read_file(args['path'])
+                            if fname=='list_project_files':value=research_context.file_directory(files(),args)
+                            elif fname=='read_project_file':value=research_context.file_page(read_file(args['path']),args)
                             elif fname=='run_ray_simulation':
                                 value=execute_ray_job(args)
                                 if isinstance(value, dict) and value.get('ray_plot_url'):
                                     last_generated_images.append(value['ray_plot_url'])
                             elif fname=='run_acoustic_code':
-                                value=execute_code_job(args.get('code',''), args.get('description',''), args.get('language','python'))
+                                value=await asyncio.to_thread(execute_code_job,args.get('code',''), args.get('description',''), args.get('language','python'))
                                 if isinstance(value, dict) and value.get('image_urls'):
                                     last_generated_images.extend(value['image_urls'])
                             elif fname=='run_ocean_simulation':
@@ -585,7 +617,9 @@ async def chat(body:Chat):
                         reply += f"\n\n![声学仿真图表]({img})"
             used=True
         except Exception as exc:raise HTTPException(502,str(exc))
-    with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
+    with connect() as c:
+        assistant_id=c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp())).lastrowid
+        if provider_turn:provider_history.save(c,assistant_id,body.session,cfg,provider_turn)
     return {'reply':reply,'model_used':used,'evidence_ids':[e['id'] for e in evidence]}
 
 
@@ -603,7 +637,7 @@ async def simulation_chat(body: Chat):
     return result
 
 def create_router(runtime):
-    for name in ('config','connect','stamp','run_dir','DB','LOCAL','ROOT','Plan','submit','job','search','history','files','read_file'):
+    for name in ('config','connect','stamp','run_dir','DB','LOCAL','ROOT','Plan','submit','job','search','history','files','read_file','PROCESSES','STATELOCK','WORKER_OWNER'):
         globals()[name] = runtime[name]
     router = APIRouter()
     router.add_api_route('/api/simulation/chat', simulation_chat, methods=['POST'])

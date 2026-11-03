@@ -1,0 +1,12 @@
+.resource-image-unavailable {
+  display: block;
+  box-sizing: border-box;
+  min-height: 100px;
+  padding: 24px 18px;
+  color: #607b8b;
+  background: #f2f7fa;
+  font-size: 13px;
+  line-height: 1.8;
+  text-align: center;
+  white-space: normal;
+}

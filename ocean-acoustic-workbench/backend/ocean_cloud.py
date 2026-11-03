@@ -9,13 +9,13 @@ class DatasetVersionMismatch(ValueError):
 
 def base_url():return os.environ.get('OCEAN_DATA_URL','').rstrip('/')
 
-def read(path='',**params):
+def read(path='',*,timeout=60,**params):
     origin=base_url();url=urlparse(origin)
     if url.scheme not in ('http','https') or not url.hostname or url.username or url.password or url.query or url.fragment:raise ValueError('OCEAN_DATA_URL 必须是可信数据站点的网址')
     if url.scheme=='http' and url.hostname not in ('localhost','127.0.0.1','::1'):raise ValueError('在线数据服务必须使用 HTTPS')
     endpoint=origin+'/api/ocean-data'+path+('?' + urlencode(params) if params else '')
     try:
-        with urlopen(Request(endpoint,headers={'Accept':'application/json','User-Agent':'OceanAcousticWorkbench/0.7 (+https://github.com/Weijifen666/ocean-acoustic-workbench)'}),timeout=60) as response:return json.load(response)
+        with urlopen(Request(endpoint,headers={'Accept':'application/json','User-Agent':'OceanAcousticWorkbench/0.7 (+https://github.com/Weijifen666/ocean-acoustic-workbench)'}),timeout=timeout) as response:return json.load(response)
     except HTTPError as error:
         try:detail=json.loads(error.read(5000)).get('detail','在线数据服务请求失败')
         except (ValueError,TypeError):detail='在线数据服务请求失败'

@@ -1,6 +1,7 @@
 """Read local WOA18 and ETOPO1 without copying the multi-GB archive."""
 from pathlib import Path
-import threading,os,json
+import threading,os,json,time
+from datetime import datetime,timezone
 import numpy as np
 from netCDF4 import Dataset
 import gsw
@@ -11,12 +12,32 @@ CONFIG=LOCAL/'config.json'
 SETTINGS=json.loads(CONFIG.read_text(encoding='utf-8')) if CONFIG.is_file() else {}
 ROOT=Path(os.environ.get('OCEAN_DATA_DIR',SETTINGS.get('ocean_data_path',str(LOCAL/'ocean-data'))))
 LOCK=threading.Lock() # netCDF/HDF5 operations must not overlap across request threads.
+STATUS_LOCK=threading.Lock()
+_status_cache={}
 PERIODS=[{'id':0,'label':'年平均'}]+[{'id':m,'label':f'{m}月'} for m in range(1,13)]+[{'id':m,'label':label} for m,label in [(13,'1—3月'),(14,'4—6月'),(15,'7—9月'),(16,'10—12月')]]
 
 def catalog():
     if ocean_cloud.base_url():return ocean_cloud.read()
     files=[{'path':str(p.relative_to(ROOT)).replace('\\','/'),'bytes':p.stat().st_size} for p in ROOT.rglob('*') if p.is_file() and p.suffix in ('.nc','.grd','.gz','.tif')]
     return {'available':len(files)==39,'files':files,'count':len(files),'bytes':sum(f['bytes'] for f in files),'periods':PERIODS,'name':'WOA18 温盐气候场与 ETOPO1 海底地形','path':str(ROOT.resolve()),'method':'TEOS-10：深度→海水压力，实用盐度→绝对盐度，原位温度→声速（完整 Gibbs 函数）'}
+
+
+def status():
+    """A short-lived metadata probe, distinct from merely configuring a URL."""
+    cloud=ocean_cloud.base_url();key=(cloud,str(ROOT))
+    with STATUS_LOCK:
+        cached=_status_cache.get(key)
+        if cached and time.monotonic()-cached[0]<30:return dict(cached[1])
+        result={'mode':'cloud' if cloud else 'local','configured':bool(cloud or ROOT.is_dir()),
+                'available':False,'checked_at':datetime.now(timezone.utc).isoformat(),
+                'scope':'数据目录与激活版本检查；不代表任意选点都有有效剖面。'}
+        try:
+            meta=ocean_cloud.read(timeout=8) if cloud else catalog()
+            result.update(available=bool(meta.get('available')),version=meta.get('version'))
+        except (ConnectionError,ValueError,OSError,TypeError):
+            result['error']='海洋数据元信息暂不可用；保留原数据源，不自动切换。'
+        _status_cache.clear();_status_cache[key]=(time.monotonic(),result)
+        return dict(result)
 
 def terrain(lon,lat):
     with Dataset(str(ROOT/'terrain/ETOPO1_Bed_g_gmt4.grd')) as ds:

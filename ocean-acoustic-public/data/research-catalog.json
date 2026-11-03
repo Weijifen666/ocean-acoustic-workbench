@@ -11,8 +11,8 @@
       "resources": [
         {
           "path": "references/applicability.md",
-          "sha256": "9332ed23487847eecde8d983d0de29b12891b50734a35bda3668aebd4910ae2f",
-          "size": 3833
+          "sha256": "539ffcf92b670be1b48ecd7f7fdf7c4bcfd2be53692a26aa9a0f8aacda27d764",
+          "size": 3879
         },
         {
           "path": "references/casebook-summary.json",
@@ -36,8 +36,8 @@
         },
         {
           "path": "references/models.json",
-          "sha256": "6badc34fecec3430fef6275881d1380891ee073d431335ce330e04df72e3b704",
-          "size": 34494
+          "sha256": "b41e2ec2da778d6d179b3cb07a095cd88140b91c40449c2e6156b0822476bdfd",
+          "size": 34507
         },
         {
           "path": "references/ram-and-pe.md",
@@ -324,17 +324,17 @@
       "prompt": "请载入 at-krakel 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "f7c56761d204dca5f3088a1dce436539cd08012494388124a1d71e3bbf545bb4",
+      "sha256": "b38a58e91bd8bd2e3bc9016e535c3965b87165524e5ff53d0bf3e5a93672a365",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "f57b2f9d536c034d459445536f6214f140f6eee5c2547af7e7379c10ea02d176",
-          "size": 1490
+          "sha256": "86c85bbfb0978430b94e29ee0b91d86d994557e5f2082a3585ee319e58947943",
+          "size": 1648
         },
         {
           "path": "SKILL.md",
-          "sha256": "f7c56761d204dca5f3088a1dce436539cd08012494388124a1d71e3bbf545bb4",
-          "size": 1806
+          "sha256": "b38a58e91bd8bd2e3bc9016e535c3965b87165524e5ff53d0bf3e5a93672a365",
+          "size": 2060
         }
       ],
       "runtime_available": false,

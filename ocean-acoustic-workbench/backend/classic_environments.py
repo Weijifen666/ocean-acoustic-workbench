@@ -1,9 +1,12 @@
 """Explicit teaching environments; not observations or untouched AT fixtures."""
-import json,hashlib
+import json,hashlib,os
 from pathlib import Path
 
 def matched_munk():
-    cfg=json.loads((Path(__file__).resolve().parents[1]/'.local/config.json').read_text(encoding='utf-8'))
+    local=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(Path(__file__).resolve().parents[1]/'.local')))
+    try:cfg=json.loads((local/'config.json').read_text(encoding='utf-8'))
+    except (OSError,ValueError):raise ValueError('未读取到运行目录中的 AT 配置，请先设置工具箱路径') from None
+    if not cfg.get('toolbox_path'):raise ValueError('尚未配置 AT 工具箱路径')
     path=Path(cfg['toolbox_path'])/'tests/Munk/MunkK.env'
     raw=path.read_text(encoding='ascii').splitlines()
     stop=next(i for i,l in enumerate(raw) if l.strip().startswith("'A'"))

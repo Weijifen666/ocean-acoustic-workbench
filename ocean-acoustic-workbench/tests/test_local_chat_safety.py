@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field, field_validator
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
-import answer_policy, context_budget
+import answer_policy, context_budget, provider_history, research_context
 import knowledge as course_knowledge
 
 TEST_KEY = "TEST-ONLY-NOT-A-REAL-API-KEY"
@@ -56,7 +56,7 @@ class LocalChatSafety(unittest.IsolatedAsyncioTestCase):
             "json": json, "config": lambda: dict(self.connection_config),
             "connect": self.connect_database, "stamp": lambda: "test-time",
             "search": lambda message: copy.deepcopy(self.evidence), "history": lambda session: [],
-            "kbfile": lambda name: self.root / name, "answer_policy": answer_policy, "context_budget": context_budget,
+            "kbfile": lambda name: self.root / name, "answer_policy": answer_policy, "context_budget": context_budget, "provider_history":provider_history, "research_context":research_context,
             "knowledge": SimpleNamespace(answer_context=lambda evidence: "test evidence only",
                                          format_no_model_answer=course_knowledge.format_no_model_answer,
                                          citations_for=lambda evidence: [{"id": e["id"]} for e in evidence],

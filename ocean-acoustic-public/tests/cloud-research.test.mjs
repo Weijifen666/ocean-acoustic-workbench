@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {readFileSync} from 'node:fs';
+import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {setup,decrypt,encrypt} from './test-support.mjs';
+import {setup,decrypt,encrypt,retrieve} from './test-support.mjs';
 import {assertMessagesBudget,estimateMessages} from '../server/context-budget.mjs';
 
 const assets=JSON.parse(readFileSync(new URL('../data/research-assets.json',import.meta.url),'utf8'));
@@ -13,13 +15,17 @@ const provider=(content='',calls=[],finish='stop',reasoning='Provider reasoning 
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 const chatBody=(overrides={})=>({session:'session-research-0001',request_id:'research-request-0001',message:'请分析海洋声学研究流程',backend:'api',rounds:40,...overrides});
 function harness(replies=[],options={}){
- const providerRequests=[],nodeRequests=[],oceanRequests=[],submissions=new Map();
+ const providerRequests=[],nodeRequests=[],knowledgeRequests=[],oceanRequests=[],submissions=new Map();
  const s=setup(async(url,init)=>{
   providerRequests.push({url,auth:init.headers.get('authorization'),body:JSON.parse(init.body)});
   const next=replies.shift();assert.ok(next,'Unexpected paid provider request');return typeof next==='function'?next(init):next;
- },{researchAssets:assets,heartbeat:async()=>options.online!==false,
+ },{researchAssets:assets,publicKnowledge:options.publicKnowledge,databasePath:options.databasePath,heartbeat:async()=>options.online!==false,
   proxy:async request=>{
-   const path=new URL(request.url).pathname,body=request.method==='GET'?undefined:JSON.parse(await request.text());
+   const url=new URL(request.url),path=url.pathname,body=request.method==='GET'?undefined:JSON.parse(await request.text());
+   if(path==='/api/knowledge/search'){
+    knowledgeRequests.push({path,query:url.searchParams.get('q'),headers:Object.fromEntries(request.headers)});
+    return Response.json(options.knowledgeRows??retrieve(url.searchParams.get('q')||''));
+   }
    const record={path,method:request.method,headers:Object.fromEntries(request.headers),body};nodeRequests.push(record);
    assert.equal(request.headers.get('authorization'),null);assert.ok(!JSON.stringify(record).includes(cfg.api_key));
    let value;
@@ -41,7 +47,7 @@ function harness(replies=[],options={}){
  // async wrapper otherwise tries nested BEGINs during concurrent HTTP tests.
  let pending=Promise.resolve();const batch=s.env.DB.batch.bind(s.env.DB);
  s.env.DB.batch=statements=>{const result=pending.then(()=>batch(statements));pending=result.catch(()=>{});return result;};
- return {...s,providerRequests,nodeRequests,oceanRequests,submissions};
+ return {...s,providerRequests,nodeRequests,knowledgeRequests,oceanRequests,submissions};
 }
 async function visitor(s,key=true){const a=await s.call('/api/config');if(key)assert.equal((await s.call('/api/config','PUT',cfg,a.cookie)).r.status,200);return a.cookie;}
 async function start(s,cookie,body=chatBody()){const r=await s.call('/api/research/chat','POST',body,cookie);assert.equal(r.r.status,202,JSON.stringify(r.data));return r.data.id;}
@@ -170,6 +176,11 @@ test('logged-in identity sends its server-derived node cookie and never forwards
  await account(`/api/research/runs/${started.data.id}/step`,'POST',{});
  assert.equal(s.nodeRequests.length,1);assert.match(s.nodeRequests[0].headers.cookie,/^ocean_visitor=[a-f0-9]{64}$/);
  assert.notEqual(s.nodeRequests[0].headers.cookie,'ocean_visitor='+'A'.repeat(64));
+ assert.equal(s.knowledgeRequests.length,1);
+ for(const node of [...s.nodeRequests,...s.knowledgeRequests]){
+  assert.equal(node.headers.cookie,s.nodeRequests[0].headers.cookie);
+  for(const name of ['authorization','oai-authenticated-user-id','oai-authenticated-user-email'])assert.equal(node.headers[name],undefined,name);
+ }
  assert.equal(s.nodeRequests[0].headers['oai-authenticated-user-id'],undefined);assert.equal(s.nodeRequests[0].headers.authorization,undefined);s.sqlite.close();
 });
 
@@ -420,4 +431,173 @@ test('offline, foreign, missing and empty jobs never produce invented exports or
    assert.equal(s.nodeRequests.length,kind==='offline'?0:1);assert.ok(s.nodeRequests.every(r=>r.method==='GET'&&r.path==='/api/jobs/'+job));
   }finally{s.sqlite.close();}
  }
+});
+
+test('research uses the same authorized full-text and public evidence path at start and in knowledge tools',async()=>{
+ const privateRow={id:'D-S17-research-regression',label:'授权教材检索测试',source_id:'S17',pdf_page:375,text:'TEST ONLY: private evidence returned by the visitor-scoped node.',evidence_type:'source_excerpt'};
+ const publicRow={id:'O-NOAA-research-regression',label:'NOAA公开资料检索测试',source_id:'NOAA-TEST',url:'https://oceanservice.noaa.gov/facts/acidification.html',text:'TEST ONLY: public snapshot evidence.',evidence_type:'public_web_excerpt'};
+ for(const online of [true,false]){
+  const s=harness([provider('',[toolCall('search_knowledge',{query:'专项检索测试'},'lookup-evidence')]),provider('仅使用本次真正提供的证据。')],
+   {online,knowledgeRows:[privateRow],publicKnowledge:{retrievePublicOcean:()=>[publicRow]}});
+  try{
+   const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:'专项检索测试'}));
+   assert.equal((await step(s,cookie,id)).data.state,'running');
+   const initial=s.providerRequests[0].body.messages[0].content;
+   assert(initial.includes(publicRow.id));assert.equal(initial.includes(privateRow.id),online);
+   const checkpoint=await stored(s,id),result=JSON.parse(checkpoint.data.messages.find(m=>m.tool_call_id==='lookup-evidence').content);
+   assert(result.matches.some(row=>row.id===publicRow.id));assert.equal(result.matches.some(row=>row.id===privateRow.id),online);
+   assert.equal(s.knowledgeRequests.length,online?2:0);
+   for(const request of s.knowledgeRequests){assert.match(request.headers.cookie,/^ocean_visitor=/);assert.equal(request.headers.authorization,undefined);assert.ok(!JSON.stringify(request).includes(cfg.api_key));}
+   assert.equal((await step(s,cookie,id)).data.state,'done');
+  }finally{s.sqlite.close();}
+ }
+});
+
+test('new call IDs and reordered plan keys reuse a durable existing submission after the database is reopened',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'ocean-research-restart-')),databasePath=join(directory,'research.sqlite3');
+ let first,second;
+ try{
+  first=harness([provider('',[toolCall('submit_simulation',{plan},'original-plan-submission')])],{databasePath});
+  const cookie=await visitor(first),id=await start(first,cookie,chatBody({message:'运行给定计划后继续检查同一任务。'}));
+  assert.equal((await step(first,cookie,id)).data.state,'running');
+  const receipt=[...first.submissions.values()][0];assert.equal(first.submissions.size,1);
+  first.sqlite.close();first=null;
+  const reordered=Object.fromEntries(Object.entries(plan).reverse());
+  second=harness([provider('',[toolCall('submit_simulation',{plan:reordered},'fresh-provider-call-id')]),provider('复用了已有任务，没有再次计算。')],{databasePath});
+  const resumed=await step(second,cookie,id);assert.equal(resumed.data.state,'running',JSON.stringify(resumed.data));
+  assert.equal(second.submissions.size,0);assert.equal(second.nodeRequests.length,0);
+  const tools=(await stored(second,id)).data.messages.filter(m=>m.role==='tool').map(m=>JSON.parse(m.content));
+  assert.equal(tools.length,2);assert.deepEqual(tools[1].ids,receipt.ids);assert.equal(tools[1].reused,true);
+  const final=await step(second,cookie,id);assert.equal(final.data.state,'done');assert.equal(final.data.trace.length,2);
+  assert.equal((await second.call('/api/research/history?session=session-research-0001','GET',undefined,cookie)).data.length,2);
+  assert.equal((await get(second,await visitor(second,false),id)).r.status,404);
+ }finally{first?.sqlite.close();second?.sqlite.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test('unlimited research stops a third identical static tool call instead of paying for an endless loop',async()=>{
+ const s=harness([0,1,2].map(i=>provider('',[toolCall('get_simulation_schema',{},'repeated-static-'+i)])));
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({rounds:0}));
+  assert.equal((await step(s,cookie,id)).data.state,'running');
+  assert.equal((await step(s,cookie,id)).data.state,'running');
+  const stopped=await step(s,cookie,id);assert.equal(stopped.data.state,'failed');assert.equal(stopped.data.error_code,'REPEATED_TOOL_CALL');
+  assert.equal(stopped.data.trace.length,2);assert.equal(s.providerRequests.length,3);
+  assert.equal((await step(s,cookie,id)).data.state,'failed');assert.equal(s.providerRequests.length,3);
+  assert.equal(s.sqlite.prepare("SELECT count(*) AS n FROM cloud_research_runs WHERE state='running'").get().n,0);
+ }finally{s.sqlite.close();}
+});
+
+test('oversized provider checkpoints fail durably and release the run without dropping earlier task receipts',async()=>{
+ for(const payload of ['x'.repeat(910000),'海'.repeat(310000)]){
+ const s=harness([provider('',[toolCall('submit_simulation',{plan},'capacity-first-compute')]),provider('',[toolCall('get_simulation_schema',{},'capacity-oversized-call')],'tool_calls',payload)]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie);
+  assert.equal((await step(s,cookie,id)).data.state,'running');const receipt=[...s.submissions.values()][0];
+  const failed=await step(s,cookie,id);assert.equal(failed.r.status,200);assert.equal(failed.data.state,'failed');assert.equal(failed.data.error_code,'RESEARCH_RECORD_LIMIT');
+  const checkpoint=await stored(s,id);assert.equal(checkpoint.lease_until,0);assert.equal(checkpoint.state,'failed');
+  assert(checkpoint.data.messages.some(m=>m.role==='tool'&&JSON.parse(m.content).ids?.includes(receipt.ids[0])));
+  assert(!JSON.stringify(checkpoint.data).includes(payload.slice(0,1000)));assert.equal(checkpoint.data.trace.length,1);
+  assert.equal((await step(s,cookie,id)).data.state,'failed');assert.equal(s.providerRequests.length,2);assert.equal(s.submissions.size,1);
+  assert.equal((await s.call('/api/research/chat','POST',chatBody({session:'new-after-capacity',request_id:'new-request-after-capacity'}),cookie)).r.status,202,'The previous oversized request must not hold the active-run unique index forever');
+ }finally{s.sqlite.close();}
+ }
+});
+
+test('empty and content-filtered provider completions remain failed and never execute returned tools',async()=>{
+ for(const answer of [provider(''),provider(null),provider('部分受限输出',[toolCall('submit_simulation',{plan},'filtered-compute')],'content_filter')]){
+  const s=harness([answer]);
+  try{
+   const cookie=await visitor(s),id=await start(s,cookie),result=await step(s,cookie,id);
+   assert.equal(result.data.state,'failed');assert.equal(result.data.reply,null);assert.equal(s.nodeRequests.length,0);assert.equal(s.submissions.size,0);
+   const history=await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);assert.equal(history.data.length,1);
+   assert.equal((await step(s,cookie,id)).data.state,'failed');assert.equal(s.providerRequests.length,1);
+  }finally{s.sqlite.close();}
+ }
+});
+
+test('DeepSeek thinking tool protocol survives a new question and database restart without exposing reasoning to UI',async()=>{
+ const directory=mkdtempSync(join(tmpdir(),'ocean-deepseek-protocol-')),databasePath=join(directory,'research.sqlite3');
+ const reasoning=['PRIVATE-PROTOCOL-TOOL-ONE','PRIVATE-PROTOCOL-FINAL-ONE','PRIVATE-PROTOCOL-TOOL-TWO','PRIVATE-PROTOCOL-FINAL-TWO'];
+ const reply=(content,calls,reason)=>Response.json({model:cfg.model,choices:[{finish_reason:calls.length?'tool_calls':'stop',message:{role:'assistant',content,reasoning_content:reason,...(calls.length?{tool_calls:calls}:{})}}]});
+ const strict=answer=>init=>{
+  const messages=JSON.parse(init.body).messages;
+  for(const message of messages.filter(row=>row.role==='assistant')){
+   const expected=message.tool_calls?.some(call=>call.id==='thinking-tool-one')?reasoning[0]:message.tool_calls?.some(call=>call.id==='thinking-tool-two')?reasoning[2]:message.content==='第一轮最终答案'?reasoning[1]:null;
+   if(expected===null||message.reasoning_content!==expected)return Response.json({error:{message:'Missing or altered reasoning_content for retained assistant message'}},{status:400});
+  }
+  completeToolGroups(messages);return answer;
+ };
+ let first,second;
+ try{
+  first=harness([strict(reply('',[toolCall('get_simulation_schema',{},'thinking-tool-one')],reasoning[0])),strict(reply('第一轮最终答案',[],reasoning[1]))],{databasePath});
+  const cookie=await visitor(first),id=await start(first,cookie);
+  assert.equal((await step(first,cookie,id)).data.state,'running');assert.equal((await step(first,cookie,id)).data.state,'done');
+  const history=await first.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);
+  for(const marker of reasoning)assert(!JSON.stringify(history.data).includes(marker));assert(!JSON.stringify(history.data).includes('_provider'));
+  const encrypted=first.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext;
+  assert(!encrypted.includes(reasoning[0]));
+  const storedSession=await decrypt(encrypted,first.env.GATEWAY_SECRET),turn=storedSession.messages.at(-1)._provider.messages;
+  assert.deepEqual(turn.map(row=>row.role),['user','assistant','tool','assistant']);assert.equal(turn[1].reasoning_content,reasoning[0]);assert.equal(turn.at(-1).reasoning_content,reasoning[1]);
+  first.sqlite.close();first=null;
+  second=harness([strict(reply('',[toolCall('get_simulation_schema',{},'thinking-tool-two')],reasoning[2])),strict(reply('第二轮最终答案',[],reasoning[3]))],{databasePath});
+  const next=await start(second,cookie,chatBody({request_id:'thinking-second-question',message:'根据上一轮继续解释。'}));
+  assert.equal((await step(second,cookie,next)).data.state,'running');assert.equal((await step(second,cookie,next)).data.state,'done');
+  const sent=second.providerRequests[0].body.messages;assert(sent.some(row=>row.tool_calls?.some(call=>call.id==='thinking-tool-one')));assert(sent.some(row=>row.tool_call_id==='thinking-tool-one'));
+  assert.equal(sent.find(row=>row.content==='第一轮最终答案').reasoning_content,reasoning[1]);
+  const publicHistory=await second.call('/api/research/history?session=session-research-0001','GET',undefined,cookie),run=await get(second,cookie,next);
+  for(const marker of reasoning){assert(!JSON.stringify(publicHistory.data).includes(marker));assert(!JSON.stringify(run.data).includes(marker));}
+  assert.equal(second.providerRequests.length,2);assert.equal(second.submissions.size,0);
+ }finally{first?.sqlite.close();second?.sqlite.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test('legacy assistant text without authentic reasoning is quoted as unverified app history, never fabricated as a DeepSeek message',async()=>{
+ const s=harness([init=>{
+  const body=JSON.parse(init.body);
+  if(body.messages.some(row=>row.role==='assistant'&&typeof row.reasoning_content!=='string'))return Response.json({error:{message:'Missing reasoning_content'}},{status:400});
+  const reference=body.messages.find(row=>row.role==='user'&&row.content.includes('APPLICATION-CONVERSATION-HISTORY'));
+  assert(reference);assert(reference.content.includes('旧问题原文'));assert(reference.content.includes('旧答案需要核实'));
+  return provider('根据旧对话引用继续核对资料。');
+ }]);
+ try{
+  const cookie=await visitor(s),session='session-research-0001',data={title:'旧版对话',messages:[{role:'user',text:'旧问题原文'},{role:'assistant',text:'旧答案需要核实',model_used:true}]};
+  s.sqlite.prepare('INSERT INTO cloud_research_sessions(visitor_id,id,ciphertext,created,updated) SELECT id,?,?,?,? FROM cloud_visitors').run(session,await encrypt(data,s.env.GATEWAY_SECRET),Date.now(),Date.now());
+  const id=await start(s,cookie,chatBody({message:'继续旧问题。'}));assert.equal((await step(s,cookie,id)).data.state,'done');assert.equal(s.providerRequests.length,1);
+ }finally{s.sqlite.close();}
+});
+
+test('individually bounded turns cannot overflow the accumulated private session or overwrite earlier protocol',async()=>{
+ const privateReasoning='PRIVATE-SESSION-STORAGE-'+'海'.repeat(150000);
+ const response=text=>Response.json({choices:[{finish_reason:'stop',message:{role:'assistant',content:text,reasoning_content:privateReasoning}}]});
+ const s=harness([response('first valid answer'),response('second answer must not overwrite the bounded session')]);
+ try{
+  const cookie=await visitor(s),first=await start(s,cookie);
+  assert.equal((await step(s,cookie,first)).data.state,'done');
+  const sessionBefore=await decrypt(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext,s.env.GATEWAY_SECRET);
+  assert(new TextEncoder().encode(JSON.stringify(sessionBefore)).length<900000);
+  const second=await start(s,cookie,chatBody({request_id:'session-capacity-second',message:'A second ordinary question.'}));
+  const checkpoint=(await stored(s,second)).data;assert(new TextEncoder().encode(JSON.stringify(checkpoint)).length<900000);
+  const failed=await step(s,cookie,second);assert.equal(failed.data.state,'failed');assert.equal(failed.data.error_code,'RESEARCH_RECORD_LIMIT');
+  const after=await decrypt(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext,s.env.GATEWAY_SECRET);
+  assert.deepEqual(after.messages.slice(0,2),sessionBefore.messages);assert.equal(after.messages.length,3);
+  assert(!JSON.stringify(after).includes('second answer must not overwrite'));assert.equal((await stored(s,second)).lease_until,0);
+  const history=await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);assert(!JSON.stringify(history.data).includes(privateReasoning.slice(0,100)));
+  assert.equal(s.providerRequests.length,2);
+ }finally{s.sqlite.close();}
+});
+
+test('session rename and creation enforce UTF-8 capacity before changing the durable conversation',async()=>{
+ const s=harness();
+ try{
+  const cookie=await visitor(s,false),session='near-capacity-session',value={title:'x',messages:[],private_note:''};
+  value.private_note='z'.repeat(899995-JSON.stringify(value).length);
+  const ciphertext=await encrypt(value,s.env.GATEWAY_SECRET);
+  s.sqlite.prepare('INSERT INTO cloud_research_sessions(visitor_id,id,ciphertext,created,updated) SELECT id,?,?,?,? FROM cloud_visitors').run(session,ciphertext,Date.now(),Date.now());
+  const renamed=await s.call('/api/research/sessions/'+session,'PATCH',{title:'海'.repeat(80)},cookie);
+  assert.equal(renamed.r.status,422);assert.equal(renamed.data.code,'RESEARCH_RECORD_LIMIT');
+  assert.equal(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext,ciphertext);
+  const created=await s.call('/api/research/chat','POST',chatBody({session,message:'A new question must not overflow an existing session.'}),cookie);
+  assert.equal(created.r.status,422);assert.equal(created.data.code,'RESEARCH_RECORD_LIMIT');
+  assert.equal(s.sqlite.prepare('SELECT count(*) AS n FROM cloud_research_runs').get().n,0);
+  assert.equal(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext,ciphertext);
+ }finally{s.sqlite.close();}
 });

@@ -38,6 +38,16 @@ test('current question and mandatory system survive exactly; old history drops a
  assert(b.context.history_messages_used>a.context.history_messages_used);
  assert(a.context.estimated_input_tokens<=4096-1024);
 });
+
+test('provider history budgets retain or drop whole user/tool/final turns and preserve every reasoning payload',()=>{
+ const turn=index=>[{role:'user',content:'old question '+index},{role:'assistant',content:null,reasoning_content:'R'.repeat(900),tool_calls:[{id:'call-'+index,type:'function',function:{name:'read',arguments:'{}'}}]},{role:'tool',tool_call_id:'call-'+index,content:'tool result '+index},{role:'assistant',content:'old final '+index,reasoning_content:'F'.repeat(900)}];
+ const history=[...turn(1),...turn(2),...turn(3)];
+ const full=buildContext({question:'new question',system:'system',history,context_budget:'unlimited'});
+ assert.deepEqual(full.messages.slice(1,-1),history);assert.equal(full.context.history_messages_used,12);
+ const limited=buildContext({question:'new question',system:'system',history,context_budget:4096});
+ assert.equal(limited.context.history_messages_used,4);assert.equal(limited.context.dropped_history_messages,8);assert.deepEqual(limited.messages.slice(1,-1),turn(3));
+ assertMessagesBudget(limited.messages,4096);
+});
 test('oversized current problem is rejected without truncation or automatic summarization',()=>{
  assert.throws(()=>buildContext({question:'海'.repeat(1500),system:'系统',context_budget:4096}),/调大|缩短/);
  assert.equal(buildContext({question:'海'.repeat(1500),system:'系统',context_budget:8192}).messages.at(-1).content,'海'.repeat(1500));

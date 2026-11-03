@@ -1,5 +1,7 @@
 """Configurable read-only agent loop with cancellation and visible tool evidence."""
 import asyncio,json,inspect
+class IncompleteResponse(RuntimeError):
+    code='AGENT_RESPONSE_INCOMPLETE'
 async def run(request, messages, tools, execute, limit, stop, trace):
     rounds=0;seen={};reason=None
     while not stop.is_set():
@@ -10,12 +12,14 @@ async def run(request, messages, tools, execute, limit, stop, trace):
         if cancel in done:
             task.cancel();await asyncio.gather(task,return_exceptions=True);return partial(trace,'用户已停止')
         cancel.cancel();await asyncio.gather(cancel,return_exceptions=True)
-        try:result=await task
-        except Exception as e:return partial(trace,'模型请求失败：'+str(e))
+        result=await task
         rounds+=1;calls=result.get('tool_calls') or []
-        if not calls:return result.get('content') or partial(trace,'模型没有返回答案')
-        if final:return partial(trace,reason+'；模型仍要求工具，已停止')
-        messages.append(result)
+        if not calls:
+            if not isinstance(result.get('content'),str) or not result['content'].strip():raise IncompleteResponse('模型没有返回完整文字答案。')
+            messages.append({'role':'assistant',**result})
+            return result['content']
+        if final:raise IncompleteResponse(reason+'；模型仍要求工具，研究没有完成。')
+        messages.append({'role':'assistant',**result})
         for call in calls:
             args={}
             name=call.get('function',{}).get('name','');raw=call.get('function',{}).get('arguments','{}')

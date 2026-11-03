@@ -11,13 +11,35 @@ META=[{'id':'at-environment','name':'AT 环境构造与算例复现','descriptio
 META += [{'id':r['skill'],'name':r['name']+' 模型构造','model':r['id'],'description':('固化 '+r['case']+' 输入、执行、检查与报告流程。' if r['supported'] else r['unavailable_reason']), 'prompt':f"请载入 {r['skill']} 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我给出的研究目标构造任务。我的目标是："} for r in model_workflows.recipes()]
 
 def catalog():return {'skills':META,'toolbox_status':'模型Skill可创建独立输入和执行脚本；创建、运行通过、物理精度验证分别记录。'}
-def resource(identity,path='SKILL.md'):
-    if identity not in {s['id'] for s in META}:raise ValueError('未知技能')
+def resource(identity,path='SKILL.md',*,offset=0,max_bytes=12000):
+    if not isinstance(identity,str) or identity not in {s['id'] for s in META}:raise ValueError('未知技能')
+    if not isinstance(path,str) or len(path)>512 or not re.fullmatch(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*',path) or any(part in ('.','..') or part.startswith('.') for part in path.split('/')):
+        raise ValueError('技能资源路径无效')
+    if type(offset) is not int or offset<0:raise ValueError('offset须为非负Unicode字符位置')
+    if type(max_bytes) is not int or not 256<=max_bytes<=20000:raise ValueError('max_bytes须为256—20000的整数')
+    # Only source files within a registered Skill's documented resource trees
+    # are readable. Adding MATLAB text support never grants filesystem access
+    # outside that package, and does not execute the returned script.
+    parts=path.split('/')
+    registered=path=='SKILL.md' or (len(parts)>1 and
+        (parts[0]=='references' and Path(path).suffix in ('.md','.json') or
+         parts[0]=='scripts' and Path(path).suffix in ('.py','.m')))
     base=(SKILLS/identity).resolve();target=(base/path).resolve()
-    if not target.is_relative_to(base) or not target.is_file() or target.suffix not in ['.md','.py','.json']:raise ValueError('技能资源不可用')
+    if not registered or not target.is_relative_to(base) or not target.is_file():raise ValueError('技能资源不可用')
     raw=target.read_bytes()
     if len(raw)>150000:raise ValueError('资源过大')
-    return {'skill':identity,'path':path,'local_path':str(target),'content':raw.decode('utf-8'),'sha256':hashlib.sha256(raw).hexdigest()}
+    text=raw.decode('utf-8')
+    if offset>len(text):raise ValueError('offset超过资源字符长度')
+    # Decode only a valid UTF-8 prefix; the offset counts Unicode code points,
+    # while max_bytes bounds response content bytes, not UTF-16 or characters.
+    content=text[offset:].encode('utf-8')[:max_bytes].decode('utf-8',errors='ignore')
+    end=offset+len(content);complete=offset==0 and end==len(text)
+    return {'skill':identity,'path':path,'local_path':str(target),'content':content,'sha256':hashlib.sha256(raw).hexdigest(),
+        'offset':offset,'next_offset':end if end<len(text) else None,'total_characters':len(text),'total_bytes':len(raw),
+        'returned_bytes':len(content.encode('utf-8')),'offset_unit':'unicode_code_points','encoding':'utf-8',
+        'has_more':end<len(text),'complete':complete,'truncated':not complete,
+        'content_format':'complete_text' if complete else 'text_fragment',
+        'note':('这是明确标记的文件片段，不是完整JSON或配方；使用相同id/path及next_offset继续读取，sha256对应完整文件。' if not complete else '完整文件内容；读取脚本不表示已执行。')}
 
 def at_file(toolbox,path):
     base=Path(toolbox).resolve();target=(base/path).resolve()
@@ -42,6 +64,9 @@ def at_catalog(toolbox,query=''):
 def tools():
     specs=[('list_model_workflows','查看各模型已固化的创建配方、默认算例和本机程序可用性',{}),('list_research_skills','列出研究技能及应用场景',{}),('load_research_skill','读取研究技能的SKILL.md，执行任务前按目标加载',{'id':'string'}),('read_skill_resource','读取技能参考文档或可执行脚本，返回路径与内容',{'id':'string','path':'string'}),('list_at_examples','按关键词查AT算例族和MATLAB函数签名，空字符串列目录',{'query':'string'}),('read_at_file','读取本机AT中的相对路径文本，如tests/sduct/sductK.env',{'path':'string'}),('get_ocean_profile','读取实际WOA18温盐声速剖面及地形，period为0年平均、1–12月、13–16季节',{'lon':'number','lat':'number','period':'integer'})]
     result=[{'type':'function','function':{'name':n,'description':d,'parameters':{'type':'object','properties':{k:{'type':v} for k,v in fields.items()},'required':list(fields),'additionalProperties':False}}} for n,d,fields in specs]
+    reader=next(t['function'] for t in result if t['function']['name']=='read_skill_resource')
+    reader['description']='分页读取已登记技能参考文档或Python/MATLAB脚本；offset是Unicode字符位置，max_bytes限制UTF-8内容字节。按next_offset续读，不把片段当成完整JSON或配方'
+    reader['parameters']['properties'].update(offset={'type':'integer','minimum':0},max_bytes={'type':'integer','minimum':256,'maximum':20000})
     result.append({'type':'function','function':{'name':'diagnose_ocean_layers',
         'description':'实际读取WOA18并用固定TEOS-10/10m参考温密阈值算法计算混合层及首个表面声道候选，保留无交叉/缺测状态和来源。可选id保存冻结剖面、结果及程序凭据到研究任务；默认阈值可按研究目的更改',
         'parameters':{'type':'object','properties':{

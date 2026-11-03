@@ -1,0 +1,168 @@
+{
+  "date": "2026-11-03",
+  "scope": "Actual executors, data and tool routes; not a model performance ranking or universal physical validation.",
+  "software_tests": {
+    "cloud": {
+      "total": 187,
+      "passed": 187
+    },
+    "local": {
+      "total": 271,
+      "passed": 270,
+      "skipped": 1
+    }
+  },
+  "fixed_solvers": [
+    {
+      "solver": "kraken",
+      "id": "3fa636e82dbf",
+      "state": "SUCCEEDED",
+      "shape": [
+        51,
+        51
+      ],
+      "valid_ratio": 0.9803921568627451
+    },
+    {
+      "solver": "scooter",
+      "id": "b2860067a14e",
+      "state": "SUCCEEDED",
+      "shape": [
+        51,
+        51
+      ],
+      "valid_ratio": 0.9803921568627451
+    },
+    {
+      "solver": "bellhop",
+      "id": "9120f59fea9e",
+      "state": "SUCCEEDED",
+      "shape": [
+        51,
+        51
+      ],
+      "valid_ratio": 0.9803921568627451
+    }
+  ],
+  "research_recipes": [
+    {
+      "solver": "kraken",
+      "id": "72d42111d52c",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "krakenc",
+      "id": "d3ffca9adf3c",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "scooter",
+      "id": "c6d5225ae910",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "bellhop",
+      "id": "e5e6b518785e",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "ram",
+      "id": "2b33131c994c",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "simplepe",
+      "id": "69f10b3726c0",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "sparc",
+      "id": "885d063935c3",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    },
+    {
+      "solver": "bellhop3d",
+      "id": "81fcfb01a1b9",
+      "executed": true,
+      "exit_code": 0,
+      "execution_audit": "consistent",
+      "numerical_validation": "not_checked",
+      "physical_accuracy": "not_established"
+    }
+  ],
+  "ocean_layer_diagnostics": {
+    "id": "a615ce68d9cf",
+    "passed": true,
+    "period_count": 4,
+    "method_version": "1.0.0",
+    "implementation_sha256": "eda419991ab450de86e420da1dc0abf5ec294287aacd080def12421b66406720",
+    "numerical_status": "checked",
+    "physical_accuracy": "not_established"
+  },
+  "dsh_readonly_roundtrip": {
+    "passed": true,
+    "model": "deepseek-v4-flash",
+    "seconds": 11.937,
+    "tools": [
+      "list_research_skills",
+      "load_research_skill"
+    ]
+  },
+  "dsh_domain_task": {
+    "passed": false,
+    "first_attempt": {
+      "seconds": 22.515,
+      "outcome": "upstream_service_busy",
+      "created_tasks": 0
+    },
+    "second_attempt": {
+      "seconds": 180.156,
+      "stopped_at_deadline": true,
+      "tools": [
+        "list_research_skills",
+        "load_research_skill"
+      ],
+      "created_tasks": 0,
+      "archived_tasks": 0
+    }
+  },
+  "not_verified": [
+    "Direct paid provider API without an available configured credential",
+    "Four real accounts and cross-device sharing",
+    "All 31 acoustic case families and arbitrary new physical environments",
+    "New private S21-S24 source PDFs on this node"
+  ],
+  "limitations": [
+    "KRAKEL recipe remains unsupported",
+    "Public full research script execution and local Harness bridge remain disabled",
+    "Climatological data is not real-time observation"
+  ]
+}

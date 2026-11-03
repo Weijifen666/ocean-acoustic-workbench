@@ -48,7 +48,7 @@ test('all 12 skills expose complete registered resources with reproducible sourc
       assert.equal(read.metadata.execution, 'reference_only');
       assert.equal(read.metadata.source_hash_normalization, 'utf8-lf');
       assert.equal(read.local_path, undefined);
-      assert.equal(fs.readFileSync(new URL('../skills/' + skill.id + '/' + resource.path, import.meta.url), 'utf8'), read.content);
+      assert.equal(fs.readFileSync(new URL('../skills/' + skill.id + '/' + resource.path, import.meta.url), 'utf8').replaceAll('\r\n', '\n'), read.content);
     }
   }
   assert.ok(api.readSkill('at-environment', 'scripts/summarize_model.m').content.includes('read_shd(workflow_output)'));

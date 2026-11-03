@@ -1,3 +1,4 @@
+import ResourceImage from './ResourceImage';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import cytoscape from "cytoscape";
 import {
@@ -871,7 +872,7 @@ export default function GraphExplorer({
                       className="knowledge-diagram"
                       onClick={() => setImage(node.images[0])}
                     >
-                      <img
+                      <ResourceImage
                         src={node.images[0].url}
                         alt={node.label + "原理示意"}
                       />
@@ -992,7 +993,7 @@ export default function GraphExplorer({
                       key={i}
                       onClick={() => setImage(im)}
                     >
-                      <img loading="lazy" src={im.url} alt={im.caption} />
+                      <ResourceImage loading="lazy" src={im.url} alt={im.caption} />
                       <span>
                         {im.caption}
                         <Maximize2 size={14} />

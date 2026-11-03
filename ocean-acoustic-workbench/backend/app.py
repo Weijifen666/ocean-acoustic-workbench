@@ -11,6 +11,7 @@ from typing import Literal
 import httpx
 import knowledge, models, science, answer_policy, context_budget, public_ocean, persistence, simulation
 import research_api, research_validation, project_browser, simulation_studio, task_files
+import provider_history, research_context
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 DB=LOCAL/'workbench.sqlite3'; CONFIG=LOCAL/'config.json'
@@ -478,12 +479,15 @@ async def chat(body:Chat):
     saved=cfg if provider==cfg.get('provider') else models.profiles(config).get(provider,{})
     cfg={**cfg,**saved,'provider':provider,'base_url':saved.get('base_url') or entry['base_url'],'model':body.model or saved.get('model') or next(m['id'] for m in catalog['models'] if m['provider']==provider),'api_key':saved.get('api_key','')}
     models.validate_endpoint(provider,cfg['base_url']);evidence=search(body.message);policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode,body.message);response_model=None;context_metadata=context_budget.inactive_context(body.context_budget)
-    previous_history=history(body.session)
+    previous_history=provider_history.load(connect,body.session,cfg)
+    provider_turn=None
     if not evidence and body.mode!='agent':answer_policy.note_gap(kbfile('knowledge-gaps.json'),body.message)
     with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'user',body.message,stamp()))
     def finish_reply(reply,used):
         metadata={'model_used':used,'model_provider':provider if used else None,'requested_model':cfg['model'] if used else None,'response_model':response_model,'requested_knowledge_mode':body.knowledge_mode,'knowledge_scope':policy['knowledge_scope'] if used else 'course','coverage_status':policy['coverage_status'],'coverage_notice':policy['coverage_notice'],'evidence_assessment':policy.get('evidence_assessment'),'evidence':evidence,'citations':knowledge.citations_for(evidence),'retrieval':knowledge.retrieval_status(),'context':context_metadata}
-        with connect() as c:c.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',(body.session,'assistant',reply,stamp(),json.dumps(metadata,ensure_ascii=False)))
+        with connect() as c:
+            assistant_id=c.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',(body.session,'assistant',reply,stamp(),json.dumps(metadata,ensure_ascii=False))).lastrowid
+            if used and provider_turn:provider_history.save(c,assistant_id,body.session,cfg,provider_turn)
         return {'reply':reply,'evidence_ids':[e['id'] for e in evidence],**metadata}
     if policy['coverage_status']=='missing_observation_data':
         return finish_reply(policy['coverage_notice'],False)
@@ -501,30 +505,35 @@ async def chat(body:Chat):
     else:
         models.validate_endpoint(cfg['provider'],cfg['base_url'])
         tools=[{'type':'function','function':{'name':'read_project_file','description':'读取已授权项目中的一个文本文件','parameters':{'type':'object','properties':{'path':{'type':'string'}},'required':['path']}}},{'type':'function','function':{'name':'list_project_files','description':'列出授权项目文件','parameters':{'type':'object','properties':{}}}}] if body.mode=='agent' else []
+        for tool in tools:
+            tool['function']['parameters']['properties'].update(offset={'type':'integer'},**({'limit':{'type':'integer'}} if tool['function']['name']=='list_project_files' else {'max_bytes':{'type':'integer'}}))
         system='你是海洋声学助手。明确假设与缺失条件，数字不得编造。当前仅允许检索知识与读取项目，不能宣称运行或修改过代码。'+policy['rule']+knowledge.answer_context([])
         try:packed=context_budget.build_context(question=body.message,system=system,evidence=evidence,history=previous_history,context_budget=body.context_budget,tools=tools)
         except context_budget.ContextBudgetError as error:raise HTTPException(422,str(error)) from None
         if body.knowledge_mode=='course' and body.mode!='agent' and not packed['evidence']:raise HTTPException(422,'检索到了课程资料，但所选预算无法保留必要依据，请调大上下文预算后重试；未调用模型。')
         msgs=packed['messages'];evidence=packed['evidence'];context_metadata=packed['context']
+        protocol_start=len(msgs)-1
         policy=answer_policy.policy(evidence,body.knowledge_mode,body.mode,body.message)
         if not policy['can_generate']:return finish_reply(policy['coverage_notice'],False)
         provider_http_status=None
         try:
             async with httpx.AsyncClient(timeout=90) as client:
                 for turn in range(4):
-                    context_metadata['estimated_input_tokens']=context_budget.assert_messages_budget(msgs,body.context_budget,tools)
-                    payload=models.chat_payload(cfg,msgs,tools)
+                    view=research_context.prepare(msgs,tools,body.context_budget,current_user_index=protocol_start,history_turn_lengths=packed['history_turn_lengths'])
+                    context_metadata.update(view['context'])
+                    payload=models.chat_payload(cfg,view['messages'],tools)
                     payload['max_tokens']=4096
                     r=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=payload)
                     if r.status_code!=200:
                         provider_http_status=r.status_code
                         raise RuntimeError('Model provider request rejected')
                     payload_result=r.json();context_metadata=context_budget.with_provider_usage(context_metadata,payload_result.get('usage'));context_metadata.update(provider_calls=turn+1,usage_scope='last_provider_request');response_model=payload_result.get('model');result=payload_result['choices'][0]['message'];calls=result.get('tool_calls')
-                    if not calls:reply=result.get('content') or '模型未返回文字内容';break
+                    if not calls:
+                        reply=result.get('content') or '模型未返回文字内容';msgs.append({'role':'assistant',**result});provider_turn=msgs[protocol_start:];break
                     msgs.append(result)
                     for call in calls:
                         try:
-                            args=json.loads(call['function']['arguments']);value=files() if call['function']['name']=='list_project_files' else read_file(args['path']) if call['function']['name']=='read_project_file' else {'error':'不允许的工具'}
+                            args=json.loads(call['function']['arguments']);value=research_context.file_directory(files(),args) if call['function']['name']=='list_project_files' else research_context.file_page(read_file(args['path']),args) if call['function']['name']=='read_project_file' else {'error':'不允许的工具'}
                         except Exception:value={'error':'工具参数不合法或文件无法读取；请核对工具名称、参数和授权项目范围。'}
                         msgs.append({'role':'tool','tool_call_id':call['id'],'content':json.dumps(value,ensure_ascii=False)})
                 else:reply='已达到首版工具调用次数上限，请缩小问题范围。'

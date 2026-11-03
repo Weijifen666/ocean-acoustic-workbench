@@ -19,10 +19,10 @@
 | 模型类别 | 本机程序 | 技能 | 备注 |
 | --- | --- | --- | --- |
 | 波数积分 | `scooter.exe` + `fields`/`fieldsco` | `at-scooter` | 深度离散同时用有限元，所以它同时落在"有限元"一行 |
-| 简正波 | `kraken.exe` / `krakenc.exe` + `field.exe` | `at-kraken` / `at-krakenc` | KRAKEL（弹性模态）缺程序，已从清单移除 |
+| 简正波 | `kraken.exe` / `krakenc.exe` + `field.exe` | `at-kraken` / `at-krakenc` | KRAKEL 保留模型资料，但尚未开放创建基线；本机程序状态以 `list_model_workflows` 为准 |
 | 射线 | `bellhop.exe` / `bellhop3d.exe` | `at-bellhop` / `at-bellhop3d` | 声线/波束近似，高频更可靠 |
 | 抛物方程 | `ram.exe` / SimplePE 脚本 / `sparc.exe` | `at-ram` / `at-simplepe` / `at-sparc` | RAM 是距离相关前向 PE；SPARC 是时域 PE |
-| 有限元 | SCOOTER 的深度有限元；KRAKEL（已移除） | `at-scooter` | AT 没有独立的"有限元"可执行程序 |
+| 有限元 | SCOOTER 的深度有限元；KRAKEL 资料入口 | `at-scooter` / `at-krakel` | KRAKEL 未开放创建基线；AT 没有独立的"有限元"可执行程序 |
 
 ## 读法
 

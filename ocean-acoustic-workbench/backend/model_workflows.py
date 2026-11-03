@@ -13,11 +13,16 @@ def recipes():
 
 def catalog(toolbox, matlab=None):
     tool = Path(toolbox)
-    return {'models': [{**r, 'available': r['supported'] and (r['id']=='ram' or matlab is None or Path(matlab).is_file()) and all((tool / 'bin' / exe).is_file() for exe in r['executables']),
-                        'runtime': 'Python' if r['id']=='ram' else 'MATLAB',
-                        'matlab_available': Path(matlab).is_file() if matlab is not None else None,
-                        'missing_executables': [exe for exe in r['executables'] if not (tool / 'bin' / exe).is_file()]}
-                       for r in recipes()]}
+    rows=[]
+    for recipe in recipes():
+        missing_executables=[exe for exe in recipe['executables'] if not (tool/'bin'/exe).is_file()]
+        missing_inputs=[source for source,_ in recipe['inputs'] if not (tool/source).is_file()]
+        runtime_available=recipe['id']=='ram' or matlab is None or Path(matlab).is_file()
+        rows.append({**recipe,'available':recipe['supported'] and runtime_available and not missing_executables and not missing_inputs,
+                     'runtime':'Python' if recipe['id']=='ram' else 'MATLAB',
+                     'matlab_available':Path(matlab).is_file() if matlab is not None else None,
+                     'missing_executables':missing_executables,'missing_inputs':missing_inputs})
+    return {'models':rows}
 
 
 def payload(toolbox, model, case):

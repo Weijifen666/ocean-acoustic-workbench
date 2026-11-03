@@ -10,6 +10,7 @@ import argparse
 from contextlib import closing
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sqlite3
@@ -19,7 +20,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / ".local/kb/chunks.sqlite3"
+DEFAULT_OUTPUT = Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT / '.local'))) / 'kb/chunks.sqlite3'
 INGESTION_VERSION = 2
 TEXT_POLICY = 'unicode_display_preserved_search_nfkc_v2'
 

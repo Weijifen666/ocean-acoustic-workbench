@@ -4,6 +4,8 @@
 
 **本项目仅用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。**
 
+API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型依据见 [Agent 后端说明](docs/AGENT_BACKENDS.md)。本地完整应用默认 DSH；公共网站默认个人模型 API，两者的工具权限不同。
+
 2026-11-02 本地科研 Agent 科学性增强：统一研究 Skill 的比较与证据规则，新增标准剖面诊断、指定区域声场数值比较和任务只读审核；结果页分开展示执行状态、程序检查与 Agent 自评，输入或方法版本改变后旧检查需重做。程序检查不等于物理精度认证。使用方法、公共端适用范围与验证见[科研检查说明](docs/RESEARCH_SCIENCE_VALIDATION.md)。
 
 2026-11-01 海洋数据在线化：新增[数据工作台入口](https://ocean-acoustic-data-workbench.huuiihhuuiii.chatgpt.site/)，复用现有网页导航，提供全球 WOA18 全部 17 个时期的温盐/声速剖面与 ETOPO1 可缩放选点地图。浏览器按需查询，无需下载老师的原始资料包；数据查询独立于 MATLAB 节点。本地研究 Agent 可通过 `OCEAN_DATA_URL` 使用同一数据接口。转换、校验、发布和能力边界见[云端海洋数据部署说明](docs/CLOUD_OCEAN_DATA.md)。完整数据是否已激活以在线 `/api/ocean-data` 为准。

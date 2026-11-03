@@ -5,9 +5,24 @@ from unittest.mock import patch
 from urllib.error import HTTPError,URLError
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 import ocean_cloud
+import ocean_data
 
 class Response(io.BytesIO):pass
 class CloudTests(unittest.TestCase):
+    def test_capability_checks_cloud_activation_and_does_not_confuse_configuration(self):
+        ocean_data._status_cache.clear()
+        with patch.object(ocean_cloud,'base_url',return_value='https://capability-test.example'),patch.object(ocean_cloud,'read',return_value={'available':True,'version':'fixture-v1'}) as read:
+            data=ocean_data.status()
+            self.assertTrue(data['available']);self.assertTrue(data['configured']);self.assertEqual(data['mode'],'cloud')
+            self.assertEqual(data['version'],'fixture-v1')
+            self.assertEqual(ocean_data.status(),data)
+            read.assert_called_once_with(timeout=8)
+        ocean_data._status_cache.clear()
+        with patch.object(ocean_cloud,'base_url',return_value='https://capability-test.example'),patch.object(ocean_cloud,'read',side_effect=ConnectionError('private response')):
+            data=ocean_data.status()
+            self.assertTrue(data['configured']);self.assertFalse(data['available'])
+            self.assertNotIn('private response',json.dumps(data))
+        ocean_data._status_cache.clear()
     @patch.dict(os.environ,{'OCEAN_DATA_URL':'https://data.example/'})
     def test_exact_profile_parameters_and_provenance(self):
         payload={'selected':{'lon':119.5,'lat':19.5},'dataset_version':'v1','rows':[]}

@@ -1,11 +1,11 @@
-import json,re,collections
+import json,re,collections,os
 from pathlib import Path
 import retrieval
 import public_ocean
 from query_planning import plan_query, reciprocal_rank_fusion
 from evidence_policy import annotate_candidates, assess_evidence
 DATA=Path(__file__).resolve().parent/'data/course_graph.json'
-CHUNKS=Path(__file__).resolve().parents[1]/'.local/kb/chunks.sqlite3'
+CHUNKS=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(Path(__file__).resolve().parents[1]/'.local')))/'kb/chunks.sqlite3'
 def graph_data():
     g=json.loads(DATA.read_text(encoding='utf-8'))
     for n in g['nodes']:

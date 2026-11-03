@@ -106,11 +106,11 @@ SQLite持久保存任务、批次、状态事件、暂停状态和提交幂等�
 模型选择与配置入口参考 [WorkBuddy 官方说明](https://www.codebuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)，未复制其产品或角色。供应商缓存以 [DeepSeek](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)和[百炼](https://help.aliyun.com/zh/model-studio/context-cache)官方文档为准，本项目不控制该缓存或保证命中。
 
 
-## 本机研究增强（feature/research-agent 开发分支）
+## 本机研究增强
 
-本分支在 v0.7 上移植模型 Skill、独立研究脚本执行和通用结果报告，尚未发布到 main。声场仿真页列出 9 类模型经验，8 类有基线创建配方；KRAKEL的 krakel.exe 已由官方源码编译并冒烟通过，弹性场后处理待验证。知识问答已替换为完整“对话工作台”，移除浮动课程助手；固定 Munk 队列与研究任务仍分别管理。
+当前 main 已整合模型 Skill、独立研究脚本执行和通用结果报告。声场仿真页列出 9 类模型经验，8 类有基线创建配方；KRAKEL 保留资料入口，尚未开放基线创建，可执行程序是否安装以本机检查为准。知识问答已替换为完整“对话工作台”；固定表单队列与研究任务分别管理。源码整合不等于网站已经发布或当前节点已具备全部程序。
 
-研究 Agent 可使用完整 DSH Agent、本机已登录的 Codex，或当前配置的模型 API。DSH 通过 ACP 驱动并以 MCP 调用工作台工具，凭据仍由 DSH 管理。需已安装相应 CLI/桌面应用或配置模型 Key，并填写 MATLAB 与 AT 路径。脚本实际运行于本机授权目录，不是安全沙箱；仅用于自己的受信任研究任务，不向公共访客开放任意代码执行。
+研究 Agent 可复用 DSH 的模型、会话与 ACP 工具循环，使用本机已登录的 Codex，或调用当前配置的模型 API。DSH 以请求专属 MCP 调用工作台工具，凭据仍由 DSH 管理；当前启动叠层关闭原生文件/终端、子代理和工作流工具，不能称为完整复制 DSH 桌面功能。需已安装相应 CLI/桌面应用或配置模型 Key，并填写 MATLAB 与 AT 路径。脚本实际运行于本机授权目录，不是安全沙箱；仅用于自己的受信任研究任务，不向公共访客开放任意代码执行。
 
 新请求通过 /api/research/chat 提交，轮询 /api/research/runs/ID 获取实际进展；请求ID幂等，重复请求不重复启动计算。模型Skill创建输入、脚本和溯源，执行后核对输入版本、产物及报告；运行成功不等于收敛或物理精度已获证明。研究结果与固定模板在同一任务页展示，但使用独立research_jobs表，避免模板执行器误领取研究任务。停止回答和取消计算分别操作；重启后的未完成研究标为中断，不自动重跑。
 
@@ -119,7 +119,7 @@ SQLite持久保存任务、批次、状态事件、暂停状态和提交幂等�
 基础检查：`python -m unittest discover -s tests -p "test_*.py"`。会话归档、长历史、工具升级和RAM读取器回归位于 tests/check_codex_*.py 与 tests/check_ram_grid.py。真实声学链还需在具备MATLAB/AT的环境单独验证。
 
 
-DSH 本机兼容性与数据配置：已验证 DSH Desktop 0.12.1（Harness 0.2.1-rc.2），尚未验证其他版本及非 Windows 系统。安装位置可用 `OCEAN_DSH_EXECUTABLE` 覆盖，凭据根目录可用 `OCEAN_DSH_HOME` 覆盖；当前 ACP 默认模型为 deepseek-v4-flash，并非自动同步 Desktop 界面选择。提供商需有有效凭据与额度。
+DSH 本机兼容性与数据配置：保留旧 Desktop 的 `harness-node-entry.mjs` 布局，并兼容新版 DeepSeek Harness 的 `dsh-desktop-host` ACP 入口；非 Windows 系统尚未实机验收。非标准安装位置通过私有环境变量 `OCEAN_DSH_EXECUTABLE` 指定，凭据根目录可用 `OCEAN_DSH_HOME` 覆盖，也尊重已有 `DSH_HOME`；默认沿用对应安装布局的凭据目录，不读取或复制其中的 Key。实际模型以 ACP 返回为准，并非自动同步 Desktop 界面选择。提供商需有有效凭据与额度。仅连接握手成功不代表模型生成或所有 Skill 已通过测试。
 
 WOA18 接口需要安装 requirements 中的 netCDF4 和 gsw，并在私有 `.local/config.json` 中设置 `ocean_data_path`，目录内保留 `ssp` 和 `terrain` 结构。Windows 的 NetCDF 库在本机无法打开中文路径，需使用英文路径的目录联接（Junction）；设置后重启服务。首次克隆者自行准备获授权数据，勿复制他人的私有配置。当前预览前端 5173，API 8766。
 

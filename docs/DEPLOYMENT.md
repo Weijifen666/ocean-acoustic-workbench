@@ -23,7 +23,8 @@ npm.cmd run build
 | --- | --- | --- |
 | `DB` | D1 | 加密临时请求与节点心跳 |
 | `BUCKET` | R2 | 海洋数据版本块、加密响应和已提供的教材图片缓存 |
-| `GATEWAY_SECRET` | Secret | 节点验证及 AES-GCM 加密 |
+| `GATEWAY_SECRET` | Secret | 已有用户配置、对话与笔记的 AES-GCM 加密；升级时保留 |
+| `COMPUTE_BRIDGE_SECRET` | Secret | 专属计算节点认证与 RPC 加密；独立于用户数据加密密钥 |
 | `DATA_PUBLISH_TOKEN` | Secret | 维护者发布海洋数据；浏览器不需要 |
 
 当前项目使用 Sites 部署。每个部署者创建自己的站点，将 `ocean-acoustic-public/hosting.example.json` 复制为仓库根目录的 `.openai/hosting.json`，填入实际 Site project_id，并保持 `d1: DB`、`r2: BUCKET`。通过 Sites 标准源码推送、归档、保存版本、部署流程发布；生产网址及绑定由平台返回。`.openai/hosting.json` 不提交本仓库。直接使用其他 Workers 平台时，需要自行配置等效 DB/BUCKET 绑定、应用 `ocean-acoustic-public/drizzle/*.sql` 迁移及设置 Secret；本仓库未提供已验证的其他平台自动部署流程。
@@ -36,7 +37,7 @@ npm.cmd run build
 .\.venv\Scripts\python.exe backend/init_public_runtime.py --site-url "https://你的实际公开站点"
 ```
 
-脚本创建未入库的 `.local/public-runtime.json`，其中 `gateway_secret` 是随机生成的连接密钥。仅将该值配置到自己站点的运行时 Secret `GATEWAY_SECRET`，不要粘贴到仓库、Issue 或公开日志。修改云端 Secret 后重新部署以应用环境修订。
+脚本创建未入库的 `.local/public-runtime.json`，其中 `gateway_secret` 是随机生成的连接密钥。新节点将该值配置到自己站点的运行时 Secret `COMPUTE_BRIDGE_SECRET`，不要粘贴到仓库、Issue 或公开日志。升级已有站点时保留 `GATEWAY_SECRET`，不得为了连接节点覆盖它，否则已有用户加密数据将无法读取。未设置独立桥接密钥时程序兼容旧 `GATEWAY_SECRET`。修改云端 Secret 后重新部署以应用环境修订。
 
 ```powershell
 .\start-public.ps1 -NoBrowser

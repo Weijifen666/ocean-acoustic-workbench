@@ -475,9 +475,9 @@
       "id": "krakel",
       "name": "KRAKEL",
       "method": "弹性模态扩展入口",
-      "status": "已编译 krakel.exe · 流体模态冒烟通过(44 模态) · 弹性已由 KRAKEN 验证（TLslices 弹性 5 例）",
-      "integration": "krakel.exe 已就位 bin/，流体模态可用；弹性能力已由 KRAKEN/KRAKENC/SCOOTER 覆盖（TLslices 弹性族），KRAKEL 作备选与 Ahmad 弹性基准。",
-      "summary": "AT 的遗留独立弹性求解器。krakel.exe 已由 2026-10-22 源码编译（gfortran+LAPACK），流体模态冒烟通过；现代 AT 的弹性算例（elsed/scholte/flused/normal/ice）由 KRAKEN 原生支持。",
+      "status": "资料入口保留 · 当前未开放基线创建 · 本机程序状态以运行检查为准",
+      "integration": "尚未开放 KRAKEL 自动基线；历史 KRAKEN/KRAKENC/SCOOTER 弹性算例不能代替 KRAKEL 验收。",
+      "summary": "AT 的遗留独立弹性求解器。历史记录包含 2026-10-22 源码编译与流体冒烟，不表示当前设备已安装，亦不表示其弹性场后处理或收敛已验证。",
       "conditions": [
         "弹性介质需给定剪切波速 cs 与密度；网格要够细（ahmad 的 cLow=100 搜索范围偏宽，需加大 N 并核对模态收敛）。",
         "场后处理需匹配版本的 field 例程；KRAKEN 自带 field.exe 与 KRAKEL 弹性 .mod 的兼容性待验证，不能直接用 KRAKENC 冒充 KRAKEL。"
@@ -492,7 +492,7 @@
         ]
       ],
       "workflow": [
-        "本机krakel.m先寻找krakel.exe，当前会在查找阶段失败。",
+        "本机 krakel.m 需要兼容的 krakel.exe；先用 list_model_workflows 核对实际安装状态，不能从历史文字推定已就绪。",
         "继续工作前需要取得兼容程序并独立复现；不自动下载替换工具箱。"
       ],
       "experience": [

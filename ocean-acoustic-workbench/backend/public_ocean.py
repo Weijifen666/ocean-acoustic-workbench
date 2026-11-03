@@ -15,6 +15,7 @@ from functools import lru_cache
 import hashlib
 from html.parser import HTMLParser
 import json
+import os
 from pathlib import Path
 import re
 import threading
@@ -28,7 +29,7 @@ NODE_ROOT = Path(__file__).resolve().parents[1]
 DATA_ROOT = NODE_ROOT.parent / "ocean-acoustic-public" / "data"
 REGISTRY = DATA_ROOT / "open-ocean-sources.json"
 CHUNKS = DATA_ROOT / "open-ocean-chunks.json"
-CACHE_ROOT = NODE_ROOT / ".local" / "kb" / "open-ocean"
+CACHE_ROOT = Path(os.environ.get('OCEAN_RUNTIME_DIR',str(NODE_ROOT / '.local'))) / 'kb' / 'open-ocean'
 ALLOWED_HOSTS = frozenset({
     "oceanservice.noaa.gov", "www.ncei.noaa.gov", "www.ndbc.noaa.gov",
     "ioos.noaa.gov", "www.pmel.noaa.gov", "oceanexplorer.noaa.gov",

@@ -229,9 +229,9 @@
       "output": "",
       "axis": "source_depth",
       "supported": false,
-      "unavailable_reason": "krakel.exe 已编译并冒烟通过，但弹性算例的场后处理与收敛尚未验证，暂不开放基线创建。",
+      "unavailable_reason": "KRAKEL 弹性算例的场后处理与收敛尚未完成当前基线验收，暂不开放创建；可执行程序是否存在以本机检查为准。",
       "limitations": [
-        "krakel.exe 已就位；弹性场后处理（field 例程兼容）与 ahmad 弹性收敛待验证。"
+        "历史记录含 krakel.exe 编译与流体冒烟；本机安装状态另查。弹性场后处理（field 例程兼容）与 ahmad 弹性收敛待验证。"
       ]
     }
   ]

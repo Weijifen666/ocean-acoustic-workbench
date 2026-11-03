@@ -11,17 +11,29 @@ from pathlib import Path
 import secrets
 import sqlite3
 import subprocess
+import shutil
 from contextlib import closing
 
 
 def installation():
-    binary = Path(os.environ.get('OCEAN_DSH_EXECUTABLE', 'E:/DSH/DSH Desktop/DSH Desktop.exe'))
+    override=os.environ.get('OCEAN_DSH_EXECUTABLE')
+    if override:
+        binary=Path(override)
+    else:
+        candidates=[shutil.which('DeepSeek Harness.exe'),shutil.which('DSH Desktop.exe')]
+        for base in (Path(os.environ.get('LOCALAPPDATA',''))/'Programs',Path(os.environ.get('PROGRAMFILES',''))):
+            candidates.extend(str(base/name/(name+'.exe')) for name in ('DeepSeek Harness','DSH Desktop'))
+        binary=next((Path(p) for p in candidates if p and Path(p).is_file()),None)
+        if binary is None:raise RuntimeError('未找到 DSH。请通过 OCEAN_DSH_EXECUTABLE 指定已安装的桌面程序路径。')
     resources = binary.parent / 'resources'
-    home = Path(os.environ.get('OCEAN_DSH_HOME', str(Path(os.environ.get('APPDATA', '')) / 'dsh-desktop/harness')))
-    entry = resources / 'app.asar/node_modules/@deepseek-ai/dsh/lib/bin.js'
     launcher = resources / 'harness-node-entry.mjs'
-    if not binary.is_file() or not launcher.is_file() or not (resources / 'app.asar').is_file():
+    legacy=launcher.is_file()
+    default_home=Path(os.environ.get('APPDATA',''))/'dsh-desktop/harness' if legacy else Path.home()/'.dsh'
+    home = Path(os.environ.get('OCEAN_DSH_HOME', os.environ.get('DSH_HOME',str(default_home))))
+    entry = resources / ('app.asar/node_modules/@deepseek-ai/dsh/lib/bin.js' if legacy else 'app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js')
+    if not binary.is_file() or not (resources / 'app.asar').is_file():
         raise RuntimeError('未找到 DSH Desktop。可通过 OCEAN_DSH_EXECUTABLE 指定程序路径。')
+    if not legacy:launcher='--expose-internals'
     return binary, launcher, entry, home
 
 

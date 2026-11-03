@@ -14,6 +14,27 @@ import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'Segoe UI', 'DejaVu Sans', 'Arial']
 plt.rcParams['axes.unicode_minus'] = False
 
+
+def validate_parameters(water_depth_m, source_depth_m, angles_deg, range_max_km,
+                        sound_speed_mps=1500.0, launch_direction='both'):
+    """Reject invalid geometry before a job or an unbounded bounce loop exists."""
+    values = [water_depth_m, source_depth_m, range_max_km, sound_speed_mps]
+    if any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+        raise ValueError('射线参数必须为有限数值')
+    if water_depth_m <= 0 or not 0 <= source_depth_m <= water_depth_m:
+        raise ValueError('声源深度必须位于海面与海底之间')
+    if range_max_km <= 0 or sound_speed_mps <= 0:
+        raise ValueError('传播距离与声速必须大于零')
+    if launch_direction not in ('both', 'up', 'down'):
+        raise ValueError('发射方向须为 both、up 或 down')
+    if not isinstance(angles_deg, (list, tuple)) or not 1 <= len(angles_deg) <= 64:
+        raise ValueError('发射角列表须包含 1–64 个角度')
+    for angle in angles_deg:
+        if not isinstance(angle, (int, float)) or not math.isfinite(angle) or not 0 <= angle < 90:
+            raise ValueError('掠射角须为 0 至小于 90 度的有限数值')
+        if range_max_km * 1000 * math.tan(math.radians(angle)) / water_depth_m > 100000:
+            raise ValueError('预计反射次数过多，请缩小距离、角度或增加水深')
+
 def trace_ray_isovelocity(
     h_m: float,
     zs_m: float,
@@ -26,7 +47,8 @@ def trace_ray_isovelocity(
     direction: 'up' means launched towards sea surface (z=0)
                'down' means launched towards seabed (z=h_m)
     """
-    theta_rad = math.radians(abs(theta_deg))
+    validate_parameters(h_m, zs_m, [theta_deg], r_max_m / 1000, launch_direction=direction)
+    theta_rad = math.radians(theta_deg)
     tan_th = math.tan(theta_rad)
     if tan_th <= 1e-9:
         # Horizontal ray
@@ -90,7 +112,7 @@ def trace_ray_isovelocity(
             z_pts.append(h_m)
             bounce_events.append({'type': 'bottom', 'r_m': round(r_curr, 2), 'z_m': h_m})
 
-    last_r = bounce_events[-1]['r_m'] if bounce_events else 0.0
+    last_r = bounce_events[-1]['r_m'] if bounce_events else None
     margin = round(r_max_m - last_r, 2) if bounce_events else None
 
     return {
@@ -118,6 +140,8 @@ def run_ray_tracing_job(
 ) -> dict:
     if angles_deg is None:
         angles_deg = [5.0, 15.0, 30.0, 45.0, 60.0]
+    validate_parameters(water_depth_m, source_depth_m, angles_deg, range_max_km,
+                        sound_speed_mps, launch_direction)
     angles_deg = sorted(list(set(angles_deg)))
     r_max_m = range_max_km * 1000.0
 

@@ -1,9 +1,9 @@
-import json
+import json,os
 from pathlib import Path
 from urllib.parse import urlparse
 import httpx
 from fastapi import HTTPException
-ROOT=Path(__file__).resolve().parents[1];LOCAL=ROOT/'.local'
+ROOT=Path(__file__).resolve().parents[1];LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
 def catalog():return json.loads((ROOT/'backend/data/model_catalog.json').read_text(encoding='utf-8'))
 def profiles(config):
     path=LOCAL/'model-profiles.json'

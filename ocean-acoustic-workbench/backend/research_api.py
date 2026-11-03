@@ -16,10 +16,11 @@ import agent_context, materials, ocean_data, dsh_bridge, context_budget, task_fi
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Literal
 import persistence, research_tasks, research_skills, model_workflows, project_browser, codex_bridge, agent_loop, models
 import layer_diagnostics, research_validation
+import provider_history, research_context
 
 
 GUIDANCE = agent_context.guidance() + '''
@@ -36,6 +37,11 @@ class ResearchRequest(BaseModel):
     message: str = Field(min_length=1, max_length=12000)
     backend: Literal['codex', 'api', 'dsh'] = 'codex'
     rounds: int = Field(default=40, ge=0, le=1000)
+    context_budget: Literal['auto',4096,8192,16384,32768,65536,131072,'unlimited']='auto'
+    @field_validator('context_budget',mode='before')
+    @classmethod
+    def valid_budget(cls,value):
+        context_budget.resolve_budget(value);return value
 
 
 class ResearchService:
@@ -147,15 +153,15 @@ class ResearchService:
     async def execute(self, engine, name, args):
         if name in {t['function']['name'] for t in research_tasks.tools()}:return await engine.execute(name,args)
         cfg = self.config(); project = Path(cfg.get('project_path', self.local/'project'))
-        if name=='list_project_files':return project_browser.list_files(self.root,project,self.local,self.store.list()+self.jobs())
-        if name=='read_project_file':return project_browser.read_file(self.root,project,self.local,args['path'],lambda identity:self.get(identity) or self.store.get(identity))
+        if name=='list_project_files':return research_context.file_directory(project_browser.list_files(self.root,project,self.local,self.store.list()+self.jobs()),args)
+        if name=='read_project_file':return research_context.file_page(project_browser.read_file(self.root,project,self.local,args['path'],lambda identity:self.get(identity) or self.store.get(identity)),{'max_bytes':6000,**args})
         if name=='list_jobs':return [agent_context.compact(v) for v in sorted(self.store.list()+self.jobs(),key=lambda v:v['created'],reverse=True)[:100]]
         if name=='get_job':return agent_context.compact(self.details(args['id']) if self.get(args['id']) else self.fixed_details(args['id']),True)
         if name=='get_batch':return self.fixed_batch(args['id'])
         if name=='search_knowledge':return self.search(args['query'])
         if name=='list_research_skills':return research_skills.catalog()
         if name=='load_research_skill':return research_skills.resource(args['id'])
-        if name=='read_skill_resource':return research_skills.resource(args['id'],args['path'])
+        if name=='read_skill_resource':return research_skills.resource(args['id'],args['path'],offset=args.get('offset',0),max_bytes=args.get('max_bytes',6000))
         if name=='list_model_workflows':return model_workflows.catalog(cfg.get('toolbox_path',''),cfg.get('matlab_path',''))
         if name=='list_at_examples':return research_skills.at_catalog(cfg.get('toolbox_path',''),args['query'])
         if name=='read_at_file':return research_skills.at_file(cfg.get('toolbox_path',''),args['path'])
@@ -198,7 +204,7 @@ class ResearchService:
 
     def snapshot(self, identity):
         run = self.runs.get(identity)
-        if run:return {**{k:run.get(k) for k in ['id','session','backend','model','state','stage','trace','partial','reply','error','dsh_session','dsh_recovery']},'elapsed_seconds':int(time.monotonic()-run['started'])}
+        if run:return {**{k:run.get(k) for k in ['id','session','backend','model','state','stage','trace','partial','reply','error','error_code','context','dsh_session','dsh_recovery']},'elapsed_seconds':int(time.monotonic()-run['started'])}
         with self.store.connection() as db:row=db.execute('SELECT * FROM research_requests WHERE id=?',(identity,)).fetchone()
         if not row:raise HTTPException(404,'研究请求不存在')
         return {k:dict(row).get(k) for k in ['id','session','state','reply','error']}
@@ -208,7 +214,7 @@ class ResearchService:
         return [dict(r) for r in reversed(rows)]
 
     async def submit(self, body):
-        digest=hashlib.sha256(json.dumps([body.message,body.backend,body.rounds],ensure_ascii=False).encode()).hexdigest()
+        digest=hashlib.sha256(json.dumps([body.message,body.backend,body.rounds]+([body.context_budget] if body.context_budget!='auto' else []),ensure_ascii=False).encode()).hexdigest()
         with self.store.connection(immediate=True) as db:
             old=db.execute('SELECT * FROM research_requests WHERE id=?',(body.request_id,)).fetchone()
             if old:
@@ -217,14 +223,16 @@ class ResearchService:
             if db.execute("SELECT 1 FROM research_requests WHERE session=? AND state='running'",(body.session,)).fetchone():raise HTTPException(409,'当前研究请求尚未结束')
             if body.backend=='api' and not self.config().get('api_key'):raise HTTPException(422,'现有模型接口尚未配置API Key；可选择本机Codex')
             db.execute('INSERT INTO research_requests VALUES(?,?,?,?,NULL,NULL,?)',(body.request_id,body.session,digest,'running',persistence.now()))
-            db.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',('research:'+body.session,'user',body.message,persistence.now()))
+            user_message_id=db.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',('research:'+body.session,'user',body.message,persistence.now())).lastrowid
         run={'id':body.request_id,'session':body.session,'state':'running','stage':'准备研究Agent','trace':[],'partial':'','backend':body.backend,'started':time.monotonic(),'stop':asyncio.Event()}
+        run['user_message_id']=user_message_id
         self.runs[body.request_id]=run
         task=asyncio.create_task(self.process(body,run));self.tasks.add(task);task.add_done_callback(self.tasks.discard)
         return {'id':body.request_id,'reused':False}
 
     async def process(self, body, run):
         engine=research_tasks.Engine(self.root,self.config,self.lookup,self.create,self.update,self.processes,self.lock,run['stop'],local=self.local)
+        provider_turn=None;cfg=None
         try:
             messages=[{'role':r['role'],'content':r['text']} for r in self.history(body.session)[-30:]]
             tools=self.tools()
@@ -234,20 +242,31 @@ class ResearchService:
                 reply=await bridge.run(messages,tools,execute,run['stop'],run['trace'],GUIDANCE,self.root,session='research-'+body.session,progress=run,runtime=self.local)
             else:
                 cfg=self.config();models.validate_endpoint(cfg['provider'],cfg['base_url'])
-                packed=context_budget.build_context(question=body.message,system=GUIDANCE,evidence=self.search(body.message),history=messages[:-1],tools=tools)
+                private_history=provider_history.load(self.store.connection,'research:'+body.session,cfg,before_id=run.get('user_message_id'))
+                packed=context_budget.build_context(question=body.message,system=GUIDANCE,evidence=self.search(body.message),history=private_history,tools=tools,context_budget=body.context_budget)
+                protocol_start=len(packed['messages'])-1
                 async with httpx.AsyncClient(timeout=90) as client:
                     async def request(msgs,available):
-                        context_budget.assert_messages_budget(msgs,tools=available)
-                        response=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=models.chat_payload(cfg,msgs,available))
+                        view=research_context.prepare(msgs,available,body.context_budget,current_user_index=protocol_start,history_turn_lengths=packed['history_turn_lengths'])
+                        run['context']=view['context']
+                        response=await client.post(cfg['base_url'].rstrip('/')+'/chat/completions',headers={'Authorization':'Bearer '+cfg['api_key']},json=models.chat_payload(cfg,view['messages'],available))
                         if response.status_code!=200:raise RuntimeError('模型接口HTTP '+str(response.status_code))
-                        return response.json()['choices'][0]['message']
+                        choice=response.json()['choices'][0]
+                        if choice.get('finish_reason') in ('length','content_filter'):raise agent_loop.IncompleteResponse('模型输出被截断或限制，研究没有完整返回。')
+                        return choice['message']
                     reply=await agent_loop.run(request,packed['messages'],tools,execute,body.rounds,run['stop'],run['trace'])
+                    provider_turn=packed['messages'][protocol_start:]
             run.update(state='stopped' if run['stop'].is_set() else 'done',reply=reply,partial=reply,stage='研究请求已结束')
-            with self.store.connection() as db:db.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',('research:'+body.session,'assistant',reply,persistence.now(),json.dumps({'research_agent':True,'trace':run['trace']})))
+            with self.store.connection() as db:
+                assistant_id=db.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',('research:'+body.session,'assistant',reply,persistence.now(),json.dumps({'research_agent':True,'trace':run['trace']}))).lastrowid
+                if provider_turn and not run['stop'].is_set():provider_history.save(db,assistant_id,'research:'+body.session,cfg,provider_turn)
         except Exception as exc:
             if run.get('partial'):
                 with self.store.connection() as db:db.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',('research:'+body.session,'assistant',run['partial']+'\n\n请求未完成，请核对已有结果后继续。',persistence.now()))
             run.update(state='failed',error='研究请求未完成：'+type(exc).__name__)
+            if isinstance(exc,(context_budget.ContextBudgetError,agent_loop.IncompleteResponse)):
+                run['error']=str(exc);run['error_code']=getattr(exc,'code',None)
+                if hasattr(exc,'context'):run['context']=exc.context
             # Errors from our local bridge are useful; HTTP transports may echo secrets.
             if body.backend in ('codex','dsh'):run['error']='研究请求未完成：'+str(exc)[:1000]
         finally:
@@ -266,8 +285,10 @@ class ResearchService:
 def router(service):
     api=APIRouter()
     @api.get('/api/research/capabilities')
-    def capabilities():return {'enabled':True,'scope':'local_research','codex_available':bool(codex_bridge.executable()),'api_configured':bool(service.config().get('api_key')),'ocean_data_available':ocean_data.ROOT.exists(),
-                               'scientific_tools':[t['function']['name'] for t in service.tools() if t['function']['name'] in ('diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task')]}
+    def capabilities():
+        data=ocean_data.status()
+        return {'enabled':True,'scope':'local_research','codex_available':bool(codex_bridge.executable()),'api_configured':bool(service.config().get('api_key')),'ocean_data_available':data['available'],'ocean_data':data,
+                'scientific_tools':[t['function']['name'] for t in service.tools() if t['function']['name'] in ('diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task')]}
     @api.get('/api/research/dsh/status')
     async def dsh_status():return await dsh_bridge.status()
     @api.get('/api/research/codex/status')

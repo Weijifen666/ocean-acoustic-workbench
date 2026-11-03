@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {OceanSource, ProfileResult, profileCsv} from '../../ocean-acoustic-workbench/src/OceanData';
+import {OceanSource, ProfileResult, profileCsv, profileSimulationDraft} from '../../ocean-acoustic-workbench/src/OceanData';
 import {oceanDataQuery} from '../../ocean-acoustic-workbench/src/OceanMap';
 
 const source = renderToStaticMarkup(<OceanSource catalog={{available: true, storage: 'cloud', dataset_version: 'teacher-v1', path: 'C:\\private\\teacher-data', bytes: 8e9}}/>);
@@ -19,7 +19,14 @@ const online = renderToStaticMarkup(<ProfileResult result={profile} cloud onDown
 assert.match(online, /1500\.00/);
 assert.match(online, /temperature\.nc/);
 assert.doesNotMatch(online, /private|用于声场仿真/);
-assert.match(renderToStaticMarkup(<ProfileResult result={profile} onSimulate={() => {}} onDownload={() => {}}/>), /用于声场仿真/);
+assert.doesNotMatch(renderToStaticMarkup(<ProfileResult result={profile} onSimulate={() => {}} onDownload={() => {}}/>), /用于声场仿真/);
+const surfaceProfile = {...profile, rows: [0,10,100,200,500,1000].map(depth_m => ({...row,depth_m}))};
+assert.match(renderToStaticMarkup(<ProfileResult result={surfaceProfile} onSimulate={() => {}} onDownload={() => {}}/>), /用于声场仿真/);
+assert.equal(profileSimulationDraft(surfaceProfile).water_depth_m,1000);
+const gapProfile = {...surfaceProfile,missing_depths_m:[250]};
+assert.equal(profileSimulationDraft(gapProfile).water_depth_m,200,'Known missing layers must cap the proposed environment at retained data before the gap');
+assert.equal(profileSimulationDraft({...surfaceProfile,missing_depths_m:[20]}),null,'Do not offer an unusable <50m environment');
+assert.equal(profileSimulationDraft({...surfaceProfile,depth_limit_m:1500,rows:surfaceProfile.rows.slice(0,-1)}).water_depth_m,500,'Never extend a draft below the deepest returned row');
 assert.equal(profileCsv(profile).split('\n')[1], '10,20,35,10,35.2,1500');
 const versionedProfile = oceanDataQuery({lon: 120, lat: 20, period: 0}, 'teacher-v2');
 assert.equal(versionedProfile.get('version'), 'teacher-v2');

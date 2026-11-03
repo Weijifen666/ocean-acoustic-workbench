@@ -5,6 +5,8 @@ description: 使用KRAKEL构造独立声学研究任务，核对输入与后处�
 
 # KRAKEL 任务创建
 
+当前只提供模型资料与流程核对，未开放已固化的基线创建。`list_model_workflows` 的 `supported:false` 表示该入口不可用；即使本机另有可执行程序，也不能据此声称配方或弹性场后处理已经验收。
+
 先读取本技能的 references/workflow.md。目标未明确时先确定观测量、频率、环境来源和传播几何；用户只查用法时直接解释，无需启动计算。
 
 原例复现使用 list_model_workflows 核对本机可用性，再 prepare_model_research_task(model="krakel", case="", title=任务标题, objective=用户目标)。此工具只创建独立输入、运行脚本和溯源记录，尚未运行。返回阻塞时如实说明缺项。

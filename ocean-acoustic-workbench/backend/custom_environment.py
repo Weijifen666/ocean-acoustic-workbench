@@ -5,10 +5,13 @@ import ocean_data
 def prepare(plan):
     data=ocean_data.profile(plan.longitude,plan.latitude,plan.period)
     rows=data['rows'];depth=np.array([r['depth_m'] for r in rows]);speed=np.array([r['sound_speed_m_s'] for r in rows])
+    if len(depth)<2 or not np.isfinite(depth).all() or not np.isfinite(speed).all() or np.any(np.diff(depth)<=0):
+        raise ValueError('剖面需要至少两个有效且严格递增的深度层')
     limit=min(data['depth_limit_m'],-data['bottom']['elevation_m'],-data['grid_bottom']['elevation_m'])
     if depth[0]!=0:raise ValueError('剖面缺少海面层，不能生成环境')
     if plan.water_depth_m>limit:raise ValueError(f'所设水深超过有效环境范围 {limit:g} m；不外推剖面，请缩小水深或换用年/季节数据')
-    if any(z<plan.water_depth_m for z in data.get('missing_depths_m',[])):raise ValueError('所设水深内存在缺测层，不能跨缺测生成环境')
+    upper=depth[min(int(np.searchsorted(depth,plan.water_depth_m)),len(depth)-1)]
+    if any(z<=upper for z in data.get('missing_depths_m',[])):raise ValueError('所设水深或底部插值区间存在缺测层，不能跨缺测生成环境')
     if max(plan.source_depths_m)>=plan.water_depth_m or plan.receiver_depth_m>=plan.water_depth_m:raise ValueError('声源和接收深度必须小于所设水深')
     inside=depth<plan.water_depth_m
     points=[{'depth_m':float(z),'sound_speed_m_s':float(c)} for z,c in zip(depth[inside],speed[inside])]

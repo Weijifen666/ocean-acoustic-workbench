@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import "./graph.css";
 import OceanBanner from "./OceanBanner";
+import GraphSelection from "./GraphSelection";
+import {toggleKnowledgeSelection} from "./knowledgeSelection";
 const groups = {
   hierarchy: "父子关系",
   prerequisite: "建议先学",
@@ -91,6 +93,11 @@ export default function GraphExplorer({
     [showPath, setShowPath] = useState(false),
     [sources, setSources] = useState([]);
   const [knowledgeStatus, setKnowledgeStatus] = useState(null);
+  const [dialogueNodes, setDialogueNodes] = useState([]);
+  function toggleDialogueNode(value) {
+    try { setDialogueNodes(toggleKnowledgeSelection(dialogueNodes, value)); }
+    catch (error) { notify?.(error.message); }
+  }
   const [directoryVisible, setDirectoryVisible] = useState(
     () => window.innerWidth >= 800,
   );
@@ -413,6 +420,7 @@ export default function GraphExplorer({
           </div>
         </aside>
         <div className="course-workspace">
+          <GraphSelection nodes={dialogueNodes} title="已选知识点" onRemove={id=>setDialogueNodes(rows=>rows.filter(row=>row.id!==id))} onClear={()=>setDialogueNodes([])} onAsk={()=>onAsk(dialogueNodes)}/>
           {tab === "graph" ? (
             <>
               <div className="graph-controlbar">
@@ -1026,6 +1034,9 @@ export default function GraphExplorer({
                   />
                 </button>
               </div>
+              <button className={"graph-node-select"+(dialogueNodes.some(item=>item.id===node.id)?" selected":"")} aria-pressed={dialogueNodes.some(item=>item.id===node.id)} onClick={()=>toggleDialogueNode(node)}>
+                {dialogueNodes.some(item=>item.id===node.id)?"移出对话上下文":"加入对话上下文"}
+              </button>
               <button onClick={() => onAsk(node)}>
                 <MessageSquare size={15} />
                 就此知识提问

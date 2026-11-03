@@ -6,6 +6,8 @@
 
 API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型依据见 [Agent 后端说明](docs/AGENT_BACKENDS.md)。本地完整应用默认 DSH；公共网站默认个人模型 API，两者的工具权限不同。
 
+2026-11-03 正式网站已发布第18版[模型连接修复](docs/validation/2026-11-03/api-connection-diagnosis.md)。本分支 `feat/dual-workbench-execution` 另含图谱选点进入模型上下文、图谱查询工具、代码草稿和“代码与分析”入口；这些新增功能仍在验收，尚未部署到正式网站。实际完成项与未验收项见[分支验收状态](docs/DUAL_WORKBENCH_ACCEPTANCE.md)。
+
 2026-11-03 [实际功能验收与修复](docs/FUNCTIONAL_VALIDATION_2026-11-03.md)：已发布第17版，真实跑通三模型表单、八种本地配方、四季双判据诊断及公网新任务；DSH只读工具链已通过，自主诊断归档两次未通过，真实API对照仍待有效配置。不把执行器成功冒充Agent自主研究成功。
 
 2026-11-02 本地科研 Agent 科学性增强：统一研究 Skill 的比较与证据规则，新增标准剖面诊断、指定区域声场数值比较和任务只读审核；结果页分开展示执行状态、程序检查与 Agent 自评，输入或方法版本改变后旧检查需重做。程序检查不等于物理精度认证。使用方法、公共端适用范围与验证见[科研检查说明](docs/RESEARCH_SCIENCE_VALIDATION.md)。
@@ -46,7 +48,7 @@ NOTICE.md                   外部教材、MATLAB 和 AT 的权利说明
 
 ## 本地启动
 
-需要 Python 3.12+、Node.js 22.13+、获授权的 MATLAB，以及课程资源包或自己准备的 AT 环境。原始课程资料不随本仓库分发。
+完整教程见[本地安装、模型 API/DSH、MATLAB/AT 配置与小算例](docs/LOCAL_SETUP.md)。基础界面和公开图谱需要 Python 3.12+、Node.js 22.13+；模型生成需要本人配置模型服务；声场仿真再配置获授权的 MATLAB 和 AT。原始课程资料不随本仓库分发。
 
 ```powershell
 cd ocean-acoustic-workbench
@@ -54,11 +56,11 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
 npm.cmd ci
 npm.cmd run build
-.\.venv\Scripts\python.exe backend/bootstrap.py "你的资料包路径.zip"
+.\.venv\Scripts\python.exe backend/init_local.py
 .\start.ps1
 ```
 
-本地默认网址 `http://127.0.0.1:8765/`。在环境设置中填写 MATLAB 可执行文件、AT 及项目目录，再检查运行环境。AT 安装脚本默认使用当前用户的 Documents/MATLAB 目录。
+本地默认网址 `http://127.0.0.1:8765/`。有课程资料包时，按完整教程额外运行 `bootstrap.py` 与 `install_toolbox.py` 导入教材和完整 AT；没有资料包也可以先使用公开图谱与 API 问答。在环境设置中填写 MATLAB 可执行文件、AT 及项目目录，再检查运行环境。AT 安装脚本默认使用当前用户的 Documents/MATLAB 目录。
 
 公网部署请阅读 [部署文档](docs/DEPLOYMENT.md)。`.local`、真实 API Key、私有数据库、求解结果、教材 PDF、原始压缩包以及生产站点身份不提交 Git。经审核的 NOAA 公有领域文字片段与项目自写导读放在公共 JSON 中，保留上游来源与许可说明。
 

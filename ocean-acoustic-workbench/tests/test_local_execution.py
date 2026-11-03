@@ -55,16 +55,30 @@ class LocalExecution(unittest.TestCase):
     def test_timeout_waits_for_actual_child_exit_before_return(self):
         code = "import os,time\nfrom pathlib import Path\nPath('child.pid').write_text(str(os.getpid()))\ntime.sleep(30)"
         started = time.monotonic()
-        result = code_sandbox.run_python_code_sandbox(code, timeout=1)
+        # A loaded Windows host may consume the whole budget during Python
+        # startup. Track the real process even if the user script has not yet
+        # reached its first line, then prove that process has actually exited.
+        children=[]; real_popen=subprocess.Popen
+        def launch(*args,**kwargs):
+            child=real_popen(*args,**kwargs);children.append(child);return child
+        with patch('code_sandbox.subprocess.Popen',side_effect=launch):
+            result = code_sandbox.run_python_code_sandbox(code, timeout=1)
         self.assertLess(time.monotonic()-started, 15)
         self.assertEqual(result['state'], 'FAILED')
         self.assertEqual(self.state(result['job_id']), 'FAILED')
-        pid = int((self.local/'runs'/result['job_id']/'child.pid').read_text())
-        if os.name == 'nt':
-            check = subprocess.run(['tasklist', '/FI', f'PID eq {pid}', '/FO', 'CSV', '/NH'], capture_output=True)
-            self.assertNotIn(str(pid).encode(), check.stdout)
-        else:
-            with self.assertRaises(ProcessLookupError): os.kill(pid, 0)
+        self.assertTrue(children)
+        self.assertIsNotNone(children[0].poll())
+        pids = {children[0].pid}
+        marker=self.local/'runs'/result['job_id']/'child.pid'
+        # Windows venv's redirector can have a different PID from the actual
+        # Python interpreter. Both the launcher and script child must be gone.
+        if marker.exists():pids.add(int(marker.read_text()))
+        for pid in pids:
+            if os.name == 'nt':
+                check = subprocess.run(['tasklist', '/FI', f'PID eq {pid}', '/FO', 'CSV', '/NH'], capture_output=True)
+                self.assertNotIn(str(pid).encode(), check.stdout)
+            else:
+                with self.assertRaises(ProcessLookupError): os.kill(pid, 0)
 
     def test_unknown_language_and_missing_matlab_are_clear_failures(self):
         with self.assertRaisesRegex(ValueError, '仅支持'):

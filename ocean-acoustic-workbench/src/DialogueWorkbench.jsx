@@ -1,6 +1,8 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Waves,ArrowUp,BookOpen,Download,Trash2,Undo2,Copy,Loader2,Square,Settings2,FlaskConical} from 'lucide-react';
 import ChatMessage from './ChatMessage';
+import GraphSelection from './GraphSelection';
+import {normalizeKnowledgeSelection,knowledgeRequestIds} from './knowledgeSelection';
 import ModelSkillPicker from './ModelSkillPicker';
 import QuestionSuggestions from './QuestionSuggestions';
 import {serializeChat} from './chatExport';
@@ -11,7 +13,8 @@ async function api(path,body,method){
  const value=await response.json();if(!response.ok)throw Error(typeof value.detail==='string'?value.detail:'请求失败，请检查服务连接');return value;
 }
 const labels={dsh:'DSH',codex:'Codex',api:'模型接口'};
-export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
+export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},openSettings}){
+ const [knowledgeNodes,setKnowledgeNodes]=useState([]);
  const [session,setSession]=useState(()=>{let value=localStorage.getItem('ocean-research-v07-session');if(!value){value=crypto.randomUUID();localStorage.setItem('ocean-research-v07-session',value)}return value});
  const [previous,setPrevious]=useState(()=>localStorage.getItem('ocean-research-v07-previous')||'');
  const [backend,setBackend]=useState(()=>localStorage.getItem('ocean-research-v07-backend')||'dsh');
@@ -22,11 +25,11 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
  function chooseBackend(value){setBackend(value);localStorage.setItem('ocean-research-v07-backend',value)}
  const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
  useEffect(()=>{loadSessions()},[]);
- useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');
+ useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');setKnowledgeNodes([]);
   Promise.all([api('history?session='+encodeURIComponent(session)),api('active?session='+encodeURIComponent(session)),api('capabilities')]).then(([rows,current,capabilities])=>{if(!alive)return;setMessages(rows);setRun(current);setCap(capabilities);if(current?.state==='running'&&current.backend)chooseBackend(current.backend)}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
  },[session]);
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
- useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);follow.current=true}},[draft]);
+ useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);try{setKnowledgeNodes(normalizeKnowledgeSelection(draft.knowledge_nodes||[]))}catch(error){setError(error.message)}follow.current=true}},[draft]);
  useEffect(()=>{if(run?.state!=='running')return;let alive=true,pending=false;
   const poll=async()=>{if(pending)return;pending=true;try{const current=await api('runs/'+run.id);if(!alive)return;setRun(current);if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(alive){setMessages(rows);setError(current.error||'')}}}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
   const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
@@ -36,12 +39,12 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
   if(backend==='api'&&(!Number.isInteger(Number(rounds))||Number(rounds)<0||Number(rounds)>1000||rounds==='')){setError('工具轮数请填 0–1000 的整数，0 为不限');return}
   sending.current=true;setSubmitting(true);setError('');follow.current=true;
   const message=text;
-  try{const result=await api('chat',{session,request_id:crypto.randomUUID(),message,backend,rounds:backend==='api'?Number(rounds):0});setRun({id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');localStorage.removeItem('ocean-research-v07-previous');setPrevious('')}
+  try{const ids=knowledgeRequestIds(knowledgeNodes);const result=await api('chat',{session,request_id:crypto.randomUUID(),message,backend,rounds:backend==='api'?Number(rounds):0,...(ids.length?{knowledge_node_ids:ids}:{})});setRun({id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');onDraftConsumed?.(draft?.id);localStorage.removeItem('ocean-research-v07-previous');setPrevious('')}
   catch(e){setError(e.message)}finally{sending.current=false;setSubmitting(false)}
   loadSessions();
  }
  async function stop(){try{await api('runs/'+run.id+'/stop',{});notify('正在停止 Agent；已启动的计算可在任务页取消')}catch(e){setError(e.message)}}
- function switchSession(next){localStorage.setItem('ocean-research-v07-session',next);setSession(next)}
+ function switchSession(next){onDraftConsumed?.(draft?.id);localStorage.setItem('ocean-research-v07-session',next);setSession(next)}
  function newSession(){if(busy)return;switchSession(crypto.randomUUID());loadSessions()}
  async function renameSession(item){const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value},'PATCH');loadSessions()}catch(e){setError(e.message)}}
  async function removeSession(item){if(busy)return;if(!window.confirm('删除会话「'+(item.title||'未命名')+'」？该会话的聊天记录会从本机删除，任务与计算结果不受影响。'))return;try{await api('sessions/'+encodeURIComponent(item.id),null,'DELETE');const next=item.id===session?crypto.randomUUID():session;switchSession(next);loadSessions()}catch(e){setError(e.message)}}
@@ -56,6 +59,7 @@ export default function DialogueWorkbench({draft,notify=()=>{},openSettings}){
    {backend==='api'&&<div className="dialogue-toolbar"><label>工具轮数 <input aria-label="Agent工具轮数" type="number" min="0" max="1000" disabled={busy} value={rounds} onChange={e=>{setRounds(e.target.value);localStorage.setItem('ocean-research-v07-rounds',e.target.value)}}/></label><span>0 为不限；达到上限后汇总已有结果</span></div>}
    <div className="dialogue-toolbar"><span>{loading?'载入聊天…':`${messages.length} 条消息`}</span><div className="dialogue-actions"><select aria-label="聊天导出格式" value={format} onChange={e=>setFormat(e.target.value)}><option value="md">Markdown</option><option value="txt">TXT</option><option value="json">JSON</option></select><button className="button" disabled={busy||loading||!messages.length} onClick={exportChat}><Download size={14}/>导出聊天</button><button className="button" disabled={busy||loading||!messages.length} onClick={clear}><Trash2 size={14}/>清空聊天</button>{previous&&<button className="button" disabled={busy||loading} onClick={undo}><Undo2 size={14}/>撤销清空</button>}</div></div>
    <ModelSkillPicker disabled={busy} onSelect={setText}/>
+   <GraphSelection nodes={knowledgeNodes} disabled={busy} onRemove={id=>{setKnowledgeNodes(rows=>rows.filter(row=>row.id!==id));onDraftConsumed?.(draft?.id)}} onClear={()=>{setKnowledgeNodes([]);onDraftConsumed?.(draft?.id)}}/>
    <div className="dialogue-messages" role="log" aria-label="聊天记录" ref={scroll} onScroll={e=>{const el=e.currentTarget;follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<100}}>
     {!loading&&!messages.length&&<div className="dialogue-welcome"><Waves size={36}/><h2>从一个声学问题开始</h2><p>让资料、方法、实际计算和验证结果连在一起。</p><QuestionSuggestions mode="agent" onSelect={setText}/></div>}
     {messages.map((row,i)=><article className={'dialogue-message '+row.role} key={row.id||i}><div className="dialogue-avatar">{row.role==='user'?'我':<Waves size={17}/>}</div><div className="dialogue-content"><div className="dialogue-message-label">{row.role==='user'?'你':'海洋声学 Agent'}<button aria-label={'复制第'+(i+1)+'条消息'} title="复制消息" onClick={()=>copy(row.text)}><Copy size={14}/></button></div>{row.role==='user'?<div className="dialogue-user-text">{row.text}</div>:<ChatMessage text={row.text}/>}</div></article>)}

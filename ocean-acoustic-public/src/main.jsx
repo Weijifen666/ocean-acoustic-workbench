@@ -7,6 +7,7 @@ import OceanData from "../../ocean-acoustic-workbench/src/OceanData";
 import PageErrorBoundary from './PageErrorBoundary';
 import ModelExperience from './ModelExperience';
 import DialogueWorkbench from './DialogueWorkbench';
+import CodeWorkbench from './CodeWorkbench';
 import {useWorkbenchCapabilities,publicCapabilities} from './cloudWorkbench';
 import {taskChatDraft} from './taskChat';
 import ResearchResult from './ResearchResult';
@@ -14,6 +15,7 @@ import './research-agent.css';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createRoot } from "react-dom/client";
 import GraphExplorer from "./GraphExplorer";
+import {createKnowledgeDraft} from "./knowledgeSelection";
 import ModelPanel from "./ModelPanel";
 import { ChatProvider, useChatSession } from "./chat-session";
 import RichMessage from "./RichMessage";
@@ -99,6 +101,7 @@ const relationName = {
 const pages = [
   ["graph", "知识图谱", Network],
   ["chat", "对话工作台", MessageSquare],
+  ["code", "代码与分析", Terminal],
   ["ocean", "海洋环境数据", Waves],
   ["simulation", "声场仿真", FlaskConical],
   ["jobs", "任务与结果", Activity],
@@ -166,6 +169,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingNote, setPendingNote] = useState(null);
   const [researchDraft,setResearchDraft]=useState(null);
+  const [initialCodeId,setInitialCodeId]=useState(null);
   const [oceanPlan,setOceanPlan]=useState(null);
   const consumeNote = useCallback(() => setPendingNote(null), []);
 
@@ -215,7 +219,7 @@ function App() {
         setImage(null);
         setSidebarOpen(false);
       }
-      if (event.altKey && /^[1-8]$/.test(event.key)) {
+      if (event.altKey && /^[1-9]$/.test(event.key)) {
         event.preventDefault();
         setPage(
           [...pages.map((item) => item[0]), "settings"][Number(event.key) - 1],
@@ -231,6 +235,17 @@ function App() {
     setPage(id);
     setSidebarOpen(false);
   }, []);
+  useEffect(() => {
+    const open = event => {
+      const match=window.location.hash.match(/^#code(?:\/([A-Za-z0-9_-]{8,100}))?$/);
+      const id=event?.detail?.artifact_id||match?.[1]||null;
+      if(event?.type!=='ocean-open-code-artifact'&&!match)return;
+      if(id&&!/^[A-Za-z0-9_-]{8,100}$/.test(id))return;
+      setInitialCodeId(id);navigate('code');
+    };
+    open();window.addEventListener('hashchange',open);window.addEventListener('ocean-open-code-artifact',open);
+    return()=>{window.removeEventListener('hashchange',open);window.removeEventListener('ocean-open-code-artifact',open)};
+  },[navigate]);
   const openChatSettings = useCallback(
     () => navigate("settings"),
     [navigate],
@@ -389,7 +404,7 @@ function App() {
           </div>
         </header>
         <main id="workspace-content" tabIndex={-1}><PageErrorBoundary key={page}>
-          {!chat.ready && ["chat", "workspace", "settings"].includes(page) && (
+          {!chat.ready && ["chat", "code", "workspace", "settings"].includes(page) && (
             <section className="panel visitor-loading">
               <Loader2 className="spin" size={20} />
               <h2>正在准备课程空间</h2>
@@ -405,7 +420,7 @@ function App() {
               notify={setToast}
               initialKnowledge={initialKnowledge}
               onAsk={(node) => {
-                setResearchDraft({id:crypto.randomUUID(),text:`请解释知识图谱中的“${node.label}”，结合公式、适用条件和相关知识点，并给出资料出处。`});
+                setResearchDraft(createKnowledgeDraft(node));
                 navigate("chat");
               }}
               onSimulation={(node) => openSimulationDraft({ node_id: node.id })}
@@ -419,9 +434,11 @@ function App() {
               onSimulation={openSimulationDraft}
               onKnowledge={openChatKnowledge}
               draft={researchDraft}
+              onDraftConsumed={identity=>setResearchDraft(current=>current?.id===identity?null:current)}
             />
           )}
           {page === "ocean" && <div className="studio-page"><OceanData notify={setToast} onSimulate={draft=>{setOceanPlan(draft);navigate("simulation")}}/></div>}
+          {chat.ready && page === "code" && <div className="studio-page"><CodeWorkbench key={initialCodeId||'code-default'} api={api} publicMode initialArtifactId={initialCodeId} onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate('chat')}}/></div>}
           {page === "simulation" && (
             <div className="studio-page"><Simulation
               onAsk={text=>{setResearchDraft({id:crypto.randomUUID(),text});navigate("chat")}}

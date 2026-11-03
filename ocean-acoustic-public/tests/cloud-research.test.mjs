@@ -184,13 +184,13 @@ test('logged-in identity sends its server-derived node cookie and never forwards
  assert.equal(s.nodeRequests[0].headers['oai-authenticated-user-id'],undefined);assert.equal(s.nodeRequests[0].headers.authorization,undefined);s.sqlite.close();
 });
 
-test('a large registered Skill result cannot strand the next real research round at the default 32K budget',async()=>{
+test('a large registered Skill result cannot strand the next real research round at the explicit auto 32K budget',async()=>{
  const resource=assets.resources['at-environment/references/casebook.json'];
  assert.ok(Buffer.byteLength(JSON.stringify(resource),'utf8')>100000,'Use the actual large published resource, not a mocked loop state');
  const question='请读取 AT 算例目录，说明模型适用范围；保留这条原始问题🌊，不要把历史记录当成新的物理验证。';
  const s=harness([provider('',[toolCall('read_skill_resource',{id:'at-environment',path:'references/casebook.json'},'large-casebook-read')]),provider('已读取目录；历史模型经验不表示本次已经完成计算。')]);
  try{
-  const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:question}));
+  const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:question,context_budget:'auto'}));
   const observed=await step(s,cookie,id);assert.equal(observed.data.state,'running');assert.equal(observed.data.trace[0].state,'done');
   const checkpoint=await stored(s,id);assert.equal(checkpoint.lease_until,0);assert.equal(checkpoint.data.rounds,1);
   assert.equal(checkpoint.data.messages.find(m=>m.role==='user').content,question);

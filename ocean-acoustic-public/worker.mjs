@@ -69,7 +69,7 @@ async function dynamic(request,env,ctx,url){
  }finally{ctx.waitUntil(Promise.all([store.run('DELETE FROM bridge_requests WHERE id=?',id),env.BUCKET.delete('rpc/'+id)]))}
 }
 async function nodeOnline(env){try{const heart=await db(env).one("SELECT seen FROM bridge_state WHERE id='matlab'");return !!heart&&Date.now()-heart.seen<15000}catch{return false}}
-const cloudApi=createCloudModels({catalog:MODELS,retrieve:createCourseRetriever(GRAPH),publicKnowledge:createPublicOceanKnowledge({sources:OCEAN_SOURCES,chunks:OCEAN_CHUNKS}),encrypt,decrypt,heartbeat:nodeOnline,template:TEMPLATE,researchAssets:RESEARCH_ASSETS,oceanQuery:handleOceanData,knowledgeCount:GRAPH.nodes.filter(n=>n.kind==='knowledge').length,sourceCount:SOURCES.length,proxy:(request,env,ctx)=>dynamic(request,env,ctx,new URL(request.url))});
+const cloudApi=createCloudModels({catalog:MODELS,graph:GRAPH,retrieve:createCourseRetriever(GRAPH),publicKnowledge:createPublicOceanKnowledge({sources:OCEAN_SOURCES,chunks:OCEAN_CHUNKS}),encrypt,decrypt,heartbeat:nodeOnline,template:TEMPLATE,researchAssets:RESEARCH_ASSETS,oceanQuery:handleOceanData,knowledgeCount:GRAPH.nodes.filter(n=>n.kind==='knowledge').length,sourceCount:SOURCES.length,proxy:(request,env,ctx)=>dynamic(request,env,ctx,new URL(request.url))});
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
  try{

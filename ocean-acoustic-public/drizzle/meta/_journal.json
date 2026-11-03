@@ -36,6 +36,13 @@
       "when": 1793512800000,
       "tag": "0004_research_workbench",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793692800000,
+      "tag": "0005_code_artifacts",
+      "breakpoints": true
     }
   ]
 }

@@ -11,6 +11,7 @@ from typing import Literal
 import httpx
 import knowledge, models, science, answer_policy, context_budget, public_ocean, persistence, simulation
 import research_api, research_validation, project_browser, simulation_studio, task_files
+import code_artifacts
 import provider_history, research_context
 
 ROOT=Path(__file__).resolve().parents[1]; LOCAL=Path(os.environ.get('OCEAN_RUNTIME_DIR',str(ROOT/'.local')))
@@ -159,6 +160,8 @@ def kill(id):
     return proc.poll() is not None
 @asynccontextmanager
 async def app_lifespan(application):
+    import init_local
+    init_local.initialize(LOCAL,ROOT)
     start_executor()
     RESEARCH.migrate()
     try:
@@ -172,6 +175,7 @@ app=FastAPI(title='海洋声学工作台',docs_url='/api/docs',lifespan=app_life
 RESEARCH=research_api.ResearchService(ROOT,LOCAL,STORE,config,lambda query:knowledge.retrieve(query))
 app.include_router(research_api.router(RESEARCH))
 app.include_router(simulation_studio.router(STORE,LOCAL,WORKER_WAKE))
+app.include_router(code_artifacts.router(STORE.connection))
 RESEARCH.fixed_schema=lambda:{'schema':simulation_studio.Plan.model_json_schema(),'solvers':['kraken','scooter','bellhop'],'templates':['munk_5000m','pekeris_100m','woa18','constant_5000m']}
 RESEARCH.fixed_preview=lambda plan:simulation_studio.preview(simulation_studio.Plan(**plan))
 RESEARCH.fixed_submit=lambda plan:simulation_studio.submit(simulation_studio.Plan(**plan),STORE,WORKER_WAKE)

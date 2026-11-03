@@ -10,6 +10,7 @@ MIT 许可证适用于本仓库原创程序、原创原理示意图及自行撰�
 - 公共 JSON 分发 30 篇 NOAA NOS 网页的清洗文字片段，依据 [NOAA NOS 使用与引用 FAQ](https://oceanservice.noaa.gov/about/faq.html)的公有领域说明，保留机构、原 URL、抓取/更新日期、哈希与使用限制。不分发 NOAA 徽标、照片、视频、音频或第三方署名素材，不暗示 NOAA 认可本项目；这些文字不被改称本项目原创版权。
 - 另有 9 条项目自写导读与 3 个仅登记的动态入口。TEOS-10、Argo、ONC、UNESCO-IOC 等原站全文或具体数据集并未因登记链接而获得新的再分发许可；导读不是原文复制或官方译文。ONC 数据许可须逐数据集核对，不能把其数据政策当作网站全文许可。具体登记与刷新见 [OPEN_OCEAN_KNOWLEDGE.md](docs/OPEN_OCEAN_KNOWLEDGE.md)。
 - npm/Python 依赖保留各自许可证；API 供应商的模型、计费和服务条件由对应供应商规定。
+- 待验收的浏览器代码页使用 [Pyodide](https://github.com/pyodide/pyodide) 314.0.7，通过 jsDelivr 按固定版本与 SHA 下载运行时及 NumPy、Matplotlib 等包；本仓库保存加载器和资产清单，不把这些运行时二进制改称原创代码。Pyodide 使用 [MPL-2.0](https://github.com/pyodide/pyodide/blob/main/LICENSE)，NumPy 与 Matplotlib 等继续保留各自[上游许可](https://github.com/numpy/numpy/blob/main/LICENSE.txt)、[许可文件](https://github.com/matplotlib/matplotlib/blob/main/LICENSE/LICENSE)。如后续改为打包再分发，应一并保留对应版本的完整许可与声明。
 - [Fuwari](https://github.com/saicaca/fuwari)（MIT，Copyright 2024 saicaca）的样式按固定提交 `6d39b0dec41282e7852e23e032998a5789abee28` 改编为项目 CSS，保留版权与完整许可；未搬运其完整站点、默认图片、字体或品牌标识。原许可及改编样式位于 `ocean-acoustic-public/src/vendor/`，同步至本地前端的 `ocean-acoustic-workbench/src/vendor/`。
 - [Sakana Widget](https://github.com/dsrkafuu/sakana-widget) 4.0.0 的 MIT 动画核心是实际依赖，通过 `sakana-widget/core` 使用；完整许可保留在依赖与 `src/vendor/sakana-widget-LICENSE.txt`。只注册本项目原创透明插画，未引入其默认动漫角色条目、角色图片或相关 IP 素材。动画引擎的 MIT 许可不被当成其默认角色图片的许可。
 - 本轮直接复用了 `dorianbrown/rank_bm25` 的 BM25Okapi 实现，固定 commit `47aa3ddf8dc1ebeb7ef4e65f2b4536af44594099`，采用 Apache-2.0，完整原许可证和出处见 `ocean-acoustic-workbench/backend/vendor/`。

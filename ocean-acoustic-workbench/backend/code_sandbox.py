@@ -46,9 +46,15 @@ def _start_process(command,folder,log,db_path,job_id,process_context):
         return proc
 
 
-def _guarded_runner(runner,code,description,db_path,runs_dir,timeout,process_context):
+def _guarded_runner(runner,code,description,db_path,runs_dir,timeout,process_context,*,input_csv='',code_artifact=None):
     context={**process_context,'started':{}} if process_context else None
-    try:return runner(code,description,db_path,runs_dir,timeout,context)
+    try:
+        valid_csv = isinstance(input_csv,str) and len(input_csv.encode('utf-8'))<=100000
+    except UnicodeError:
+        valid_csv = False
+    if not valid_csv:
+        raise ValueError('输入CSV须为100KB以内的文本，尚未执行代码')
+    try:return runner(code,description,db_path,runs_dir,timeout,context,input_csv=input_csv,code_artifact=code_artifact)
     finally:
         if context:
             # Keep the guard through final artifact/state writes. A cancelled
@@ -83,7 +89,8 @@ def _run_python_code(
     db_path: Path | str | None = None,
     runs_dir: Path | str | None = None,
     timeout: int = 60,
-    process_context=None
+    process_context=None,
+    *, input_csv='', code_artifact=None
 ) -> dict:
     job_id = uuid.uuid4().hex[:12]
     now_str = datetime.now().astimezone().isoformat(timespec='seconds')
@@ -97,7 +104,15 @@ def _run_python_code(
     folder.mkdir(parents=True, exist_ok=True)
 
     script_file = folder / "run_sandbox.py"
-    script_file.write_text(code, encoding='utf-8')
+    script_file.write_bytes(code.encode('utf-8'))
+    (folder/'input.csv').write_bytes(input_csv.encode('utf-8'))
+    # Keep source bytes and future imports intact. Only the trusted launcher
+    # supplies the same explicit CSV names as the browser's Python environment.
+    (folder/'sandbox_entry.py').write_text(
+        "import runpy\nfrom pathlib import Path\n"
+        "_csv = Path('input.csv').read_bytes().decode('utf-8')\n"
+        "runpy.run_path('run_sandbox.py', run_name='__main__', "
+        "init_globals={'input_csv': _csv, 'INPUT_CSV': _csv})\n", encoding='utf-8')
 
     if db_path is None:
         db_path = _runtime() / 'workbench.sqlite3'
@@ -107,7 +122,8 @@ def _run_python_code(
     plan_meta = {
         'task_type': 'custom_sandbox_code',
         'description': description,
-        'script_file': 'run_sandbox.py'
+        'script_file': 'run_sandbox.py', 'language': 'python', 'input_file': 'input.csv',
+        **({'code_artifact': code_artifact} if code_artifact is not None else {})
     }
 
     _register_job(db_path, job_id, now_str, plan_meta,process_context)
@@ -118,7 +134,7 @@ def _run_python_code(
         log.flush()
 
         try:
-            proc=_start_process([sys.executable,'run_sandbox.py'],folder,log,db_path,job_id,process_context)
+            proc=_start_process([sys.executable,'sandbox_entry.py'],folder,log,db_path,job_id,process_context)
         except OSError:
             state=_update_db(db_path, job_id, 'FAILED', 'Python 进程未能启动',process_context)
             return {'job_id': job_id, 'state': state, 'error': 'Python 进程未能启动', 'artifacts': []}
@@ -129,7 +145,7 @@ def _run_python_code(
             state=_update_db(db_path, job_id, 'FAILED', err_msg,process_context)
             return {'job_id': job_id, 'state': state, 'error': err_msg, 'artifacts': []}
 
-    artifacts = [p.name for p in folder.glob("*") if p.is_file() and p.name not in ["run_sandbox.py"]]
+    artifacts = [p.name for p in folder.glob("*") if p.is_file() and p.name not in ["run_sandbox.py", "sandbox_entry.py", "input.csv"]]
     png_images = [p.name for p in folder.glob("*.png")]
 
     if ret != 0:
@@ -178,7 +194,8 @@ def _run_matlab_code(
     db_path: Path | str | None = None,
     runs_dir: Path | str | None = None,
     timeout: int = 180,
-    process_context=None
+    process_context=None,
+    *, input_csv='', code_artifact=None
 ) -> dict:
     job_id = uuid.uuid4().hex[:12]
     now_str = datetime.now().astimezone().isoformat(timespec='seconds')
@@ -191,32 +208,34 @@ def _run_matlab_code(
 
     config_file = Path(os.environ.get('OCEAN_RUNTIME_DIR', str(root / '.local'))) / 'config.json'
     cfg = json.loads(config_file.read_text(encoding='utf-8')) if config_file.exists() else {}
-    matlab_exe = cfg.get('matlab_path', r"D:\Program Files\MATLAB\R2024b\bin\matlab.exe")
-    toolbox_path = cfg.get('toolbox_path', r"D:\matlab-project&tool\at-matlab\at")
+    matlab_exe = cfg.get('matlab_path', '')
+    toolbox_path = cfg.get('toolbox_path', '')
     if not Path(matlab_exe).is_file():
         raise ValueError('未找到已配置的 MATLAB 可执行文件，尚未执行代码')
-    toolbox_literal = Path(toolbox_path).as_posix().replace("'", "''")
+    toolbox_literal = Path(toolbox_path).as_posix().replace("'", "''") if toolbox_path else ''
 
     header = f"""
-try
+if ~isempty('{toolbox_literal}') && isfolder('{toolbox_literal}')
     tb = '{toolbox_literal}';
     setenv('AT_PATH', tb);
-    addpath(tb, fullfile(tb,'bin'), fullfile(tb,'ReadWrite'), fullfile(tb,'Plot'), fullfile(tb,'Misc'));
-catch
+    paths = {{tb, fullfile(tb,'bin'), fullfile(tb,'ReadWrite'), fullfile(tb,'Plot'), fullfile(tb,'Misc')}};
+    for k = 1:numel(paths)
+        if isfolder(paths{{k}}), addpath(paths{{k}}); end
+    end
 end
+fid = fopen('input.csv', 'rb');
+if fid < 0, error('Could not open explicit input.csv'); end
+input_csv = native2unicode(fread(fid, Inf, '*uint8')', 'UTF-8');
+fclose(fid);
+INPUT_CSV = input_csv;
+run('source.m');
 """
-    # Prevent clear from wiping tb
-    processed_code = code
-    if "clear" in processed_code:
-        processed_code = processed_code.replace("clear;", f"clear; tb = '{toolbox_literal}';").replace("clear all;", f"clear all; tb = '{toolbox_literal}';")
-
-    # Prevent unwanted cd calls from breaking isolated execution
-    import re
-    processed_code = re.sub(r'cd\s*\([^)]*\)\s*;?', '% [cd removed: already in isolated sandbox]', processed_code)
-
-    full_code = header + "\n" + processed_code + "\nexit(0);\n"
+    # Local execution is trusted, not a security sandbox. Preserve the exact
+    # source; rewriting clear/cd silently changes the program being verified.
+    (folder/'source.m').write_bytes(code.encode('utf-8'))
+    (folder/'input.csv').write_bytes(input_csv.encode('utf-8'))
     script_file = folder / "run_sandbox.m"
-    script_file.write_text(full_code, encoding='utf-8')
+    script_file.write_text(header, encoding='utf-8')
 
     if db_path is None: db_path = _runtime() / 'workbench.sqlite3'
     else: db_path = Path(db_path)
@@ -225,7 +244,8 @@ end
         'task_type': 'custom_sandbox_code',
         'description': description,
         'language': 'matlab',
-        'script_file': 'run_sandbox.m'
+        'script_file': 'source.m', 'input_file': 'input.csv',
+        **({'code_artifact': code_artifact} if code_artifact is not None else {})
     }
 
     _register_job(db_path, job_id, now_str, plan_meta,process_context)
@@ -247,7 +267,7 @@ end
             state=_update_db(db_path, job_id, 'FAILED', err_msg,process_context)
             return {'job_id': job_id, 'state': state, 'error': err_msg, 'artifacts': []}
 
-    artifacts = [p.name for p in folder.glob("*") if p.is_file() and p.name not in ["run_sandbox.m"]]
+    artifacts = [p.name for p in folder.glob("*") if p.is_file() and p.name not in ["run_sandbox.m", "source.m", "input.csv"]]
     png_images = [p.name for p in folder.glob("*.png")]
 
     if ret != 0:
@@ -288,12 +308,12 @@ end
         'log': log_file.read_text(encoding='utf-8', errors='replace')[-5000:]
     }
 
-def run_python_code_sandbox(code,description='动态声学仿真计算',db_path=None,runs_dir=None,timeout=60,process_context=None):
-    return _guarded_runner(_run_python_code,code,description,db_path,runs_dir,timeout,process_context)
+def run_python_code_sandbox(code,description='动态声学仿真计算',db_path=None,runs_dir=None,timeout=60,process_context=None,*,input_csv='',code_artifact=None):
+    return _guarded_runner(_run_python_code,code,description,db_path,runs_dir,timeout,process_context,input_csv=input_csv,code_artifact=code_artifact)
 
 
-def run_matlab_code_sandbox(code,description='动态 MATLAB/AT 声学仿真计算',db_path=None,runs_dir=None,timeout=180,process_context=None):
-    return _guarded_runner(_run_matlab_code,code,description,db_path,runs_dir,timeout,process_context)
+def run_matlab_code_sandbox(code,description='动态 MATLAB/AT 声学仿真计算',db_path=None,runs_dir=None,timeout=180,process_context=None,*,input_csv='',code_artifact=None):
+    return _guarded_runner(_run_matlab_code,code,description,db_path,runs_dir,timeout,process_context,input_csv=input_csv,code_artifact=code_artifact)
 
 
 def run_code_sandbox(
@@ -303,12 +323,13 @@ def run_code_sandbox(
     db_path: Path | str | None = None,
     runs_dir: Path | str | None = None,
     timeout: int = 180,
-    process_context=None
+    process_context=None,
+    *, input_csv='', code_artifact=None
 ) -> dict:
     if language.lower() in ['matlab', 'm']:
-        return run_matlab_code_sandbox(code, description, db_path, runs_dir, timeout,process_context)
+        return run_matlab_code_sandbox(code, description, db_path, runs_dir, timeout,process_context,input_csv=input_csv,code_artifact=code_artifact)
     if language.lower() in ['python', 'py']:
-        return run_python_code_sandbox(code, description, db_path, runs_dir, timeout,process_context)
+        return run_python_code_sandbox(code, description, db_path, runs_dir, timeout,process_context,input_csv=input_csv,code_artifact=code_artifact)
     raise ValueError('仅支持 Python 或 MATLAB 脚本')
 
 def _update_db(db_path: Path, job_id: str, state: str, error: str | None,process_context=None):

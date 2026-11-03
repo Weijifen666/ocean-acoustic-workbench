@@ -52,3 +52,7 @@ export const researchRuns=sqliteTable('cloud_research_runs',{
  created:integer('created').notNull(),updated:integer('updated').notNull()
 },t=>[uniqueIndex('research_owner_request').on(t.visitor_id,t.request_key),index('research_owner_session').on(t.visitor_id,t.session_id,t.created),
  uniqueIndex('research_owner_active').on(t.visitor_id).where(sql`${t.state} = 'running'`)]);
+export const codeArtifacts=sqliteTable('code_artifacts',{
+ id:text('id').primaryKey(),owner_id:text('owner_id').notNull(),ciphertext:text('ciphertext').notNull(),
+ revision:integer('revision').notNull().default(1),created:integer('created').notNull(),updated:integer('updated').notNull()
+},t=>[index('code_artifacts_owner_updated').on(t.owner_id,t.updated)]);

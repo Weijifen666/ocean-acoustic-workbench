@@ -4,7 +4,7 @@ from pathlib import Path
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field, model_validator
-import acoustic_cookbook, code_sandbox, models, ray_tracer
+import acoustic_cookbook, code_sandbox, code_artifacts, models, ray_tracer
 import provider_history, context_budget, research_context
 
 def detect_matlab():
@@ -170,13 +170,15 @@ def execute_ray_job(params: dict) -> dict:
         return {'status': 'error', 'job_id': id, 'state': 'FAILED', 'error': str(e)}
 
 
-def execute_code_job(code: str, description: str = "动态声学仿真计算", language: str = "python") -> dict:
+def execute_code_job(code: str, description: str = "动态声学仿真计算", language: str = "python", *, input_csv='', code_artifact=None) -> dict:
     return code_sandbox.run_code_sandbox(
         code=code,
         language=language,
         description=description,
         db_path=DB,
         runs_dir=LOCAL / 'runs',
+        input_csv=input_csv,
+        code_artifact=code_artifact,
         process_context={'registry':PROCESSES,'lock':STATELOCK,'owner':WORKER_OWNER}
     )
 
@@ -193,8 +195,53 @@ async def submit_code(request: Request):
     lang = data.get('language', 'python')
     if not isinstance(code,str) or not code.strip(): raise HTTPException(422, '代码须为非空文本')
     if not isinstance(desc,str) or not isinstance(lang,str):raise HTTPException(422, '脚本说明和语言须为文本')
-    try:return await asyncio.to_thread(execute_code_job, code, desc, lang)
+    try:return await asyncio.to_thread(execute_code_job, code, desc, lang, input_csv=data.get('input_csv', ''))
     except ValueError as exc:raise HTTPException(422,str(exc)) from None
+
+
+async def run_code_artifact(identity: str, request: Request):
+    """Execute only an explicitly selected, saved source revision on this PC.
+
+    This route is registered on the local app, never the public gateway. The
+    local Host/Origin middleware remains the execution permission boundary.
+    """
+    raw = bytearray()
+    async for chunk in request.stream():
+        raw.extend(chunk)
+        if len(raw) > 150000:
+            raise HTTPException(413, '运行请求过大；请先保存代码与CSV')
+    try:
+        body = json.loads(raw)
+        if not isinstance(body, dict):
+            raise ValueError()
+    except (ValueError, UnicodeError):
+        raise HTTPException(422, '运行请求须为JSON对象') from None
+    repository = code_artifacts.Store(connect)
+    try:
+        record = repository.read(identity)
+    except code_artifacts.ArtifactError as error:
+        raise HTTPException(error.status, str(error)) from None
+    if type(body.get('expected_revision')) is not int or body['expected_revision'] != record['revision']:
+        raise HTTPException(409, '代码已更新；请重新载入并明确选择当前版本后再运行')
+    if 'input_csv' in body and body['input_csv'] != record['input_csv']:
+        raise HTTPException(409, '运行CSV与已保存版本不一致；请先保存，再运行')
+    binding = {'id': identity, 'source_revision': record['revision'],
+               'code_sha256': record['code_sha256'], 'input_sha256': record['input_sha256']}
+    try:
+        result = await asyncio.to_thread(execute_code_job, record['code'], record['title'], record['language'],
+                                         input_csv=record['input_csv'], code_artifact=binding)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from None
+    response = {**result, 'code_artifact': binding, 'execution_location': 'local',
+                'provenance': 'local_process_record', 'physical_accuracy': 'not_established'}
+    try:
+        response['artifact'] = repository.record_local_run(identity, record['revision'], result['job_id'])
+        response['artifact_linked'] = True
+    except code_artifacts.ArtifactError as error:
+        # The process result remains inspectable even if another editor changed
+        # or removed the source while it was running. Never label it as current.
+        response.update(artifact_linked=False, artifact_link_error=str(error))
+    return response
 
 
 def parse_simulation_intent(text: str) -> dict | None:
@@ -643,6 +690,7 @@ def create_router(runtime):
     router.add_api_route('/api/simulation/chat', simulation_chat, methods=['POST'])
     router.add_api_route('/api/jobs/ray', submit_ray, methods=['POST'])
     router.add_api_route('/api/jobs/code', submit_code, methods=['POST'])
+    router.add_api_route('/api/research/code/artifacts/{identity}/run-local', run_code_artifact, methods=['POST'])
     router.add_api_route('/api/matlab/detect', detect_matlab, methods=['GET'])
     router.add_api_route('/api/matlab/check', check_matlab, methods=['POST'])
     return router

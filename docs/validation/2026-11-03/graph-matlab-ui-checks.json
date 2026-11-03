@@ -121,5 +121,57 @@
     "matlab_first_default": true,
     "matlab_environment_shortcut_worked": true
   },
-  "publication": "pending"
+  "publication": {
+    "version": 22,
+    "state": "succeeded",
+    "receipt": "deployment-v22.json"
+  },
+  "public_browser": {
+    "authored_wave_equation_image_opened": true,
+    "supplementary_source_page_opened": true,
+    "source_page": "S17/86",
+    "source_page_loaded": true,
+    "body_font_px": 16.52,
+    "matlab_workspace_entry_visible": true,
+    "matlab_location_explained": true,
+    "matlab_simulation_shortcut_worked": true
+  },
+  "public_simulation": {
+    "job_id": "b091fc34424c",
+    "state": "SUCCEEDED",
+    "solver": "kraken",
+    "frequency_hz": 50,
+    "source_depth_m": 1000,
+    "receiver_depth_m": 1000,
+    "range_km": [
+      1,
+      2
+    ],
+    "output_grid": [
+      101,
+      101
+    ],
+    "actual_shape": [
+      101,
+      101
+    ],
+    "valid_ratio": 0.9900990099009901,
+    "median_tl_db": 70.89064071632853,
+    "actual_receiver_depth_m": 1000,
+    "image_outputs_verified_in_browser": [
+      "传播损失声场图",
+      "传播损失曲线",
+      "模态形状",
+      "水平波数"
+    ]
+  },
+  "public_images": {
+    "all_registered_urls_checked": 100,
+    "available_valid_images": 72,
+    "correctly_reported_missing_originals": 28,
+    "unexpected_failures": 0,
+    "source_page_cloud_cache_verified": true,
+    "http_record": "graph-image-http-v22.json",
+    "screenshot": "wave-equation-fixed-v22.jpg"
+  }
 }

@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-03",
+  "github_code_commit": "19b1bf3",
+  "site_source_commit": "780f83fd4c104d501232f785cd5140a0212db550",
+  "version_number": 22,
+  "version_id": "appgprj_6ac7626759b88191938139bc53264883~appgver_db278c00b9ec81918315dd00d4cb38d7",
+  "deployment_id": "appgdep_6ae9e732ec7081919d38330cb55675f9",
+  "status": "succeeded",
+  "url": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "env_set_revision": 3,
+  "archive": {
+    "archive_format": "tar",
+    "sediment_file_id": "file_00000000d6b082308a74ed664f466a4b",
+    "content_hash": "sha256:ebae382d351e7dd253f72c1d46f1198070af4be171c84cb4888d414cc89239a2",
+    "size_bytes": 11008000,
+    "file_count": 48
+  },
+  "public_browser": {
+    "authored_wave_equation_image_opened": true,
+    "supplementary_source_page_opened": true,
+    "source_page": "S17/86",
+    "source_page_loaded": true,
+    "body_font_px": 16.52,
+    "matlab_workspace_entry_visible": true,
+    "matlab_location_explained": true,
+    "matlab_simulation_shortcut_worked": true
+  },
+  "public_simulation": {
+    "job_id": "b091fc34424c",
+    "state": "SUCCEEDED",
+    "solver": "kraken",
+    "frequency_hz": 50,
+    "source_depth_m": 1000,
+    "receiver_depth_m": 1000,
+    "range_km": [
+      1,
+      2
+    ],
+    "output_grid": [
+      101,
+      101
+    ],
+    "actual_shape": [
+      101,
+      101
+    ],
+    "valid_ratio": 0.9900990099009901,
+    "median_tl_db": 70.89064071632853,
+    "actual_receiver_depth_m": 1000,
+    "image_outputs_verified_in_browser": [
+      "传播损失声场图",
+      "传播损失曲线",
+      "模态形状",
+      "水平波数"
+    ]
+  },
+  "public_images": {
+    "all_registered_urls_checked": 100,
+    "available_valid_images": 72,
+    "correctly_reported_missing_originals": 28,
+    "unexpected_failures": 0,
+    "source_page_cloud_cache_verified": true,
+    "http_record": "graph-image-http-v22.json",
+    "screenshot": "wave-equation-fixed-v22.jpg"
+  }
+}

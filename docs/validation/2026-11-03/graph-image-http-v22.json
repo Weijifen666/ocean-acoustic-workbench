@@ -1,0 +1,920 @@
+{
+  "scope": "Actual public v22 SVG and source-page image HTTP checks, including expected missing originals",
+  "seconds": 96.562,
+  "checked": 100,
+  "passed": 100,
+  "available_images": 72,
+  "missing_originals": 28,
+  "unexpected_failures": [],
+  "repeat_source_page": {
+    "path": "/api/source/S17/page/86",
+    "status": 200,
+    "valid_image": true,
+    "expected_missing_original": false,
+    "bytes": 101267,
+    "cache": "cloud",
+    "passed": true
+  },
+  "results": [
+    {
+      "path": "/api/source/S07/page/84",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 149315,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S15/page/54",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 115688,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/103",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 139263,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/138",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 90100,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/162",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 118597,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/175",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 91932,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/176",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 86260,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/194",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 134638,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/199",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 98582,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/201",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 129612,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/217",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 75625,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/22",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 148930,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/23",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 82081,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/254",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 103056,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/264",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 121371,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/27",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 117389,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/270",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 144518,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/28",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 177343,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/284",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 133835,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/29",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 167368,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/30",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 128779,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/31",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 110303,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/32",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 136971,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/33",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 111200,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/34",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 134347,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/356",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 109144,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/357",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 124321,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/359",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 102715,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/362",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 102652,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/37",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 105984,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/375",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 103351,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/376",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 81895,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/40",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 122755,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/404",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 119783,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/41",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 162221,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/42",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 98094,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/421",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 112632,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/427",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 130597,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/43",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 152101,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/44",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 161203,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/45",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 149852,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/477",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 122577,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/478",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 114497,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/482",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 121663,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/493",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 134620,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/506",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 119938,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/51",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 138909,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/512",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 112568,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/52",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 158290,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/53",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 141595,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/86",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 101267,
+      "cache": "node",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/90",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 118591,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S17/page/91",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 140737,
+      "cache": "cloud",
+      "passed": true
+    },
+    {
+      "path": "/api/source/S21/page/2",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S21/page/21",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S21/page/26",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S21/page/3",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S21/page/35",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/19",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/2",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/29",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/5",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/53",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S22/page/54",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/17",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/2",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/24",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/27",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/31",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/38",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/4",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S23/page/5",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/16",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/17",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/19",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/27",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/28",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/4",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/43",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/6",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/api/source/S24/page/9",
+      "status": 404,
+      "valid_image": false,
+      "expected_missing_original": true,
+      "bytes": 130,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/at-models.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2780,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/boundary.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 1889,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/grid.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 3066,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/image-source.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2132,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/methods.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2538,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/modal-basis.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 6129,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/modes.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 4749,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/observation.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2270,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/pe-marching.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2500,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/pekeris-waveguide.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 1852,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/pipeline.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 3119,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/quantities.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2196,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/rays.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 1794,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/spectral-residues.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2002,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/spectral-transform.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2500,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/spreading.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2171,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/ssp.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 3841,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/wave-equation.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 3263,
+      "cache": null,
+      "passed": true
+    },
+    {
+      "path": "/assets/knowledge/wkb-approximation.svg",
+      "status": 200,
+      "valid_image": true,
+      "expected_missing_original": false,
+      "bytes": 2795,
+      "cache": null,
+      "passed": true
+    }
+  ]
+}

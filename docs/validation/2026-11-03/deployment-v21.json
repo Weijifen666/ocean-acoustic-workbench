@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-03",
+  "github_commit": "9326e25",
+  "site_source_commit": "0de731ff4f62e8b52037b917ce9190cbeb3cdd44",
+  "version_number": 21,
+  "version_id": "appgprj_6ac7626759b88191938139bc53264883~appgver_6954dce811b48191b772dd837ebe40f2",
+  "deployment_id": "appgdep_6ae9da2074748191a0fd81b1030883e7",
+  "status": "succeeded",
+  "url": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "env_set_revision": 3,
+  "archive": {
+    "archive_format": "tar",
+    "sediment_file_id": "file_00000000c89081fa85c7d14e09481867",
+    "content_hash": "sha256:1663feba792e1cacdb8c90391afc7c965d033c43af1b2bd64b91dfc11e8835e6",
+    "size_bytes": 10895360,
+    "file_count": 48
+  },
+  "local_service": {
+    "updated": true,
+    "matlab_available": true,
+    "dsh_available": true,
+    "knowledge_cards": 69,
+    "code_routes_available": true,
+    "existing_fixed_job": "a4c12b4c0828",
+    "field_and_receiver_scopes_present": true
+  },
+  "post_publish_browser_check": {
+    "passed": true,
+    "anonymous_visitor_without_api_key": true,
+    "python_status": "succeeded",
+    "execution_seconds": 3.312,
+    "sample_count": 6,
+    "minimum_sound_speed_m_s": 1483.83,
+    "maximum_sound_speed_m_s": 1538.86,
+    "saved_revision": 2,
+    "page_reload_restored_code_and_result": true,
+    "json_download_checked": true,
+    "png_download_checked": true,
+    "source_download_matches_example_bytes": true,
+    "source_bytes": 843,
+    "source_sha256": "e93af65871102ae3627c4c80ad61af36b790456960e683c4dd0b97755391910f",
+    "png_bytes": 24169,
+    "png_size": [
+      585,
+      453
+    ],
+    "screenshot": "public-python-success.jpg"
+  }
+}

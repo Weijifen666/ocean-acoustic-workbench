@@ -119,5 +119,27 @@
     "Code execution in model-write/repair/read-result test explicitly initiated by test operator through formal run-local endpoint.",
     "Successful execution does not establish physical accuracy.",
     "Four real accounts across devices not exercised."
-  ]
+  ],
+  "public_browser": {
+    "passed": true,
+    "anonymous_visitor_without_api_key": true,
+    "python_status": "succeeded",
+    "execution_seconds": 3.312,
+    "sample_count": 6,
+    "minimum_sound_speed_m_s": 1483.83,
+    "maximum_sound_speed_m_s": 1538.86,
+    "saved_revision": 2,
+    "page_reload_restored_code_and_result": true,
+    "json_download_checked": true,
+    "png_download_checked": true,
+    "source_download_matches_example_bytes": true,
+    "source_bytes": 843,
+    "source_sha256": "e93af65871102ae3627c4c80ad61af36b790456960e683c4dd0b97755391910f",
+    "png_bytes": 24169,
+    "png_size": [
+      585,
+      453
+    ],
+    "screenshot": "public-python-success.jpg"
+  }
 }

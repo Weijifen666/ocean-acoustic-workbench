@@ -48,7 +48,7 @@ function Curve({rows}) {
     </g>)}
     <text x="18" y="220" transform="rotate(-90 18 220)" textAnchor="middle">深度（m）</text>
     <polyline points={rows.map(row => `${x(row.sound_speed_m_s)},${y(row.depth_m)}`).join(' ')} fill="none" stroke="#137b80" strokeWidth="3"/>
-    {rows.map(row => <circle key={row.depth_m} cx={x(row.sound_speed_m_s)} cy={y(row.depth_m)} r="2" fill="#137b80"><title>{row.depth_m} m：{row.sound_speed_m_s.toFixed(2)} m/s</title></circle>)}
+    {rows.map(row => <circle key={row.depth_m} cx={x(row.sound_speed_m_s)} cy={y(row.depth_m)} r="2" fill="#137b80"><title>{row.depth_m + ' m：' + row.sound_speed_m_s.toFixed(2) + ' m/s'}</title></circle>)}
   </svg>;
 }
 
@@ -78,18 +78,47 @@ export function ProfileResult({result, onSimulate, onDownload, cloud}) {
   </section>;
 }
 
+export function scrollToOceanProfile(target) {
+  if (!target) return false;
+  const reduced = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  target.scrollIntoView({behavior: reduced ? 'auto' : 'smooth', block: 'start'});
+  target.focus?.({preventScroll: true});
+  return true;
+}
+
+export function OceanPointSummary({selection, periodLabel, busy, error, result, onView}) {
+  const number = (value, digits = 2) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+  const surface = result?.rows?.find(row => row.depth_m === 0);
+  const state = busy ? 'loading' : error ? 'error' : result ? 'success' : 'idle';
+  return <div className={'ocean-point-summary ' + state} role={error && !busy ? 'alert' : 'status'} aria-live="polite">
+    <div className="ocean-point-heading"><strong>{busy ? '正在读取所选点…' : error ? '该点暂未取得剖面' : result ? '剖面已读取' : '请选择海洋位置'}</strong>{busy && <Loader2 size={15} className="spin"/>}</div>
+    {selection && <p className="ocean-point-coordinate">请求坐标 {number(selection.lon, 4)}°，{number(selection.lat, 4)}° · {periodLabel}</p>}
+    {error && !busy && <p className="ocean-point-error">{error}</p>}
+    {busy && <p>正在查询温盐、原始地形与声速；当前位置标记不代表已有有效数据。</p>}
+    {result && !busy && !error && <>
+      <p className="ocean-point-grid">实际温盐格点 {number(result.selected?.lon, 2)}°，{number(result.selected?.lat, 2)}°</p>
+      <dl className="ocean-point-values"><div><dt>有效层</dt><dd>{result.rows.length}</dd></div><div><dt>坐标水深</dt><dd>{number(Number.isFinite(result.bottom?.elevation_m) ? -result.bottom.elevation_m : undefined, 0)} m</dd></div><div><dt>有效剖面至</dt><dd>{number(result.rows.at(-1)?.depth_m, 0)} m</dd></div></dl>
+      {surface ? <dl className="ocean-point-values"><div><dt>海表温度</dt><dd>{number(surface.temperature_c)} °C</dd></div><div><dt>海表实用盐度</dt><dd>{number(surface.practical_salinity)}</dd></div><div><dt>海表声速</dt><dd>{number(surface.sound_speed_m_s)} m/s</dd></div></dl> : <p>海表0 m缺测；最浅有效层为 {number(result.rows[0]?.depth_m, 0)} m，未把它当作海表。</p>}
+      <button className="button primary ocean-view-profile" onClick={onView}>查看完整剖面与下载</button>
+    </>}
+    {!selection && !busy && !error && <p>点击地图后可在这里查看状态与数据概要。</p>}
+    {error && !busy && <p>请查看提示后另选海洋位置，或修改坐标后重新提取。沿岸的1°温盐格点可能为陆地或缺测。</p>}
+  </div>;
+}
+
 export default function OceanData({notify, onSimulate}) {
   const [catalog, setCatalog] = useState(null);
   const [lon, setLon] = useState('120'), [lat, setLat] = useState('20'), [period, setPeriod] = useState('0');
   const [result, setResult] = useState(null), [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const request = useRef(null);
+  const [selection, setSelection] = useState(null);
+  const request = useRef(null), resultTarget = useRef(null), inputsEdited = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
     get('', controller.signal).then(data => {
       if (controller.signal.aborted) return;
       setCatalog(data);
-      if (data.available) loadPoint(120, 20, '0', data.dataset_version);
+      if (data.available && !inputsEdited.current) loadPoint(120, 20, '0', data.dataset_version);
     }).catch(error => {if (!controller.signal.aborted) setError(error.message);});
     return () => {controller.abort(); request.current?.abort();};
   }, []);
@@ -98,6 +127,7 @@ export default function OceanData({notify, onSimulate}) {
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
+    setSelection({lon: Number(x), lat: Number(y), period: Number(selectedPeriod)});
     setLon(String(x)); setLat(String(y)); setBusy(true); setResult(null); setError('');
     try {
       const query = oceanDataQuery({lon: x, lat: y, period: selectedPeriod}, dataVersion);
@@ -118,20 +148,22 @@ export default function OceanData({notify, onSimulate}) {
     notify?.('环境剖面已导出。');
   }
 
+  const periodLabel = result?.period || catalog?.periods?.find(item => Number(item.id) === selection?.period)?.label || (selection?.period === 0 ? '年平均' : '所选时段');
+  const summaryProps = {selection, periodLabel, busy, error, result, onView: () => scrollToOceanProfile(resultTarget.current)};
+
   return <div className="ocean-data-page">
     <div className="page-title"><div><div className="eyebrow">OCEAN ENVIRONMENT</div><h1>海洋环境数据</h1><p className="description">WOA18 温盐气候平均场 · ETOPO1 海底地形 · 声速剖面</p></div></div>
     <section className="panel ocean-input"><OceanSource catalog={catalog}/>
       <form onSubmit={event => {event.preventDefault(); loadPoint(lon, lat);}}>
-        <label>经度（东经为正）<input required type="number" min="-180" max="180" step="any" value={lon} onChange={event => setLon(event.target.value)}/></label>
-        <label>纬度（北纬为正）<input required type="number" min="-90" max="90" step="any" value={lat} onChange={event => setLat(event.target.value)}/></label>
+        <label>经度（东经为正）<input required type="number" min="-180" max="180" step="any" value={lon} onChange={event => {inputsEdited.current = true; setLon(event.target.value);}}/></label>
+        <label>纬度（北纬为正）<input required type="number" min="-90" max="90" step="any" value={lat} onChange={event => {inputsEdited.current = true; setLat(event.target.value);}}/></label>
         <label>平均时段<select value={period} disabled={!catalog?.available} onChange={event => {setPeriod(event.target.value); if (catalog?.available) loadPoint(lon, lat, event.target.value);}}>{(catalog?.periods || [{id: 0, label: '年平均'}]).map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         <button className="button primary" disabled={busy || !catalog?.available} type="submit">{busy ? <Loader2 className="spin" size={15}/> : <MapPin size={15}/>}提取环境剖面</button>
       </form>
       <p className="ocean-hint">年平均、季节最深5500 m；月平均最深1500 m。遇到陆地或缺测会提示，不自动填补或外推。</p>
       {error && <p role="alert" className="ocean-error">{error}</p>}
     </section>
-    {catalog?.available && <OceanMap point={{lon: Number(lon), lat: Number(lat)}} selected={result?.selected} onPick={loadPoint} dataVersion={catalog.dataset_version}/>}
-    {busy && <p role="status" className="ocean-hint">正在提取所选点温盐与声速数据…</p>}
-    {result && <ProfileResult result={result} onSimulate={onSimulate} onDownload={download} cloud={catalog?.storage === 'cloud'}/>}
+    {catalog?.available && <div className="ocean-explorer-layout"><OceanMap point={selection} selected={result?.selected} onPick={loadPoint} dataVersion={catalog.dataset_version} pointSummary={<OceanPointSummary {...summaryProps}/>}/><aside className="ocean-selection-aside" aria-label="当前选点数据"><OceanPointSummary {...summaryProps}/></aside></div>}
+    {result && <div ref={resultTarget} id="ocean-profile-result" className="ocean-profile-target" tabIndex={-1}><ProfileResult result={result} onSimulate={onSimulate} onDownload={download} cloud={catalog?.storage === 'cloud'}/></div>}
   </div>;
 }

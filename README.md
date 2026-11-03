@@ -6,6 +6,8 @@
 
 API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型依据见 [Agent 后端说明](docs/AGENT_BACKENDS.md)。本地完整应用默认 DSH；公共网站默认个人模型 API，两者的工具权限不同。
 
+2026-11-03 第20版精简图谱详情的来源定位卡片，保留知识讲解、图片与关联。当前资料接入属于知识卡、RAG和Skill，没有对供应商模型进行领域蒸馏或微调；实际实现与可选训练路线见[知识接入与模型训练状态](docs/KNOWLEDGE_TRAINING_STATUS.md)。
+
 2026-11-03 正式网站第19版修复[地图选点后数据难以发现](docs/validation/2026-11-03/ocean-point-display.md)：地图旁直接显示温盐声速概要，普通滚轮恢复页面滚动。已核查云端17期数据和印度洋等3点的真实剖面；第18版模型连接修复也已由用户确认有效Key“调用通过”，见[API验收记录](docs/validation/2026-11-03/api-connection-diagnosis.md)。
 
 本分支 `feat/dual-workbench-execution` 另含图谱选点进入模型上下文、图谱查询工具、代码草稿和“代码与分析”入口；这些新增功能仍在验收，尚未部署到正式网站。实际完成项与未验收项见[分支验收状态](docs/DUAL_WORKBENCH_ACCEPTANCE.md)。

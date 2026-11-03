@@ -11,7 +11,9 @@ test('public research, model library and tasks render with honest execution boun
  const base=path.resolve(tmpdir()),directory=await mkdtemp(path.join(base,'unified-ocean-ui-'));
  try{
   const outfile=path.join(directory,'fixture.cjs');
-  await build({entryPoints:[fileURLToPath(new URL('./unified-ui-fixture.jsx',import.meta.url))],outfile,bundle:true,format:'cjs',platform:'node',loader:{'.css':'empty'},logLevel:'silent'});
+  await build({entryPoints:[fileURLToPath(new URL('./unified-ui-fixture.jsx',import.meta.url))],outfile,bundle:true,format:'cjs',platform:'node',
+   alias:Object.fromEntries(['react','react-dom','lucide-react'].map(name=>[name,fileURLToPath(new URL('../node_modules/'+name,import.meta.url))])),
+   nodePaths:[fileURLToPath(new URL('../node_modules',import.meta.url))],loader:{'.css':'empty'},logLevel:'silent'});
   const result=spawnSync(process.execPath,[outfile],{encoding:'utf8',timeout:20000,windowsHide:true});
   assert.equal(result.status,0,result.stderr||result.stdout);
   assert.match(result.stdout,/Unified public workbench UI contracts passed/);

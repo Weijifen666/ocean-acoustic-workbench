@@ -1,0 +1,123 @@
+{
+  "date": "2026-11-03",
+  "real_model_checks": {
+    "model": "deepseek-v4-flash",
+    "production_8765_or_gateway_modified": false,
+    "credentials_read_or_recorded": false,
+    "skill_simulation": {
+      "structural_loop_passed": true,
+      "job_id": "fe9ec6595223",
+      "seconds": 77.359,
+      "supervisor_compute_calls": 0,
+      "interpretation_issue_found": "full-field-versus-receiver-scope",
+      "corrected_with_real_model_and_full_csv": true,
+      "field_max_tl_db": 78.94633047667249,
+      "receiver_curve_max_tl_db": 71.324179116167
+    },
+    "graph_tools": {
+      "passed": true,
+      "seconds": 27.92,
+      "tools": [
+        "find_graph_path",
+        "read_graph_node",
+        "read_graph_relations",
+        "search_graph_nodes",
+        "select_graph_nodes"
+      ],
+      "second_user_turn_cleared_selection": true
+    },
+    "code_tools": {
+      "passed": true,
+      "document_id": "940ad571-4f5d-44d5-a80f-981c63c342ec",
+      "first_execution_failed_job_id": "cd1c5b94e189",
+      "failure": "Generated code assumed INPUT_CSV was an environment variable/path; actual runtime injects global CSV text.",
+      "model_repair_passed": true,
+      "operator_edited_source": false,
+      "successful_saved_source_revision": 4,
+      "successful_job_id": "8fe4e94d1700",
+      "real_result_analysis_passed": true,
+      "execution_initiator": "explicit_test_operator_via_formal_run_local_endpoint",
+      "model_autonomously_executed": false
+    },
+    "evidence_files": [
+      "munk-closed-loop-1.json",
+      "munk-interpretation-review.json",
+      "munk-followup-actual.json",
+      "graph-actual.json",
+      "code-actual.json",
+      "code-execution-followup-actual.json",
+      "code-model-repair-actual.json",
+      "code-execution-followup-rev4-actual.json"
+    ]
+  },
+  "browser_local": {
+    "actual_ui": true,
+    "python_default_example": {
+      "status": "succeeded",
+      "samples": 6,
+      "speed_min_m_s": 1483.83,
+      "speed_max_m_s": 1538.86,
+      "artifacts": [
+        "summary.json",
+        "figure-1.png"
+      ]
+    },
+    "first_attempt_failed": "Opaque frame module Worker startup rejected; classic Worker retains original CSP and isolation and succeeds",
+    "execution_timeout_seconds": 10,
+    "cancel_during_initialization": true,
+    "cancel_during_execution": true,
+    "restricted_globals": {
+      "document": false,
+      "cookie": false,
+      "globalThis": false
+    },
+    "pyfetch_attempt_blocked": true,
+    "matlab_ui_job_id": "11832b3a8696",
+    "matlab_ui_state": "SUCCEEDED",
+    "matlab_cancel_ui_job_id": "8ed0633fe61b",
+    "matlab_cancel_ui_state": "CANCELLED",
+    "chat_polling_bug_reproduced": true,
+    "chat_fix_verified_without_refresh": true,
+    "graph_selected_nodes": [
+      "munk_profile",
+      "env_file"
+    ],
+    "graph_selection_arrived_in_composer": true,
+    "graph_real_model_read_and_path_query": true
+  },
+  "natural_language": {
+    "ray_job_id": "87d536afac88",
+    "python_job_id": "109960b803f5",
+    "matlab_job_id": "f5569a3eab71",
+    "matlab_state": "SUCCEEDED",
+    "matlab_shape": [
+      51,
+      51
+    ],
+    "matlab_valid_cells": 2550,
+    "explanation_shallow_water_out_of_range_requests_created_no_jobs": true,
+    "failed_or_pending_jobs_not_reported_as_success": true
+  },
+  "automated_checks": {
+    "cloud_full": {
+      "tests": 210,
+      "passed": 210,
+      "failed": 0
+    },
+    "local_full_before_final_metadata_and_commit_order_scope_guards": {
+      "tests": 322,
+      "passed": 321,
+      "skipped": 1,
+      "failed": 0,
+      "skip_reason": "Windows account cannot create symlinks"
+    },
+    "subsequent_changed_groups": "Code tools, 32K provider protocol, research API/commit ordering and fixed-job scope regressions separately passed; counts are not added to the full-suite total"
+  },
+  "limits": [
+    "Real model workflows tested through configured DSH deepseek-v4-flash, not all website API providers.",
+    "Public arbitrary server-side Python/MATLAB remains unavailable.",
+    "Code execution in model-write/repair/read-result test explicitly initiated by test operator through formal run-local endpoint.",
+    "Successful execution does not establish physical accuracy.",
+    "Four real accounts across devices not exercised."
+  ]
+}

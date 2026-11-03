@@ -77,9 +77,12 @@ class ResearchGraphTools(unittest.IsolatedAsyncioTestCase):
   source={'title':'声速分析','language':'python','code':'print(1500)\n','input_csv':'depth,speed\n0,1500'}
   result=await self.service.execute(None,'write_code_artifact',source)
   self.assertFalse(result['executed']);self.assertEqual(result['workspace_url'],'/#code/'+result['id'])
+  self.assertEqual(result['input_contract']['delivery'],'python_module_globals');self.assertFalse(result['input_contract']['environment_variable'])
+  self.assertEqual(result['input_contract']['variables'],['input_csv','INPUT_CSV']);self.assertEqual(result['input_contract']['working_directory_file'],'input.csv')
   self.assertEqual(len((await self.service.execute(None,'list_code_artifacts',{}))['artifacts']),1)
   read=await self.service.execute(None,'read_code_artifact',{'id':result['id'],'field':'input_csv','max_bytes':256})
   self.assertEqual(read['content'],source['input_csv']);self.assertTrue(read['complete'])
+  self.assertEqual(read['input_contract'],result['input_contract'])
   missing=await self.service.execute(None,'read_code_result',{'id':result['id']});self.assertIsNone(missing['result']);self.assertFalse(missing['executed'])
   with self.assertRaises(ValueError):await self.service.execute(None,'write_code_artifact',{**source,'id':result['id'],'result':{'status':'succeeded'}})
   with self.assertRaises(ValueError):await self.service.execute(None,'write_code_artifact',{**source,'id':result['id'],'expected_revision':0})

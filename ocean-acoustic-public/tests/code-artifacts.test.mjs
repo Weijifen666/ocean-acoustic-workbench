@@ -52,9 +52,11 @@ test('failed/cancelled results stay failed/cancelled and unsafe or oversized art
 test('model tools page real sources and text results, never expose PNG base64 or write results',async()=>{
  const {store,env,sqlite}=fixture();try{
   const code=('#中文说明\n').repeat(180),saved=await executeCodeTool(store,'write_code_artifact',{...source,code,result:{status:'succeeded'}},env,'visitor-a');
+  assert.equal(saved.input_contract.delivery,'python_module_globals');assert.equal(saved.input_contract.environment_variable,false);
+  assert.deepEqual(saved.input_contract.variables,['input_csv','INPUT_CSV']);assert.equal(saved.input_contract.working_directory_file,'input.csv');assert.equal(saved.input_contract.requires_explicit_run,true);
   assert.equal(saved.executed,false);assert.equal(saved.workspace_url,'/#code/'+saved.id);
   assert.equal((await store.read(env,'visitor-a',saved.id)).result,null);
-  const page=await executeCodeTool(store,'read_code_artifact',{id:saved.id,max_bytes:256},env,'visitor-a');assert(page.has_more);assert(page.returned_bytes<=256);assert(code.startsWith(page.content));
+  const page=await executeCodeTool(store,'read_code_artifact',{id:saved.id,max_bytes:256},env,'visitor-a');assert(page.has_more);assert(page.returned_bytes<=256);assert(code.startsWith(page.content));assert.deepEqual(page.input_contract,saved.input_contract);
   const next=await executeCodeTool(store,'read_code_artifact',{id:saved.id,offset:page.next_offset,max_bytes:256},env,'visitor-a');assert.equal(page.content+next.content,Array.from(code).slice(0,next.next_offset).join(''));
   const row=await store.read(env,'visitor-a',saved.id);await store.save(env,'visitor-a',{expected_revision:1,result:await receipt(row)},saved.id,true);
   const report=await executeCodeTool(store,'read_code_result',{id:saved.id},env,'visitor-a');assert.equal(report.content,'样本1\n');assert.equal(report.server_verified,false);assert.equal(report.artifacts[0].bytes,68);assert(!JSON.stringify(report).includes(PNG));

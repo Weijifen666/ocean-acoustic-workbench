@@ -373,7 +373,9 @@ def details(id:str):
     v=job(id);folder=run_dir(id);v['log']=task_files.read_log(folder/'run.log',50000) if (folder/'run.log').exists() else '等待执行器领取任务…'
     v['artifacts']=[p.name for p in folder.glob('*') if p.is_file()] if folder.exists() else []
     v['events']=STORE.events(id)
-    if v['state']=='SUCCEEDED':v['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
+    if v['state']=='SUCCEEDED':
+        v['summary']=json.loads((folder/'summary.json').read_text(encoding='utf-8'))
+        v.update(RESEARCH.fixed_job_statistics(id,v))
     return v
 @app.delete('/api/jobs/{id}')
 def delete_task_files(id:str):

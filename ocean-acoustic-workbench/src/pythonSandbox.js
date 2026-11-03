@@ -23,7 +23,7 @@ function frameHtml(channel){
 window.addEventListener('message',event=>{if(event.source!==parent||event.data?.channel!==channel)return;
 const message=event.data;try{if(message.type==='boot'){
  const url=URL.createObjectURL(new Blob([message.worker],{type:'text/javascript'}));
- worker=new Worker(url,{type:'module'});
+ worker=new Worker(url,{type:'classic'});
  worker.onmessage=event=>{if(event.data?.type==='ready')URL.revokeObjectURL(url);parent.postMessage({channel,...event.data},'*')};
  worker.onerror=event=>{URL.revokeObjectURL(url);parent.postMessage({channel,type:'error',message:'隔离Python运行环境失败：'+String(event.message||'浏览器拒绝执行计算线程').slice(0,1000)},'*')};
  const assets=message.assets;worker.postMessage({type:'init',assets},assets.map(item=>item.bytes));

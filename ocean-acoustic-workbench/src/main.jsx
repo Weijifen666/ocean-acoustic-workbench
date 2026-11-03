@@ -344,7 +344,7 @@ function App() {
         <div className="side-bottom">
           <button
             className={page === "settings" ? "nav-item active" : "nav-item"}
-            title="Alt + 7"
+            title={`Alt + ${pages.length + 1}`}
             onClick={() => navigate("settings")}
           >
             <Settings2 size={17} />

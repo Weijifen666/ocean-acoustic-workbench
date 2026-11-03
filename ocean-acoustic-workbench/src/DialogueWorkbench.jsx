@@ -31,7 +31,7 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
  useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);try{setKnowledgeNodes(normalizeKnowledgeSelection(draft.knowledge_nodes||[]))}catch(error){setError(error.message)}follow.current=true}},[draft]);
  useEffect(()=>{if(run?.state!=='running')return;let alive=true,pending=false;
-  const poll=async()=>{if(pending)return;pending=true;try{const current=await api('runs/'+run.id);if(!alive)return;setRun(current);if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(alive){setMessages(rows);setError(current.error||'')}}}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
+  const poll=async()=>{if(pending)return;pending=true;try{const current=await api('runs/'+run.id);if(!alive)return;if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(!alive)return;setMessages(rows);setError(current.error||'');loadSessions()}setRun(current)}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
   const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
  },[run?.id,run?.state,session]);
  useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial]);

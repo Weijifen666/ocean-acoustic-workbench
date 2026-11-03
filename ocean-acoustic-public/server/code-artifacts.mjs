@@ -41,7 +41,7 @@ export async function validateCodeResult(value,code,inputCSV){
   provenance:'browser_client_report',server_verified:false,physical_accuracy:'not_established',
   note:'用户浏览器隔离计算的回传结果；服务端校验格式、归属和代码/输入版本，没有重新执行或认证科学结论。'};
 }
-function meta(row){return Object.fromEntries(['id','title','language','revision','created','updated','code_sha256','input_sha256'].filter(key=>row[key]!==undefined).map(key=>[key,row[key]]));}
+function meta(row){return {...Object.fromEntries(['id','title','language','revision','created','updated','code_sha256','input_sha256'].filter(key=>row[key]!==undefined).map(key=>[key,row[key]])),input_contract:{format:'UTF-8 CSV text',variables:['input_csv','INPUT_CSV'],delivery:row.language==='python'?'python_module_globals':'matlab_workspace_variables',environment_variable:false,working_directory_file:'input.csv',requires_explicit_run:true,note:'使用注入变量中的CSV文本，或读取input.csv；不要依赖os.environ/getenv取得CSV。保存源码不会执行；MATLAB需要本地执行器。'}};}
 export function createCodeArtifacts({encrypt,decrypt}){
  const one=(env,sql,...args)=>env.DB.prepare(sql).bind(...args).first();
  async function read(env,owner,id){identity(id);const row=await one(env,'SELECT * FROM code_artifacts WHERE owner_id=? AND id=?',owner,id);if(!row)throw fail('代码不存在或不属于当前用户',404);return {...await decrypt(row.ciphertext,env.GATEWAY_SECRET),id:row.id,revision:row.revision,created:row.created,updated:row.updated};}

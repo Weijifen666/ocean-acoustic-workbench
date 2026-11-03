@@ -244,128 +244,258 @@ async def run_code_artifact(identity: str, request: Request):
     return response
 
 
+_NL_NUMBER = r'[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?'
+_NL_FIELDS = {
+    'frequency': r'(?:声源)?频率(?:组合)?|frequenc(?:y|ies)',
+    'source': r'声源深(?:度)?|源深(?:度)?|发射深度|声源(?!频率)|z_?s\b',
+    'receiver': r'接收器深度|接收点深度|接收深(?:度)?|接收',
+    'water': r'水深|海底深度|海底\s*z\b',
+    'range': r'最大距离|传播距离|距离(?:范围)?|范围|(?<![a-z0-9_])r\s*=',
+    'speed': r'(?<!等)声速(?:\s*c)?|(?<![a-z0-9_])c\s*=',
+    'angles': r'掠射角|发射角',
+    'range_points': r'距离(?:采样)?点数|距离网格点|range_points',
+    'depth_points': r'深度(?:采样)?点数|深度网格点|depth_points',
+}
+
+
+def _natural_segments(text):
+    # Longer control labels precede "距离"/"深度", so grid counts cannot become
+    # an extra physical quantity. All explicit labeled values are validated.
+    order = ['range_points', 'depth_points', 'frequency', 'receiver', 'source', 'water', 'range', 'speed', 'angles']
+    pattern = '|'.join('(?P<' + key + '>' + _NL_FIELDS[key] + ')' for key in order)
+    found = list(re.finditer(pattern, text, re.I))
+    segments = {}
+    for index, match in enumerate(found):
+        fragment = text[match.end():found[index + 1].start() if index + 1 < len(found) else len(text)]
+        fragment = re.split(r'[;；。\n]', fragment, maxsplit=1)[0]
+        fragment = re.sub(r'^\s*(?:(?:设为|设置为|位于|为|是|在|取)\s*|[:：=]\s*)', '', fragment).strip()
+        segments.setdefault(match.lastgroup, []).append(fragment)
+    return segments
+
+
+def _natural_quantities(fragments, kind, label):
+    units = {
+        'length': r'千米|公里|厘米|毫米|米|km|cm|mm|m',
+        'frequency': r'千赫兹|千赫|赫兹|kHz|Hz',
+        'speed': r'米\s*/\s*秒|米每秒|m\s*/\s*s',
+        'angles': r'°|度',
+        'count': r'点|points?',
+    }[kind]
+    values = []
+    for fragment in fragments:
+        if not re.match(_NL_NUMBER, fragment, re.I):
+            raise ValueError(label + '没有明确数值，未使用默认值替代')
+        if label in ('频率', '源深', '掠射角') and re.search(r'\d\s*(?:Hz|kHz|m|米|度)?\s*[-–—~～至到]\s*\d', fragment, re.I):
+            raise ValueError(label + '范围未给明确步长，请用逗号列出离散值')
+        # A minus between positive endpoints denotes an interval, not a
+        # negative second endpoint. A leading negative remains negative.
+        fragment = re.sub(r'(?<=[\d米m])\s*[-–—~～至到]\s*(?=\d)', ' ', fragment)
+        found = list(re.finditer('(' + _NL_NUMBER + r')\s*(' + units + ')?', fragment, re.I))
+        if not found or len(found) > 64:
+            raise ValueError(label + '数值格式无效')
+        explicit_units = [match.group(2) for match in found if match.group(2)]
+        if kind != 'count' and not explicit_units:
+            raise ValueError(label + '缺少或不支持单位，请明确使用米/千米、Hz/kHz或度；未猜测参数')
+        for match in found:
+            suffix = fragment[match.end():].lstrip()
+            if (not match.group(2) and re.match(r'[A-Za-z]|千米|公里|厘米|毫米|米|千赫|赫兹|度', suffix)) or (kind == 'length' and re.match(r'/|每秒', suffix)):
+                raise ValueError(label + '含不支持的单位，未忽略或替换')
+            unit = (match.group(2) or (explicit_units[-1] if explicit_units else '')).lower()
+            value = float(match.group(1))
+            scale = 1000 if unit in ('km', '千米', '公里', 'khz', '千赫', '千赫兹') else .01 if unit in ('cm', '厘米') else .001 if unit in ('mm', '毫米') else 1
+            value *= scale
+            if not math.isfinite(value):
+                raise ValueError(label + '须为有限数值')
+            values.append(value)
+    return values
+
+
 def parse_simulation_intent(text: str) -> dict | None:
-    text_lower = text.lower()
-    if not any(word in text_lower for word in ['仿真','模拟','计算','运行','跑','画','绘制','追踪']):return None
-    if any(word in text_lower for word in ['如何','怎么','怎样','什么是','为什么']) and not any(word in text_lower for word in ['帮我','请','给我','直接']):return None
-    if any(word in text_lower for word in ['bellhop','scooter','ram','抛物方程']):
-        return {'type':'unsupported','reason':'离线规则解析不能执行指定求解器；请到声场仿真选择对应模型，或配置研究 Agent。未将它替换为解析射线或 KRAKEN。'}
-    # 检查是否为射线声学相关指令
-    ray_keywords = ['射线', '声线', '掠射角', '反射次数', '浅海声线', '海面反射', '海底反射', '轨迹']
-    if any(k in text_lower for k in ray_keywords):
-        if any(word in text_lower for word in ['梯度','munk','折射','声道']):
-            return {'type':'unsupported','reason':'离线解析射线仅支持等声速平底水层，不能用直线反射代替梯度折射或 Munk 声道；请使用声场仿真或配置研究 Agent。'}
-        H = 100.0
-        m_H = re.search(r'(?:海底\s*[z=:]*|水深\s*[:：=]?)\s*(\d+(?:\.\d+)?)\s*m', text)
-        if m_H: H = float(m_H.group(1))
+    text_lower = text.lower().strip()
+    if not any(word in text_lower for word in ['仿真', '模拟', '计算', '运行', '跑', '画', '绘制', '追踪']):
+        return None
+    # Polite questions remain questions; "请" is not an execution permission.
+    if re.match(r'^(?:请问|请教|想问|问一下|能否|能不能|是否|如何|怎么|怎样|什么是|为什么|请(?:解释|说明|介绍))', text_lower):
+        return None
+    direct = re.search(r'(?:帮我|请|直接|立即|现在|开始)\s*(?:仿真|模拟|计算|运行|绘制|追踪|画|跑)', text_lower)
+    if any(word in text_lower for word in ['如何', '怎么', '怎样', '什么是', '为什么', '了解']) and not direct:
+        return None
+    if re.search(r'(?:不要|别|不必|无需|不用|仅|只)\s*(?:实际)?(?:运行|执行|仿真|模拟|计算)', text_lower):
+        return None
+    def reject(reason):
+        return {'type': 'unsupported', 'reason': reason + '；未启动计算，也未使用默认参数或其他环境替代。'}
+    if re.search(r'(?<![a-z0-9_])(?:bellhop(?:3d)?|scooter|ram|simplepe|krakenc|krakel|sparc)(?![a-z0-9_])|抛物方程', text_lower):
+        return reject('离线规则解析不能执行指定求解器，请到声场仿真选择对应模型，或配置研究Agent。未将它替换为解析射线或KRAKEN')
+    is_ray = any(word in text_lower for word in ['射线', '声线', '掠射角', '反射次数', '海面反射', '海底反射', '轨迹'])
+    if is_ray and re.search(r'梯度|munk|折射|声道|kraken|传播损失|声压|振幅|吸收|底质|弹性', text_lower):
+        return reject('离线解析射线仅支持等声速平底水层的路径几何，不能用直线反射代替梯度折射、Munk、KRAKEN或声场幅度计算')
+    if not is_ray and re.search(r'浅海|pekeris|等声速|自定义|实时|真实海域|南海|东海|黄海|渤海|地中海|印度洋|大西洋|太平洋', text_lower):
+        return reject('离线声场入口仅支持Munk 5000m理想深海模板，当前不能忠实执行所述环境；请使用声场表单或研究Agent')
 
-        zs = 50.0
-        m_zs = re.search(r'(?:声源|源深|z_?s)\s*(?:在|[:：=])?\s*(\d+(?:\.\d+)?)\s*m', text)
-        if m_zs: zs = float(m_zs.group(1))
-
-        c = 1500.0
-        m_c = re.search(r'(?:声速\s*[c=:]*|c\s*=)\s*(\d+(?:\.\d+)?)\s*(?:m/s)?', text)
-        if m_c: c = float(m_c.group(1))
-
-        r_max = 5.0
-        m_r = re.search(r'(?:距离\s*[r=:]*|r\s*=\s*)(\d+(?:\.\d+)?)\s*km', text)
-        if m_r: r_max = float(m_r.group(1))
-
-        angles = []
-        for m in re.finditer(r'(\d+(?:\.\d+)?)\s*[°度]', text):
-            a = float(m.group(1))
-            if 0 < a < 90: angles.append(a)
-        angles = sorted(list(set(angles)))
-        if not angles: angles = [5.0, 15.0, 30.0, 45.0, 60.0]
-
-        return {
-            'type': 'ray',
-            'water_depth_m': H,
-            'source_depth_m': zs,
-            'sound_speed_mps': c,
-            'range_max_km': r_max,
-            'angles_deg': angles,
-            'launch_direction': 'both'
-        }
-
-    # 检查是否为 KRAKEN 简正波/深海声场相关指令
-    sim_keywords = ['仿真', '计算声场', '模拟', '跑一下', '运行声场', 'kraken', 'munk', '传播损失', '声场分布']
-    if any(k in text_lower for k in sim_keywords):
-        freqs = []
-        for m in re.finditer(r'(\d+(?:\.\d+)?)\s*(?:hz|赫兹)', text, re.I):
-            f = float(m.group(1))
-            if 10 <= f <= 200: freqs.append(f)
-        if not freqs:
-            m = re.search(r'频率\s*[:：=]?\s*(\d+(?:\.\d+)?)', text)
-            if m and 10 <= float(m.group(1)) <= 200: freqs.append(float(m.group(1)))
-        if not freqs: freqs = [50.0]
-
-        source_depths = []
-        for m in re.finditer(r'(?:源深|声源深度|声源|发射深度)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*m?', text):
-            d = float(m.group(1))
-            if 0 < d < 5000: source_depths.append(d)
-        if not source_depths: source_depths = [1000.0]
-
-        rec_depth = 1000.0
-        m = re.search(r'(?:接收深(?:度)?|接收器深度|接收点深度|接收)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*m?', text)
-        if m and 0 < float(m.group(1)) < 5000: rec_depth = float(m.group(1))
-
-        r_max = 50.0
-        m = re.search(r'(?:最大距离|距离|范围|传播距离)\s*[:：=]?\s*(\d+(?:\.\d+)?)\s*km', text)
-        if m and 0.1 < float(m.group(1)) <= 100: r_max = float(m.group(1))
-
-        return {
-            'type': 'kraken',
-            'frequencies_hz': sorted(list(set(freqs))),
-            'source_depths_m': sorted(list(set(source_depths))),
-            'receiver_depth_m': rec_depth,
-            'range_min_km': 1.0,
-            'range_max_km': r_max,
-            'range_points': 201,
-            'depth_points': 251,
-            'template': 'munk_5000m'
-        }
-
-    return None
-
-
-async def execute_simulation_and_wait(plan_data:dict, timeout:int=150)->dict:
     try:
-        p = Plan(**{key: value for key, value in plan_data.items() if key in Plan.model_fields})
-        p.checked()
-    except Exception as e:
-        return {'status': 'error', 'error': f'参数校验失败: {str(e)}'}
+        fields = _natural_segments(text)
+        def numbers(key, kind, label, default):
+            return _natural_quantities(fields[key], kind, label) if key in fields else list(default)
+        def scalar(key, kind, label, default):
+            values = numbers(key, kind, label, [default])
+            if len(values) != 1:
+                raise ValueError(label + '须明确提供一个值')
+            return values[0]
+        if is_ray:
+            water = scalar('water', 'length', '水深', 100)
+            source = scalar('source', 'length', '源深', 50)
+            speed = scalar('speed', 'speed', '声速', 1500)
+            ranges = numbers('range', 'length', '传播距离', [5000])
+            if len(ranges) == 2 and ranges[0] == 0:
+                ranges = ranges[1:]
+            if len(ranges) != 1:
+                raise ValueError('解析射线从0距离起算，请只提供终点或0到终点')
+            angle_fragments = fields.get('angles')
+            if angle_fragments:
+                angles = _natural_quantities(angle_fragments, 'angles', '掠射角')
+            else:
+                angle_fragments = [match.group(0) for match in re.finditer(_NL_NUMBER + r'\s*(?:°|度)', text)]
+                angles = _natural_quantities(angle_fragments, 'angles', '掠射角') if angle_fragments else [5, 15, 30, 45, 60]
+            if any(key in fields for key in ['frequency', 'receiver', 'range_points', 'depth_points']):
+                raise ValueError('解析路径几何不计算频率相关声场、接收深度或网格，请使用相应声场求解器')
+            direction = 'up' if '向上' in text and '向下' not in text else 'down' if '向下' in text and '向上' not in text else 'both'
+            return {'type': 'ray', **PlanRay(water_depth_m=water, source_depth_m=source, sound_speed_mps=speed,
+                range_max_km=ranges[0] / 1000, angles_deg=sorted(set(angles)), launch_direction=direction).model_dump()}
 
-    sub = submit(p, Request({"type": "http", "headers": []}))
-    job_ids = sub.get('ids', [])
-    if not job_ids:
-        return {'status': 'error', 'error': '任务提交失败，未生成任务标识'}
+        if 'water' in fields and scalar('water', 'length', '水深', 5000) != 5000:
+            raise ValueError('Munk模板水深固定为5000m，不能替换所请求的其他水深')
+        if 'speed' in fields or 'angles' in fields:
+            raise ValueError('该入口不能修改Munk剖面声速或发射角，请使用对应声场表单')
+        freqs = numbers('frequency', 'frequency', '频率', [])
+        if not freqs:
+            fragments = [match.group(0) for match in re.finditer(_NL_NUMBER + r'\s*(?:千赫兹|千赫|赫兹|兆赫|吉赫|[a-z]*hz)', text, re.I)]
+            freqs = _natural_quantities(fragments, 'frequency', '频率') if fragments else [50]
+        sources = numbers('source', 'length', '源深', [1000])
+        receiver = scalar('receiver', 'length', '接收深度', 1000)
+        ranges = numbers('range', 'length', '传播距离', [1000, 50000])
+        if len(ranges) == 1:
+            ranges = [1000, ranges[0]]
+        if len(ranges) != 2:
+            raise ValueError('距离须提供终点或起点与终点')
+        if any(not 10 <= value <= 200 for value in freqs):
+            raise ValueError('频率须在10–200Hz内，超范围值不会被替换为50Hz')
+        if len(set(freqs)) > 4 or len(set(sources)) > 3:
+            raise ValueError('最多4个频率、3个源深')
+        if any(not 0 < value < 5000 for value in sources) or not 0 < receiver < 5000:
+            raise ValueError('Munk源深和接收深度须在0到5000m之间')
+        if not .1 <= ranges[0] / 1000 < ranges[1] / 1000 <= 100:
+            raise ValueError('距离须满足0.1km≤起点<终点≤100km')
+        counts = {}
+        for field, label, default in [('range_points', '距离点数', 201), ('depth_points', '深度点数', 251)]:
+            value = scalar(field, 'count', label, default)
+            if value != int(value) or not 51 <= value <= 501:
+                raise ValueError(label + '须为51–501的整数')
+            counts[field] = int(value)
+        return {'type': 'kraken', 'frequencies_hz': sorted(set(freqs)), 'source_depths_m': sorted(set(sources)),
+            'receiver_depth_m': receiver, 'range_min_km': ranges[0] / 1000, 'range_max_km': ranges[1] / 1000,
+            **counts, 'template': 'munk_5000m'}
+    except (ValueError, TypeError) as error:
+        return reject('参数未通过离线解析：' + str(error))
 
-    start_t = time.time()
+
+async def wait_for_simulation_jobs(job_ids, timeout=150):
+    """Read real states; waiting expiration does not mean solver failure."""
+    deadline = time.monotonic() + max(0, timeout)
     results = []
     for jid in job_ids:
-        while time.time() - start_t < timeout:
-            jinfo = job(jid)
-            if jinfo['state'] in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
+        while True:
+            info = job(jid)
+            if info['state'] not in ('QUEUED', 'RUNNING') or time.monotonic() >= deadline:
                 break
-            await asyncio.sleep(1.0)
-        jinfo = job(jid)
-        folder = run_dir(jid)
-        item = {
-            'job_id': jid,
-            'state': jinfo['state'],
-            'plan': jinfo['plan'],
-            'error': jinfo.get('error')
-        }
-        if jinfo['state'] == 'SUCCEEDED':
-            sum_path = folder / 'summary.json'
-            if sum_path.exists():
-                item['summary'] = json.loads(sum_path.read_text(encoding='utf-8'))
-            item['tl_map_url'] = f"/api/jobs/{jid}/artifact/tl_map.png"
-            item['tl_curve_url'] = f"/api/jobs/{jid}/artifact/tl_curve.png"
-            item['download_url'] = f"/api/jobs/{jid}/download"
+            await asyncio.sleep(min(1, max(0, deadline - time.monotonic())))
+        item = {'job_id': jid, 'state': info['state'], 'plan': info['plan'], 'error': info.get('error')}
+        if info['state'] == 'SUCCEEDED':
+            folder = run_dir(jid)
+            required = ['summary.json', 'result.json', 'tl_map.png', 'tl_curve.png']
+            missing = [name for name in required if not (folder / name).is_file() or not (folder / name).stat().st_size]
+            try:
+                if missing:
+                    raise ValueError('缺少本次产物：' + ', '.join(missing))
+                summary = json.loads((folder / 'summary.json').read_text(encoding='utf-8-sig'))
+                if not isinstance(summary, dict):
+                    raise ValueError('summary.json不是结果对象')
+                for name in ['tl_map.png', 'tl_curve.png']:
+                    with (folder / name).open('rb') as stream:
+                        if stream.read(8) != b'\x89PNG\r\n\x1a\n':
+                            raise ValueError(name + '不是PNG')
+                item.update(summary=summary, tl_map_url=f'/api/jobs/{jid}/artifact/tl_map.png',
+                            tl_curve_url=f'/api/jobs/{jid}/artifact/tl_curve.png',
+                            download_url=f'/api/jobs/{jid}/download')
+            except (ValueError, OSError, UnicodeError) as error:
+                item['output_error'] = str(error)
         results.append(item)
-    return {'status': 'success', 'results': results}
+    if results and all(item['state'] == 'SUCCEEDED' and not item.get('output_error') for item in results):
+        return {'status': 'success', 'state': 'SUCCEEDED', 'results': results}
+    failed = [item for item in results if item['state'] not in ('SUCCEEDED', 'QUEUED', 'RUNNING') or item.get('output_error')]
+    if failed:
+        return {'status': 'error', 'state': 'FAILED', 'error': '部分任务失败、取消、中断或缺少有效产物；以每个任务记录为准。', 'results': results}
+    return {'status': 'pending', 'state': 'RUNNING', 'message': '任务仍在排队或运行；本次等待已结束，未报告计算成功，也未重复提交。', 'results': results}
+
+
+async def execute_simulation_and_wait(plan_data: dict, timeout: int = 150) -> dict:
+    try:
+        if not isinstance(plan_data, dict) or set(plan_data) - set(Plan.model_fields) - {'type'}:
+            raise ValueError('仅接受已登记的Munk参数，未忽略未知字段')
+        if plan_data.get('type', 'kraken') != 'kraken':
+            raise ValueError('此入口仅执行Munk KRAKEN')
+        p = Plan(**{key: value for key, value in plan_data.items() if key != 'type'})
+        p.checked()
+        sub = submit(p, Request({'type': 'http', 'headers': []}))
+    except Exception as error:
+        return {'status': 'error', 'error': '参数校验或任务提交失败：' + str(error), 'results': []}
+    ids = sub.get('ids', [])
+    if not ids:
+        return {'status': 'error', 'error': '任务提交失败，未生成任务标识', 'results': []}
+    return await wait_for_simulation_jobs(ids, timeout)
+
+
+def simulation_succeeded(value):
+    """A status word alone cannot establish completion of an inner task."""
+    if not isinstance(value, dict) or value.get('error') or value.get('status') not in (None, 'success', 'succeeded'):
+        return False
+    if 'results' in value:
+        rows = value['results']
+        return bool(rows) and all(isinstance(row, dict) and row.get('state') == 'SUCCEEDED' and not row.get('error') and not row.get('output_error') for row in rows)
+    return value.get('state') == 'SUCCEEDED'
+
+
+def format_ocean_simulation_reply(intent, result):
+    def number(value, digits=2):
+        return f'{value:.{digits}f}' if isinstance(value, (float, int)) and not isinstance(value, bool) and math.isfinite(value) else '未提供'
+    headline = '仿真已完成，实际产物已核对' if simulation_succeeded(result) else '仿真仍在排队或运行，尚未完成' if result.get('status') == 'pending' else '仿真未全部成功'
+    lines = ['### ' + headline,
+        '- 模型：KRAKEN，Munk 5000m理想深海模板；不是指定真实海域。',
+        '- 频率：' + ', '.join(f'{value:g} Hz' for value in intent['frequencies_hz']),
+        '- 源深：' + ', '.join(f'{value:g} m' for value in intent['source_depths_m']),
+        f"- 接收深度：{intent['receiver_depth_m']:g} m；距离：{intent['range_min_km']:g}–{intent['range_max_km']:g} km。",
+        '- 未说明的参数使用上述课程示例默认值；它们不代表原题已提供所有物理条件。']
+    if result.get('error'):
+        lines.append(result['error'])
+    for row in result.get('results', []):
+        jid, state = row['job_id'], row['state']
+        lines += ['', f'#### 任务 {jid} · {state}']
+        if state in ('QUEUED', 'RUNNING'):
+            lines.append('任务尚未完成。可在“任务与结果”继续查看；本次等待结束不等于计算失败。')
+        elif row.get('output_error'):
+            lines.append('任务虽标记完成，但产物核对未通过：' + row['output_error'])
+        elif state != 'SUCCEEDED':
+            lines.append('任务未成功：' + str(row.get('error') or state))
+        else:
+            summary = row['summary']
+            lines += [
+                '- 实际接收深度：' + number(summary.get('actual_receiver_depth_m')) + ' m。',
+                '- 中位/最小/最大传播损失：' + ' / '.join(number(summary.get(key)) for key in ['tl_median_db', 'tl_min_db', 'tl_max_db']) + ' dB。',
+                '- 有效网格比例：' + (number(summary['valid_ratio'] * 100) + '%' if isinstance(summary.get('valid_ratio'), (float, int)) else '未提供') + '。',
+                f"![传播损失声场图]({row['tl_map_url']})",
+                f"![接收深度传播损失曲线]({row['tl_curve_url']})",
+                f"[下载本次实际结果包]({row['download_url']})"]
+    lines += ['', '执行成功与彩图不证明收敛或物理精度；未做独立基准和真实海域验证，不从模板名称或曲线起伏推断未经计算的机理。']
+    return '\n\n'.join(lines)
 
 
 async def chat(body:Chat):
@@ -444,42 +574,11 @@ async def chat(body:Chat):
 
         elif sim_intent.get('type') == 'kraken':
             sim_res = await execute_simulation_and_wait(sim_intent)
-            if sim_res.get('status') == 'success':
-                lines = [
-                    "### 🌊 海洋声学仿真智能体已自动解析并执行任务",
-                    "**任务拆解与参数提取**：",
-                    f"- **频率组合**：{', '.join(f'{f:g} Hz' for f in sim_intent['frequencies_hz'])}",
-                    f"- **声源深度**：{', '.join(f'{z:g} m' for z in sim_intent['source_depths_m'])}",
-                    f"- **接收深度**：{sim_intent['receiver_depth_m']:g} m",
-                    f"- **计算距离**：{sim_intent['range_min_km']:g} ~ {sim_intent['range_max_km']:g} km",
-                    "- **声场模型**：KRAKEN 简正波求解器（Munk 5000m 理想深海声道剖面）",
-                    ""
-                ]
-                for r in sim_res['results']:
-                    jid = r['job_id']
-                    if r['state'] == 'SUCCEEDED':
-                        s = r.get('summary', {})
-                        lines.extend([
-                            f"#### 📊 仿真结果 [任务 ID: {jid}]",
-                            f"- **计算工况**：频率 {r['plan'].get('frequency_hz')} Hz | 声源深度 {r['plan'].get('source_depth_m')} m | 实际接收深度 {s.get('actual_receiver_depth_m')} m",
-                            f"- **统计指标**：中位传播损失 **{s.get('tl_median_db', 0):.2f} dB** | 最小损失 **{s.get('tl_min_db', 0):.2f} dB** | 最大损失 **{s.get('tl_max_db', 0):.2f} dB**",
-                            f"- **有效网格**：{s.get('valid_ratio', 1.0)*100:.1f}% 有效点（忽略海面近零声压残差）",
-                            "",
-                            f"![传播损失声场分布图]({r['tl_map_url']})",
-                            f"![接收深度传播损失曲线]({r['tl_curve_url']})",
-                            "",
-                            "💡 **物理机理分析**：",
-                            "1. 本次采用理想 Munk 剖面，声源位置与各模态激励共同影响结果；不能只凭模板名称判断本次声能是否避开边界。",
-                            ('2. 本次为相干模态叠加，场中可以包含模态相位干涉。' if s.get('mode_addition')=='coherent' else '2. 本次为非相干模态叠加，不将曲线起伏解释为已计算的相干模态干涉。'),
-                            "3. 以上为执行与结果统计；尚未做网格收敛、独立基准或真实海域验证，不从彩图直接推断固定干涉周期或传播优势。",
-                            f"[📥 下载本次完整仿真结果包]({r['download_url']})",
-                            ""
-                        ])
-                    else:
-                        lines.append(f"❌ 任务 {jid} 运行失败：{r.get('error')}")
-                reply = '\n'.join(lines)
-                with connect() as c:c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',(body.session,'assistant',reply,stamp()))
-                return {'reply':reply,'model_used':False,'evidence_ids':[e['id'] for e in evidence]}
+            reply = format_ocean_simulation_reply(sim_intent, sim_res)
+            with connect() as c:
+                c.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)', (body.session,'assistant',reply,stamp()))
+            return {'reply':reply,'model_used':False,'evidence_ids':[e['id'] for e in evidence],
+                    'execution_status':sim_res['status'],'results':sim_res.get('results',[])}
 
     # 模式二：未配置 API Key 且非仿真指令，回退到知识卡检索
     if not cfg.get('api_key'):
@@ -512,7 +611,7 @@ async def chat(body:Chat):
             "- 全场声传播损失 (TL) 与声强云图：首选 KRAKEN + field.exe 或 BELLHOP 'C' 模式，使用 plotshd 并反转色标 (caxisrev)。\n\n"
             "【阶段三：极速执行与出版级绘图要求】：\n"
             f"- Acoustics Toolbox 根目录已就绪: {tb_path}，已注入变量 tb 与环境变量 AT_PATH。严禁全盘搜索！\n"
-            "- 当需要仿真计算时，必须在第 1 轮直接调用 run_acoustic_code（选择 matlab）一步到位执行完整仿真脚本！\n"
+            "- 执行前核对用户的求解器、环境、数值与单位；缺少关键条件先询问，不能为追求首轮执行而猜测或替换。工具返回 pending/FAILED/CANCELLED/INTERRUPTED 时不得声称完成，须给出任务ID与实际状态。\n"
             "- 绘图要求：必须绘制具有科研出版物质量的双栏或多子图图表，包含专业坐标轴单位、网格、边界界面标记线、声源位置、图例及关键物理注释，使用 saveas(gcf, 'xxx.png') 保存。\n\n"
             "【阶段四：严谨理论归因与数学公式解析】：\n"
             "- 仿真完成后，必须在最终回复中结合波动理论给出深入、严谨的物理机制分析，绝不可只发图不解释！\n"
@@ -589,6 +688,7 @@ async def chat(body:Chat):
                 tool['function']['parameters']['properties'].update(offset={'type':'integer'},**({'limit':{'type':'integer'}} if tool['function']['name']=='list_project_files' else {'max_bytes':{'type':'integer'}}))
         try:
             last_generated_images = []
+            submitted_simulations = {}
             async with httpx.AsyncClient(timeout=180) as client:
                 for turn in range(10):
                     payload=models.chat_payload(cfg,msgs,tools)
@@ -601,8 +701,9 @@ async def chat(body:Chat):
                         provider_turn=msgs[protocol_start:]
                         break
                     msgs.append(result)
-                    has_successful_sim = False
+                    compute_results = []
                     for call in calls:
+                        fname = call.get('function', {}).get('name', '')
                         try:
                             args=json.loads(call['function']['arguments'])
                             fname=call['function']['name']
@@ -611,15 +712,22 @@ async def chat(body:Chat):
                             elif fname=='read_project_file':value=research_context.file_page(read_file(args['path']),args)
                             elif fname=='run_ray_simulation':
                                 value=execute_ray_job(args)
-                                if isinstance(value, dict) and value.get('ray_plot_url'):
+                                if simulation_succeeded(value) and value.get('ray_plot_url'):
                                     last_generated_images.append(value['ray_plot_url'])
                             elif fname=='run_acoustic_code':
                                 value=await asyncio.to_thread(execute_code_job,args.get('code',''), args.get('description',''), args.get('language','python'))
-                                if isinstance(value, dict) and value.get('image_urls'):
+                                if simulation_succeeded(value) and value.get('image_urls'):
                                     last_generated_images.extend(value['image_urls'])
                             elif fname=='run_ocean_simulation':
-                                value=await execute_simulation_and_wait(args)
-                                if isinstance(value, dict):
+                                key = json.dumps(args, sort_keys=True)
+                                if key in submitted_simulations:
+                                    value = await wait_for_simulation_jobs(submitted_simulations[key], timeout=0)
+                                    value['reused'] = True
+                                else:
+                                    value = await execute_simulation_and_wait(args)
+                                    if value.get('results'):
+                                        submitted_simulations[key] = [row['job_id'] for row in value['results']]
+                                if simulation_succeeded(value):
                                     for r_sim in value.get('results', []):
                                         if r_sim.get('tl_map_url'): last_generated_images.append(r_sim['tl_map_url'])
                                         if r_sim.get('tl_curve_url'): last_generated_images.append(r_sim['tl_curve_url'])
@@ -628,9 +736,8 @@ async def chat(body:Chat):
                         print(f"[Agent Turn {turn+1}] Result summary: {str(value)[:180]}")
                         msgs.append({'role':'tool','tool_call_id':call['id'],'content':json.dumps(value,ensure_ascii=False)})
                         if fname in ['run_acoustic_code', 'run_ray_simulation', 'run_ocean_simulation']:
-                            if isinstance(value, dict) and (value.get('state') == 'SUCCEEDED' or value.get('status') == 'success'):
-                                has_successful_sim = True
-                    if has_successful_sim:
+                            compute_results.append(value)
+                    if compute_results and all(simulation_succeeded(value) for value in compute_results):
                         # 仿真已成功完成并生成数据，下一轮强制关闭工具调用，令模型直接输出图表解析与总结
                         tools = None
                         img_note = "\n".join(f"- 图片地址: `{img}`" for img in last_generated_images)

@@ -63,12 +63,55 @@ class ResearchAPI(unittest.TestCase):
         self.assertIn('get_ocean_profile',seen['tools']);self.assertIn('read_material_page',seen['tools'])
         rows=self.client.get('/api/research/history',params={'session':session}).json()
         self.assertEqual(len(rows),42);self.assertEqual(rows[0]['text'],'message 0')
+    def test_completed_reply_is_committed_before_terminal_state_is_published(self):
+        from contextlib import contextmanager
+        service=self.module.RESEARCH
+        identity='commit-before-done'
+        observed=[]
+        original=self.module.STORE.connection
+        class Probe:
+            def __init__(self,db):self.db=db;self.assistant_insert=False
+            def __getattr__(self,name):return getattr(self.db,name)
+            def execute(self,sql,parameters=()):
+                if sql.startswith('INSERT INTO messages') and len(parameters)>1 and parameters[1]=='assistant':self.assistant_insert=True
+                return self.db.execute(sql,parameters)
+        @contextmanager
+        def connection(*args,**kwargs):
+            with original(*args,**kwargs) as db:
+                probe=Probe(db)
+                yield probe
+                if probe.assistant_insert:observed.append(service.runs[identity]['state'])
+        async def provider(*args,**kwargs):return 'A complete persisted answer'
+        with patch.object(self.module.STORE,'connection',side_effect=connection),patch('research_api.dsh_bridge.run',side_effect=provider):
+            response=self.client.post('/api/research/chat',json={'session':'commit-order-session','request_id':identity,'message':'read-only commit ordering','backend':'dsh'})
+            self.assertEqual(response.status_code,200,response.text)
+            deadline=time.monotonic()+5
+            while time.monotonic()<deadline:
+                current=self.client.get('/api/research/runs/'+identity).json()
+                if current['state']!='running':break
+                time.sleep(.01)
+        self.assertEqual(observed,['running'])
+        self.assertEqual(current['state'],'done',current)
+        rows=self.client.get('/api/research/history',params={'session':'commit-order-session'}).json()
+        self.assertEqual(rows[-1]['text'],'A complete persisted answer')
     def test_secret_and_path_boundaries(self):
         for key in ['@workbench/.local/config.json','../config.json']:
             self.assertEqual(self.client.get('/api/project/file',params={'path':key}).status_code,403)
         functions={t['function']['name'] for t in self.module.RESEARCH.tools()}
         self.assertIn('prepare_model_research_task',functions);self.assertIn('get_ocean_profile',functions);self.assertIn('read_material_page',functions)
         for name in ['diagnose_ocean_layers','evaluate_acoustic_checks','audit_research_task']:self.assertIn(name,functions)
+    def test_fixed_job_http_and_model_tools_keep_field_and_receiver_scopes_distinct(self):
+        identity='aabbccddeeff';folder=self.local/'runs'/identity;folder.mkdir(parents=True)
+        summary={'tl_min_db':64.3,'tl_max_db':78.95,'actual_receiver_depth_m':1000,'shape':[51,51]}
+        (folder/'summary.json').write_text(json.dumps(summary),encoding='utf8')
+        (folder/'curve.csv').write_text('range_m,tl_db\n1000,64.3\n5000,71.32\n',encoding='utf8')
+        value={'id':identity,'state':'SUCCEEDED','created':'2026-11-03','plan':{'template':'munk_5000m','frequency_hz':50,'solver':'kraken'}}
+        with patch.object(self.module,'job',return_value=dict(value)):
+            result=self.client.get('/api/jobs/'+identity)
+        self.assertEqual(result.status_code,200);data=result.json()
+        self.assertEqual(data['field_statistics']['max_tl_db'],78.95)
+        self.assertEqual(data['receiver_curve_statistics']['max_tl_db'],71.32)
+        self.assertEqual(data['receiver_curve_statistics']['actual_receiver_depth_m'],1000)
     def test_canonical_diagnostic_can_archive_and_legacy_report_cannot_forge_verification(self):
         engine=self.engine();created=asyncio.run(engine.execute('create_research_task',{'title':'Layer fixture','objective':'MLD from a frozen profile'}));identity=created['id']
         profile={'selected':{'lon':120,'lat':20},'requested':{'lon':120,'lat':20},'period':16,

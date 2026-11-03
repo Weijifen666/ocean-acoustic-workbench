@@ -2,7 +2,7 @@
 
 本教程面向 Windows 本机使用。完成基础安装后，先选择“模型 API”或“DSH Harness”接入，再按需要配置 MATLAB/AT 和课程教材。公共网站只接模型 API；本地工作台保留两种研究后端，二者使用同一套领域 Skill 和计算工具。
 
-本文对应待验收分支 `feat/dual-workbench-execution`。该分支的新代码页尚未在正式网站发布；首次下载请使用下面指定分支的命令。浏览器 WASM 执行的实机验收状态见[分支验收记录](DUAL_WORKBENCH_ACCEPTANCE.md)。
+本文对应包含代码工作台与图谱Agent工具的main版本。真实浏览器Python与本机MATLAB使用链路已实测，范围见[功能验收状态](DUAL_WORKBENCH_ACCEPTANCE.md)。
 
 运行数据只保存在你自己的 `.local/`。原始教材、MATLAB、AT 求解器及 DSH 程序不随 GitHub 源码分发。
 
@@ -35,7 +35,7 @@ git --version
 在准备存放项目的目录执行：
 
 ```powershell
-git clone --branch feat/dual-workbench-execution https://github.com/Weijifen666/ocean-acoustic-workbench.git ocean-acoustic-course
+git clone --branch main https://github.com/Weijifen666/ocean-acoustic-workbench.git ocean-acoustic-course
 Set-Location .\ocean-acoustic-course\ocean-acoustic-workbench
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
@@ -207,7 +207,7 @@ Invoke-RestMethod 'http://127.0.0.1:8765/api/research/capabilities'
 
 需要直接编辑时，先打开“代码与分析”。载入Python示例、展开输入CSV并点击“运行Python”，检查标准输出、PNG与JSON下载。代码最多50,000字节，CSV最多100,000字节；超限先取数据子集。点击“让AI检查或修改”，模型可按草稿ID读取当前内容，保存修改仍需匹配修订号，防止覆盖其他窗口的更新。
 
-本轮本机Python与MATLAB读取CSV、生成CSV/PNG已实测，浏览器WASM入口仍待实际浏览器验收。此处给出使用与复验步骤，不把构建通过当作浏览器执行通过。新增代码功能以待验收分支为准，当前公共站点未必已部署。
+本轮已实际通过浏览器Python示例（6个样本、JSON与PNG）、10秒超时、初始化/运行中停止，以及本机Python/MATLAB读取CSV和输出CSV/PNG。网页本机任务可从“任务与结果”取消。Python输入CSV是全局变量input_csv/INPUT_CSV中的文本，也可读input.csv，不能当作环境变量或文件路径。
 
 浏览器计算使用WASM/Pyodide，首次需下载并校验约27MB公开运行依赖；随后在禁用网络的隔离线程内执行，只接收明确载入的CSV。支持Python标准库、NumPy与Matplotlib，不提供任意pip安装、MATLAB/AT二进制或本机磁盘访问。它会占用当前设备的浏览器资源，与云端大模型推理是两件事。可选10/20/60秒运行上限，点击停止会终止该计算线程。保存的是浏览器运行回执，不能据此声称服务端复算或物理精度已获证明。
 

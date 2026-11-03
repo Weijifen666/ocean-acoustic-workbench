@@ -1,4 +1,4 @@
-// Executed only as a Blob module Worker inside an opaque, network-disabled frame.
+// Executed only as a Blob classic Worker inside an opaque, network-disabled frame.
 // Runtime bytes have already been pinned and verified by the parent application.
 let python;
 const encoder = new TextEncoder();

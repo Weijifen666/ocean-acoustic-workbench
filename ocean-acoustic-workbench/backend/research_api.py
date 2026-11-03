@@ -4,12 +4,15 @@ The public gateway does not proxy these routes. Model scripts run only after
 an explicit local research request; no source DB or credentials are migrated.
 """
 import asyncio
+import csv
 import hashlib
 import inspect
 import json
+import math
 from pathlib import Path
 import subprocess
 import os
+import statistics
 import threading
 import time
 import agent_context, materials, ocean_data, dsh_bridge, context_budget, task_files
@@ -153,6 +156,34 @@ class ResearchService:
         value['events'] = []
         return value
 
+    def fixed_job_statistics(self, identity, value):
+        """Label actual field and receiver scopes separately for model tools."""
+        plan=value.get('plan') or {}
+        if (plan.get('task_type') or plan.get('kind')=='research' or plan.get('template') not in ('munk_5000m','constant_5000m','pekeris_100m','woa18') or 'frequency_hz' not in plan):return {}
+        if value.get('state')!='SUCCEEDED' or not isinstance(value.get('summary'),dict):return {}
+        summary=value['summary'];result={}
+        if any(key in summary for key in ('tl_min_db','tl_median_db','tl_max_db')):
+            result['field_statistics']={'scope':'full_depth_range_field','source_file':'summary.json','tl_unit':'dB',
+                **{target:summary[source] for source,target in [('tl_min_db','min_tl_db'),('tl_median_db','median_tl_db'),('tl_max_db','max_tl_db'),('shape','shape'),('valid_ratio','valid_ratio')] if summary.get(source) is not None},
+                'missing_samples_excluded':True,'note':'全深度×距离网格的有效值统计，不能当作某一接收深度的曲线统计。'}
+        curve={'scope':'receiver_depth_range_curve','source_file':'curve.csv','available':False,'tl_unit':'dB','range_unit':'m',
+            **{key:summary[key] for key in ('requested_receiver_depth_m','actual_receiver_depth_m') if summary.get(key) is not None}}
+        result['receiver_curve_statistics']=curve
+        try:
+            folder=task_files.directory(self.local/'runs',identity);path=folder/'curve.csv'
+            if not path.is_file():curve['reason']='curve_file_missing';return result
+            if path.is_symlink() or path.resolve().parent!=folder or path.stat().st_size>100000:raise ValueError('Invalid curve file')
+            raw=path.read_bytes();reader=csv.DictReader(raw.decode('utf-8-sig').splitlines())
+            if reader.fieldnames!=['range_m','tl_db']:raise ValueError('Invalid curve columns')
+            samples=[(float(row['range_m']),float(row['tl_db'])) for row in reader]
+            if not samples or any(not math.isfinite(r) or not math.isfinite(tl) for r,tl in samples) or any(samples[i][0]<=samples[i-1][0] for i in range(1,len(samples))):raise ValueError('Invalid curve samples')
+            values=[tl for _,tl in samples]
+            curve.update(available=True,source_sha256=hashlib.sha256(raw).hexdigest(),sample_count=len(samples),
+                range_min_m=samples[0][0],range_max_m=samples[-1][0],min_tl_db=min(values),median_tl_db=statistics.median(values),max_tl_db=max(values),
+                note='仅适用于上述实际接收深度的距离曲线；完整曲线可用read_project_file读取@runs/'+identity+'/curve.csv。')
+        except (OSError,ValueError,UnicodeError,KeyError,TypeError):curve['reason']='curve_file_invalid'
+        return result
+
     async def execute(self, engine, name, args, run=None):
         if name in self.graph_names:
             result=self.graph.execute(name,args)
@@ -166,7 +197,11 @@ class ResearchService:
         if name=='list_project_files':return research_context.file_directory(project_browser.list_files(self.root,project,self.local,self.store.list()+self.jobs()),args)
         if name=='read_project_file':return research_context.file_page(project_browser.read_file(self.root,project,self.local,args['path'],lambda identity:self.get(identity) or self.store.get(identity)),{'max_bytes':6000,**args})
         if name=='list_jobs':return [agent_context.compact(v) for v in sorted(self.store.list()+self.jobs(),key=lambda v:v['created'],reverse=True)[:100]]
-        if name=='get_job':return agent_context.compact(self.details(args['id']) if self.get(args['id']) else self.fixed_details(args['id']),True)
+        if name=='get_job':
+            research=self.get(args['id'])
+            value=self.details(args['id']) if research else self.fixed_details(args['id'])
+            scopes={key:value[key] for key in ('field_statistics','receiver_curve_statistics') if key in value}
+            return {**agent_context.compact(value,True),**({} if research else scopes or self.fixed_job_statistics(args['id'],value))}
         if name=='get_batch':return self.fixed_batch(args['id'])
         if name=='search_knowledge':return self.search(args['query'])
         if name=='list_research_skills':return research_skills.catalog()
@@ -275,10 +310,11 @@ class ResearchService:
                         return choice['message']
                     reply=await agent_loop.run(request,packed['messages'],tools,execute,body.rounds,run['stop'],run['trace'])
                     provider_turn=packed['messages'][protocol_start:]
-            run.update(state='stopped' if run['stop'].is_set() else 'done',reply=reply,partial=reply,stage='研究请求已结束')
             with self.store.connection() as db:
                 assistant_id=db.execute('INSERT INTO messages(session,role,text,created,metadata) VALUES(?,?,?,?,?)',('research:'+body.session,'assistant',reply,persistence.now(),json.dumps({'research_agent':True,'trace':run['trace']}))).lastrowid
                 if provider_turn and not run['stop'].is_set():provider_history.save(db,assistant_id,'research:'+body.session,cfg,provider_turn)
+            # Publish terminal state only after the completed reply is committed.
+            run.update(state='stopped' if run['stop'].is_set() else 'done',reply=reply,partial=reply,stage='研究请求已结束')
         except Exception as exc:
             if run.get('partial'):
                 with self.store.connection() as db:db.execute('INSERT INTO messages(session,role,text,created) VALUES(?,?,?,?)',('research:'+body.session,'assistant',run['partial']+'\n\n请求未完成，请核对已有结果后继续。',persistence.now()))

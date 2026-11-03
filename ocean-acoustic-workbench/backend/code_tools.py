@@ -16,7 +16,11 @@ def tool_specs():
 
 def metadata(value):
     return {**{key:value.get(key) for key in ('id','title','language','revision','code_sha256','input_sha256')},
-            'workspace_url':'/#code/'+value['id']}
+            'workspace_url':'/#code/'+value['id'],'input_contract':{
+                'format':'UTF-8 CSV text','variables':['input_csv','INPUT_CSV'],
+                'delivery':'python_module_globals' if value.get('language')=='python' else 'matlab_workspace_variables',
+                'environment_variable':False,'working_directory_file':'input.csv','requires_explicit_run':True,
+                'note':'使用注入变量中的CSV文本，或读取input.csv；不要依赖os.environ/getenv取得CSV。保存源码不会执行。'}}
 
 
 def text_page(content,args):

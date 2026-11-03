@@ -59,6 +59,10 @@ class IntegratedAgents(unittest.TestCase):
         identity = 'abcdef123456'
         folder = self.local / 'runs' / identity
         folder.mkdir(parents=True)
+        (folder/'summary.json').write_text('{}', encoding='utf-8')
+        (folder/'result.json').write_text('{}', encoding='utf-8')
+        for name in ['tl_map.png','tl_curve.png']:
+            (folder/name).write_bytes(b'\x89PNG\r\n\x1a\n')
         plan = {'frequencies_hz':[50.0], 'source_depths_m':[1000.0],
                 'receiver_depth_m':1000.0, 'range_min_km':1.0,
                 'range_max_km':50.0, 'range_points':201, 'depth_points':251}

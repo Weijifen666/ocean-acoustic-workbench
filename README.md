@@ -4,6 +4,21 @@
 
 **本项目仅用于四人小组的海洋声学课程作业与教学展示，无任何商业用途。**
 
+
+## 使用与配置入口
+
+当前公网部署为**第22版（2026-11-03）**，应用版本号仍为v0.7；代码与配置教程均位于本仓库的`main`分支。
+
+| 你要做什么 | 从这里开始 |
+| --- | --- |
+| 直接使用公网网站 | [打开工作台](https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site/) → “模型与环境”选择供应商、填写自己的API Key、测试并保存。MATLAB仿真使用共享计算节点，需节点在线。 |
+| 在自己电脑运行完整Agent与MATLAB | **[Windows本地完整配置教程](docs/LOCAL_SETUP.md)**：下载源码、安装依赖、初始化、API或DSH配置、MATLAB/AT与工程目录、启动、小算例及排障。 |
+| 理解API、DSH与Skill如何配合 | [Agent后端与执行范围](docs/AGENT_BACKENDS.md)。本地可用API或DSH，两者共用领域Skill；公网使用API。 |
+| 自行部署或维护公网版本 | [部署教程](docs/DEPLOYMENT.md)及[公共工作台与本地节点说明](docs/PUBLIC_WORKBENCH_SYNC.md)。 |
+
+MATLAB、AT、DSH程序、私有教材和个人Key需按所选功能自行准备，不随源码下载。验证MATLAB时，先检查路径，再实际运行示例，到“任务与结果”查看成功状态、日志与输出图片；路径检查通过不等于已经运行成功。
+
+
 API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型依据见 [Agent 后端说明](docs/AGENT_BACKENDS.md)。本地完整应用默认 DSH；公共网站默认个人模型 API，两者的工具权限不同。
 
 2026-11-03 第22版已发布：正文与控件字号放大约18%；“MATLAB 与代码”默认MATLAB，Python保留为可选辅助分析。原来打不开的28张原页引用属于未提供原件的S21–S24课件；现69知识点均有原创原理示意，并补充已核实教材页，缺原件单独提示。真实MATLAB启动自检任务7d129b357c19已通过；公网表单实际提交b091fc34424c并完成101×101声场及诊断图，见[发布复验](docs/validation/2026-11-03/deployment-v22.json)和[实测记录](docs/validation/2026-11-03/graph-matlab-ui-checks.json)。

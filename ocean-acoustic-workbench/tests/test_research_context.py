@@ -11,6 +11,39 @@ import research_context
 
 
 class ResearchContext(unittest.TestCase):
+    def test_latest_skill_page_json_formatting_does_not_consume_its_evidence_budget(self):
+        # The installed path varies between clones. At a tight budget retain
+        # every actual page value and the full tool schema, rather than losing
+        # the answer because JSON separators carry avoidable spaces.
+        page={'skill':'at-environment','path':'references/casebook.json',
+              'local_path':'C:/课程项目🌊/'+'long-worktree-folder/'*12+'references/casebook.json',
+              'content':'真实算例片段，缺测状态不得填值。\n'*60,'sha256':'1'*64,
+              'offset':0,'next_offset':1200,'returned_bytes':3600,'total_bytes':120000,
+              'has_more':True,'complete':False,'content_format':'text_fragment'}
+        page.update(next_offset=len(page['content']),returned_bytes=len(page['content'].encode('utf-8')))
+        call={'id':'latest-skill','function':{'name':'read_skill_resource','arguments':'{"id":"at-environment","path":"references/casebook.json"}'}}
+        tools=[{'type':'function','function':{'name':'read_skill_resource','parameters':{'type':'object',
+                'properties':{'id':{'type':'string'},'path':{'type':'string'},'offset':{'type':'integer'}},'required':['id','path']}}}]
+        messages=[{'role':'system','content':'required instructions'}, {'role':'user','content':'Read the actual complete page and its source'},
+                  {'role':'assistant','content':None,'reasoning_content':'opaque private continuation','tool_calls':[call]},
+                  {'role':'tool','tool_call_id':'latest-skill','content':json.dumps(page,ensure_ascii=False,indent=2)}]
+        compact=copy.deepcopy(messages);compact[-1]['content']=json.dumps(page,ensure_ascii=False,separators=(',',':'))
+        limit=context_budget.resolve_budget('auto')-context_budget.CONTEXT_RESERVE
+        padding='x'*(limit-context_budget.estimate_messages(compact,tools)-1)
+        messages[0]['content']+=padding;compact[0]['content']+=padding
+        original=copy.deepcopy(messages)
+        original_tools=copy.deepcopy(tools)
+        self.assertGreater(context_budget.estimate_messages(messages,tools),limit)
+        packed=research_context.prepare(messages,tools,'auto',current_user_index=1)
+        self.assertLessEqual(packed['context']['estimated_input_tokens'],limit)
+        self.assertEqual(json.loads(packed['messages'][-1]['content']),page)
+        self.assertEqual(packed['messages'][:-1],original[:-1])
+        self.assertEqual(packed['messages'][-1]['tool_call_id'],'latest-skill')
+        self.assertEqual(packed['context']['dropped_tool_messages'],0)
+        self.assertEqual(packed['context']['compacted_tool_messages'],0)
+        self.assertEqual(messages,original,'Provider projection cannot rewrite stored protocol')
+        self.assertEqual(tools,original_tools,'Full tool definitions cannot be clipped to meet the budget')
+
     def test_directory_pages_keep_total_and_valid_continuations(self):
         source={'root':'authorized','files':[{'path':f'file-{i}.m'} for i in range(45)]}
         first=research_context.file_directory(source,{})

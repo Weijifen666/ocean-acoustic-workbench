@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build"
+    "build": "vite build",
+    "test:dialogue": "node tests/check_dialogue_completion.mjs"
   },
   "dependencies": {
     "cytoscape": "^3.33.1",
@@ -24,6 +25,7 @@
     "katex": "$katex"
   },
   "devDependencies": {
+    "react-test-renderer": "19.3.0",
     "vite": "^7.1.0"
   }
 }

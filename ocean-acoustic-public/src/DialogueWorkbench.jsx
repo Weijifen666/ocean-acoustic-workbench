@@ -1,5 +1,6 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {Waves,ArrowUp,BookOpen,Download,Trash2,Undo2,Copy,Loader2,Square,Settings2,FlaskConical,X} from 'lucide-react';
+import {Waves,ArrowUp,BookOpen,Download,Trash2,Undo2,Loader2,Square,Settings2,FlaskConical,X} from 'lucide-react';
+import DialogueMessage from '../../ocean-acoustic-workbench/src/DialogueMessage';
 import ChatMessage from './ChatMessage';
 import JobExports from './JobExports';
 import GraphSelection from './GraphSelection';
@@ -8,6 +9,7 @@ import ModelSkillPicker from './ModelSkillPicker';
 import QuestionSuggestions from './QuestionSuggestions';
 import {serializeChat} from './chatExport';
 import './dialogue-workbench.css';
+import '../../ocean-acoustic-workbench/src/dialogue-bubbles.css';
 import {researchRounds,contextBudgetChoices,normalizeResearchBudget,estimateVisibleResearchInput,researchContextNotes} from './cloudWorkbench';
 
 async function api(path,body,method){
@@ -55,12 +57,29 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
  useEffect(()=>{loadSessions()},[]);
  useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');setKnowledgeNodes([]);
-  Promise.all([api('history?session='+encodeURIComponent(session)),api('active?session='+encodeURIComponent(session)),api('capabilities')]).then(([rows,current,capabilities])=>{if(!alive)return;setMessages(rows);setRun(current);setError(current?.error||'');setCap(capabilities);setContextBudget(old=>String(normalizeResearchBudget(old,capabilities.context_budgets)));setRounds(old=>String(researchRounds(old,capabilities.max_rounds)));if(current?.state==='running'&&current.backend==='api')chooseBackend('api')}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
+  const load=async()=>{
+   const [current,capabilities]=await Promise.all([api('active?session='+encodeURIComponent(session)),api('capabilities')]);
+   if(!alive)return;
+   // A terminal snapshot must be paired with history read after that snapshot.
+   const rows=await api('history?session='+encodeURIComponent(session));
+   if(!alive)return;setMessages(rows);setRun(current);setError(current?.error||'');setCap(capabilities);setContextBudget(old=>String(normalizeResearchBudget(old,capabilities.context_budgets)));setRounds(old=>String(researchRounds(old,capabilities.max_rounds)));if(current?.state==='running'&&current.backend==='api')chooseBackend('api')
+  };
+  load().catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
  },[session]);
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
  useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);try{setKnowledgeNodes(normalizeKnowledgeSelection(draft.knowledge_nodes||[]))}catch(error){setError(error.message)}follow.current=true}},[draft]);
- useEffect(()=>{if(run?.state!=='running'||budgetPaused)return;let alive=true,pending=false;
-  const poll=async()=>{if(pending)return;pending=true;try{const current=await advanceResearchRun(run.id,cap?.execution_mode);if(!alive)return;setRun(current);setError(current.error||'');if(current.state!=='running'){const rows=await api('history?session='+encodeURIComponent(session));if(alive){setMessages(rows);loadSessions()}}}catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
+ useEffect(()=>{if(run?.state!=='running'||budgetPaused)return;let alive=true,pending=false,terminal=null;
+  const poll=async()=>{if(pending)return;pending=true;try{
+   const current=terminal||await advanceResearchRun(run.id,cap?.execution_mode);if(!alive)return;
+   if(current.state!=='running'){
+    // Once finished, a failed history read retries only history. It must not
+    // advance another paid model/tool step while waiting to display the answer.
+    terminal=current;
+    const rows=await api('history?session='+encodeURIComponent(session));if(!alive)return;
+    setMessages(rows);loadSessions()
+   }
+   setError(current.error||'');setRun(current)
+  }catch(e){if(alive)setError('连接暂时中断，将继续重连：'+e.message)}finally{pending=false}};
   const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
  },[run?.id,run?.state,session,cap?.execution_mode,budgetPaused]);
  useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial&&!run?.exports?.length)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial,run?.exports?.length]);
@@ -68,7 +87,7 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
   if(backend==='api'&&(!Number.isInteger(Number(rounds))||Number(rounds)<0||Number(rounds)>(cap?.max_rounds||1000)||rounds==='')){setError('工具轮数请填 0–'+(cap?.max_rounds||1000)+' 的整数，0 表示不限');return}
   sending.current=true;setSubmitting(true);setError('');follow.current=true;
   const message=text;
-  try{const result=await startResearchRun({session,request_id:crypto.randomUUID(),message,rounds,contextBudget,knowledgeNodes},cap);setRun({...result,id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');onDraftConsumed?.(draft?.id);localStorage.removeItem('ocean-cloud-research-v1-previous');setPrevious('')}
+  try{const result=await startResearchRun({session,request_id:crypto.randomUUID(),message,rounds,contextBudget,knowledgeNodes},cap);setRun({...result,id:result.id,state:'running',backend,stage:'准备请求',trace:[]});setMessages(rows=>[...rows,{role:'user',text:message}]);setText('');setKnowledgeNodes([]);onDraftConsumed?.(draft?.id);localStorage.removeItem('ocean-cloud-research-v1-previous');setPrevious('')}
   catch(e){setError(e.message)}finally{sending.current=false;setSubmitting(false)}
   loadSessions();
  }
@@ -107,9 +126,9 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
    <GraphSelection nodes={knowledgeNodes} disabled={busy} onRemove={id=>{setKnowledgeNodes(rows=>rows.filter(row=>row.id!==id));onDraftConsumed?.(draft?.id)}} onClear={()=>{setKnowledgeNodes([]);onDraftConsumed?.(draft?.id)}}/>
    <div className="dialogue-messages" role="log" aria-label="聊天记录" ref={scroll} onScroll={e=>{const el=e.currentTarget;follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<100}}>
     {!loading&&!messages.length&&<div className="dialogue-welcome"><Waves size={36}/><h2>从一个声学问题开始</h2><p>从资料与真实环境数据开始，区分研究计划、已执行工具和待验证结论。</p><QuestionSuggestions mode="agent" onSelect={setText}/></div>}
-    {messages.map((row,i)=><article className={'dialogue-message '+row.role} key={row.id||i}><div className="dialogue-avatar">{row.role==='user'?'我':<Waves size={17}/>}</div><div className="dialogue-content"><div className="dialogue-message-label">{row.role==='user'?'你':'海洋声学 Agent'}<button aria-label={'复制第'+(i+1)+'条消息'} title="复制消息" onClick={()=>copy(row.text)}><Copy size={14}/></button></div>{row.role==='user'?<div className="dialogue-user-text">{row.text}</div>:<><ChatMessage text={row.text}/><JobExports items={row.exports}/></>}</div></article>)}
-    {busy&&run?.partial&&<article className="dialogue-message"><div className="dialogue-avatar"><Waves size={17}/></div><div className="dialogue-content"><div className="dialogue-message-label">{labels[run.backend||backend]} · 正在回答</div><ChatMessage text={run.partial}/></div></article>}
-    {run?.state!=='done'&&run?.exports?.length>0&&<JobExports items={run.exports}/>}
+    {messages.map((row,i)=><DialogueMessage key={row.id||i} role={row.role} text={row.text} index={i} onCopy={copy} renderAnswer={value=><ChatMessage text={value}/>}>{row.role!=='user'&&row.exports?.length>0?<JobExports items={row.exports}/>:null}</DialogueMessage>)}
+    {busy&&<DialogueMessage role="assistant" text={run?.partial||''} streaming backend={run?.backend||backend} renderAnswer={value=><ChatMessage text={value}/>}>{run?.exports?.length>0?<JobExports items={run.exports}/>:null}</DialogueMessage>}
+    {!busy&&run?.state!=='done'&&run?.exports?.length>0&&<DialogueMessage role="assistant"><JobExports items={run.exports}/></DialogueMessage>}
    </div>
    {run?.trace?.length>0&&<details className="dialogue-trace"><summary>实际工具调用 · {run.trace.length} 次</summary><div>{run.trace.map((item,i)=><details key={i}><summary>{i+1}. {item.tool} · {item.status}</summary><pre>{JSON.stringify(item.arguments,null,2)}</pre></details>)}</div></details>}
    {busy&&<div className="dialogue-runtime" role="status"><Loader2 size={16} className="spin"/>{labels[run?.backend||backend]} · {run?.stage||'正在提交'}{run?.elapsed_seconds!=null&&` · ${run.elapsed_seconds} 秒`}{run?.model&&` · ${run.model}`}<button className="button" disabled={!run?.id} onClick={stop}><Square size={13}/>停止当前请求</button></div>}

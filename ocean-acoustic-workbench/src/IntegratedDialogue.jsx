@@ -41,7 +41,7 @@ function SimulationChat({openSettings, notify}) {
 export default function IntegratedDialogue(props) {
   const [mode, setMode] = useState('research');
   useEffect(() => {if (props.draft) setMode('research')}, [props.draft]);
-  return <div><nav aria-label="对话模式" className="panel-heading" style={{gap:12,marginBottom:12}}>{[['research','研究代理'],['simulation','自然语言仿真'],['course','课程问答']].map(([id,title]) => <button key={id} aria-pressed={mode === id} onClick={() => setMode(id)}>{title}</button>)}</nav>
+  return <div className="integrated-dialogue"><details className="integrated-dialogue-modes"><summary>其他对话入口</summary><nav aria-label="对话模式" className="panel-heading">{[['research','研究代理'],['simulation','自然语言仿真'],['course','课程问答']].map(([id,title]) => <button key={id} aria-pressed={mode === id} onClick={event => {setMode(id);event.currentTarget.closest('details').open=false}}>{title}</button>)}</nav></details>
     <div hidden={mode !== 'research'}><DialogueWorkbench {...props}/></div>
     <div hidden={mode !== 'simulation'}><SimulationChat {...props}/></div>
     <div hidden={mode !== 'course'}><CourseChat {...props}/></div>

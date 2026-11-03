@@ -126,3 +126,9 @@
 .dialogue-workbench .job-export-files>ul { max-height:160px; overflow:auto; overscroll-behavior:contain; list-style:none; padding:0 4px; margin:7px 0 0; }
 .dialogue-workbench .job-export-files li a { display:flex; align-items:center; gap:7px; padding:5px 0; font-size:calc(12px * var(--ui-font-scale, 1.18)); }
 .dialogue-workbench .job-export-files li span { overflow-wrap:anywhere; min-width:0; }
+
+/* Shared message bubbles also contain authenticated task export cards. */
+.dialogue-workbench .dialogue-bubble .job-exports { max-width:100%; margin:12px 0 0; }
+.dialogue-workbench .dialogue-bubble>.job-exports:first-child { margin-top:0; }
+.dialogue-workbench .dialogue-bubble .job-export-card { max-width:100%; }
+.dialogue-workbench .dialogue-bubble .job-export-download { overflow-wrap:anywhere; }

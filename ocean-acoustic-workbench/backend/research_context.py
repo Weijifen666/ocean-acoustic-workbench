@@ -63,8 +63,11 @@ def prepare(messages, tools, budget='auto', *, current_user_index, history_turn_
             continue
         try:
             old = json.loads(message['content']); projected = project_result(old)
-            if projected != old:
-                message['content'] = json.dumps(projected, ensure_ascii=False); metadata['compacted_tool_messages'] += 1
+            # Formatting whitespace is not evidence. Normalize every JSON tool
+            # view, including complete Skill/file pages, without changing its
+            # values or the original protocol retained in private storage.
+            message['content'] = json.dumps(projected, ensure_ascii=False, separators=(',', ':'))
+            if projected != old: metadata['compacted_tool_messages'] += 1
         except (ValueError, TypeError):
             pass
     system = raw[:1]

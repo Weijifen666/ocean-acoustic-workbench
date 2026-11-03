@@ -6,6 +6,8 @@
 
 API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型依据见 [Agent 后端说明](docs/AGENT_BACKENDS.md)。本地完整应用默认 DSH；公共网站默认个人模型 API，两者的工具权限不同。
 
+2026-11-03 [实际功能验收与修复](docs/FUNCTIONAL_VALIDATION_2026-11-03.md)：已发布第17版，真实跑通三模型表单、八种本地配方、四季双判据诊断及公网新任务；DSH只读工具链已通过，自主诊断归档两次未通过，真实API对照仍待有效配置。不把执行器成功冒充Agent自主研究成功。
+
 2026-11-02 本地科研 Agent 科学性增强：统一研究 Skill 的比较与证据规则，新增标准剖面诊断、指定区域声场数值比较和任务只读审核；结果页分开展示执行状态、程序检查与 Agent 自评，输入或方法版本改变后旧检查需重做。程序检查不等于物理精度认证。使用方法、公共端适用范围与验证见[科研检查说明](docs/RESEARCH_SCIENCE_VALIDATION.md)。
 
 2026-11-01 海洋数据在线化：新增[数据工作台入口](https://ocean-acoustic-data-workbench.huuiihhuuiii.chatgpt.site/)，复用现有网页导航，提供全球 WOA18 全部 17 个时期的温盐/声速剖面与 ETOPO1 可缩放选点地图。浏览器按需查询，无需下载老师的原始资料包；数据查询独立于 MATLAB 节点。本地研究 Agent 可通过 `OCEAN_DATA_URL` 使用同一数据接口。转换、校验、发布和能力边界见[云端海洋数据部署说明](docs/CLOUD_OCEAN_DATA.md)。完整数据是否已激活以在线 `/api/ocean-data` 为准。
@@ -14,7 +16,7 @@ API、DSH Harness 与领域 Skill 的实际接入方式、执行范围和选型�
 
 2026-10-15 更新：采用 Fuwari 风格改编与 Sakana 动画核心，配合原创透明海洋研究员插画；新增公网 SSE 真实流式回答、独立持久会话、Sites 账户个人空间和小组共享课题。知识检索增加有语境的口语改写、RRF 与时空数值证据门控；五份授权 PDF 按保留 Unicode 的入库格式2重建，1789 / 1846 页、4101 个片段，57 页等待复核。仿真支持持久化队列、幂等提交和真实结果对比。见 [v0.7 验收](docs/VALIDATION_V0_7.md)与[知识质量说明](docs/KNOWLEDGE_QUALITY.md)。
 
-在线站点：[海洋声学工作台](https://ocean-acoustics-workbench-30682.jovial-sun-4182.chatgpt.site/)。GitHub 源码、当前构建产物与该地址实际部署版本分别管理；合并源码不会自动发布。下述统一版能力以本分支实现为准，实际线上启用范围须以部署和验收记录确认。历史 v0.7 公网界面为 46 个知识点、126 条关系与固定 Munk KRAKEN/FIELD，本次将本地增强界面和受限公共工具统一接入，不能用旧截图判断新版能力。
+在线站点：[海洋声学工作台](https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site/)。GitHub 源码、当前构建产物与该地址实际部署版本分别管理；合并源码不会自动发布。下述统一版能力以本分支实现为准，实际线上启用范围须以部署和验收记录确认。历史 v0.7 公网界面为 46 个知识点、126 条关系与固定 Munk KRAKEN/FIELD，本次将本地增强界面和受限公共工具统一接入，不能用旧截图判断新版能力。
 
 ## 当前源码：统一工作台
 

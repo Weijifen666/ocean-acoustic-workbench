@@ -1,0 +1,345 @@
+{
+  "site": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "version": 17,
+  "deployed_at_utc": "2026-11-03T09:18:34.719605+00:00",
+  "site_source_commit": "2a782b4cab174ecad1d9f090d9bcba3b3433ba4f",
+  "github_application_commit": "22fa94d30b2b08677e8bf7886f082139a229ce41",
+  "archive_sha256": "b322153018e078ac1799336967e6b92382d98711228b93df289f6c0fb14a3f69",
+  "public_workbench": {
+    "site": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+    "checked_at_utc": "2026-11-03T09:19:29.107392+00:00",
+    "scope": "Fresh anonymous visitors; no-key research, public catalogs and ownership. No paid generation, MATLAB submission or signed-in account test.",
+    "compute_submissions": 0,
+    "paid_generation_requests": 0,
+    "checks": [
+      {
+        "name": "anonymous_and_no_plaintext_keys",
+        "passed": true,
+        "visitors": 2,
+        "configured_keys": 0,
+        "plaintext_keys": 0
+      },
+      {
+        "name": "graph_snapshot",
+        "passed": true,
+        "knowledge_cards": 69,
+        "edges": 180
+      },
+      {
+        "name": "skill_and_model_catalogs",
+        "passed": true,
+        "skills": 12,
+        "models": 9,
+        "supported_recipes": 8
+      },
+      {
+        "name": "shared_files_and_matlab_source",
+        "passed": true,
+        "files": 57,
+        "matlab_source_verified": true,
+        "sha256_verified": true
+      },
+      {
+        "name": "no_key_research_persistence_and_replay",
+        "passed": true,
+        "history_messages": 2,
+        "model_used": false,
+        "reply_characters": 270,
+        "idempotent_replay": true
+      },
+      {
+        "name": "visitor_research_isolation",
+        "passed": true,
+        "foreign_actions_rejected": 4,
+        "foreign_history_empty": true
+      },
+      {
+        "name": "research_session_rename_persistence",
+        "passed": true,
+        "patch_persisted": true
+      },
+      {
+        "name": "legacy_no_key_sse",
+        "passed": true,
+        "model_used": false,
+        "done_events": 1,
+        "private_test_history_retained": true
+      },
+      {
+        "name": "cleanup_own_temporary_research",
+        "passed": true,
+        "own_research_session_removed": true
+      }
+    ],
+    "tool_pagination": {
+      "live_http_tested": false,
+      "reason": "HTTP file endpoints return complete snapshots; model-tool pagination is covered separately by repository regression tests."
+    },
+    "passed": 9,
+    "total": 9,
+    "legacy_sse_requested": true
+  },
+  "public_ocean": {
+    "site": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+    "checked_at_utc": "2026-11-03T09:19:27.760055+00:00",
+    "scope": "One selected ocean point across 17 climatological periods; map and error-route smoke checks, not global scientific validation.",
+    "checks": [
+      {
+        "name": "period_0",
+        "status": 200,
+        "passed": true,
+        "layers": 82,
+        "max_depth_m": 3500,
+        "sha256": "269dc6bc53307ab1aae595ec8f77f7201ee30b68f5837c0631ec45b5ae4a05d8"
+      },
+      {
+        "name": "period_1",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "24c41c5999107f37efd7432273a3c7fd7b531a4a8e7cbdaa0c5fc0f60c91bd01"
+      },
+      {
+        "name": "period_2",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "56ebde138c40280797d9e7299398d3f884da46146f177eab5fab7ee416bf0cc5"
+      },
+      {
+        "name": "period_3",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "5e75f27895e4dfc588d99bd7b9a0c2dc1c1eae544662e0ef8d884dfb3aeeb60b"
+      },
+      {
+        "name": "period_4",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "625bd893f3dad78ab985be99862e45be88557447a025f51087747bad3545bedc"
+      },
+      {
+        "name": "period_5",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "5c7219ca7108fa41b157ed515c78bc7362a470e1dc33e00d19cbd404bee7669c"
+      },
+      {
+        "name": "period_6",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "15f89b047cc5a2ca5bf7a6824b8af234010f4ca7b9991931c844974f7c11e8ee"
+      },
+      {
+        "name": "period_7",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "08f93b9e0fb561468bf2900b3d7e0492d237af2877f2aef201f22dad11b48127"
+      },
+      {
+        "name": "period_8",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "99d0e4a72ecd642112da628cef034c6d3145dbbc920667b862c87a350b21faac"
+      },
+      {
+        "name": "period_9",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "f65f9ebd6818d6f1ef354e15f432babd698cd6961e9d48a0e8a625e9c618fdc6"
+      },
+      {
+        "name": "period_10",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "627d4412cae015796eaeb8947d00cb0915b4ec22260660022ba743617d5bbdc3"
+      },
+      {
+        "name": "period_11",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "706075b4f39bb149640bebbf2e0a55ea0b6979a22111665de57e536190d20cc0"
+      },
+      {
+        "name": "period_12",
+        "status": 200,
+        "passed": true,
+        "layers": 57,
+        "max_depth_m": 1500,
+        "sha256": "9dda7261ceee17e0407972688c0edaabf7d01d71e13d848b32ffb2a9c84c0224"
+      },
+      {
+        "name": "period_13",
+        "status": 200,
+        "passed": true,
+        "layers": 82,
+        "max_depth_m": 3500,
+        "sha256": "3e1dbaa82020d31c69deb0710369c89edb530e85fdc88172a30fe9def1668ce7"
+      },
+      {
+        "name": "period_14",
+        "status": 200,
+        "passed": true,
+        "layers": 82,
+        "max_depth_m": 3500,
+        "sha256": "00f57ff68fd4da234f2ac6a90083316a82f71898af9e98d7b02a8416bb4a8f62"
+      },
+      {
+        "name": "period_15",
+        "status": 200,
+        "passed": true,
+        "layers": 82,
+        "max_depth_m": 3500,
+        "sha256": "aca0ffd948a46b7212bcd7d097ce7cbe5305479dc56ca5e1f056fbb928708672"
+      },
+      {
+        "name": "period_16",
+        "status": 200,
+        "passed": true,
+        "layers": 82,
+        "max_depth_m": 3500,
+        "sha256": "6d2da6bb58a0fd492a94bd46e63cf7bd71cfe405ae55a27497fb96c70204df84"
+      },
+      {
+        "name": "land",
+        "status": 422,
+        "passed": true
+      },
+      {
+        "name": "invalid_lat",
+        "status": 422,
+        "passed": true
+      },
+      {
+        "name": "old_version",
+        "status": 409,
+        "passed": true
+      },
+      {
+        "name": "map_region",
+        "status": 200,
+        "passed": true,
+        "shape": [
+          160,
+          240
+        ],
+        "stride": 4
+      },
+      {
+        "name": "map_global",
+        "status": 200,
+        "passed": true,
+        "shape": [
+          160,
+          240
+        ],
+        "stride": 64
+      },
+      {
+        "name": "map_close",
+        "status": 200,
+        "passed": true,
+        "shape": [
+          13,
+          12
+        ],
+        "stride": 1
+      }
+    ],
+    "passed": 23,
+    "total": 23,
+    "dataset_version": "woa18-etopo1-v1"
+  },
+  "public_compute": {
+    "passed": true,
+    "scope": "Public connectivity and independent Munk input/output checks; not physical-accuracy certification",
+    "connectivity": {
+      "public_http_ok": true,
+      "node_online": true,
+      "matlab_available": true,
+      "solver_available": true,
+      "script_execution": false,
+      "queue_admin": false
+    },
+    "simulation": {
+      "id": "a4c12b4c0828",
+      "batch_id": "1dcadea3b7724a1dbda9ff3ad73d4847",
+      "state": "SUCCEEDED",
+      "plan_sha256": "eacb68e7c7153dbe0e71cdf9452ed76ef5211dc9a1182150f73806819094c9cd",
+      "field_checks": {
+        "passed": true,
+        "shape": [
+          51,
+          51
+        ],
+        "finite_samples": 2550,
+        "valid_ratio": 0.9803921568627451,
+        "receiver_depth_error_m": 0,
+        "mode_count": 102,
+        "scope": "Input/output consistency only; no convergence or physical-accuracy claim"
+      },
+      "env_checks": {
+        "passed": true,
+        "reference": "@project/at/tests/Munk/MunkK.env",
+        "only_allowed_edits": [
+          "frequency_hz",
+          "NSD=1",
+          "source_depth_m"
+        ],
+        "ssp_and_bottom_unchanged": true,
+        "water_depth_m": 5000.0,
+        "case_env_sha256": "5b3aa9400ffc5eda03506400fba38363fe8c2681a216d5392a5a7663aac54df8"
+      },
+      "zip_checks": {
+        "passed": true,
+        "file_count": 20,
+        "verified_direct_artifacts": [
+          "case.env",
+          "case.json",
+          "result.json",
+          "run.log",
+          "summary.json"
+        ],
+        "sha256": "4eb27d437bcecf9a29a8079ba07e1bc16a8c7a7c42f6851c7acd6a575912afd9"
+      },
+      "artifact_sha256": {
+        "result.json": "8335d509f2bce9ef8e47412d47f070b225f945ce6b3c71a27e72fbff03ad77e1",
+        "summary.json": "e8c104b1ebd3301fa8bbfd66de3cbd4288a33a3b03878c83057f02c0aec9fa33",
+        "case.env": "5b3aa9400ffc5eda03506400fba38363fe8c2681a216d5392a5a7663aac54df8",
+        "case.json": "f4421974651afdedb5049f5153215e649d2dff8b559582a80f4dd289c09f759c",
+        "run.log": "3cb6c0c11931bf09ecbedcdebb2828f0ee09081f01e5813afeb7f9e691fe830e"
+      },
+      "artifact_bytes": {
+        "result.json": 50753,
+        "summary.json": 787,
+        "case.env": 699,
+        "case.json": 1199,
+        "run.log": 2931
+      },
+      "batch_verified": true,
+      "physical_accuracy_proven": false,
+      "note": "Actual solver artifacts and coordinates checked; no convergence or experimental validation claimed"
+    }
+  },
+  "network_observation": "Local proxy had intermittent ConnectError; bridge reconnected and the public simulation and downloads were verified. Long-duration availability was not tested."
+}

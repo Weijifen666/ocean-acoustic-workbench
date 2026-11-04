@@ -25,6 +25,10 @@ function previousResults(messages,name,args) {
 }
 const recordLimit=()=>Object.assign(problem('当前研究记录超过容量，请另建会话；已提交任务仍可在任务页查询。'),{code:'RESEARCH_RECORD_LIMIT'});
 const assertRecord=value=>{if(new TextEncoder().encode(JSON.stringify(value)).byteLength>900000)throw recordLimit();};
+const STEP_LEASE_MS=360000;
+const legacyOutputLimit='模型输出达到上限，本次研究未完整返回；请缩小问题或继续追问。';
+const outputLimitFailure=data=>data.error_code==='PROVIDER_OUTPUT_LIMIT'||data.error===legacyOutputLimit;
+export function researchOutputOptions(configuration,retry=0){const level=Number.isInteger(retry)?Math.max(0,Math.min(retry,3)):retry?1:0;return configuration.provider==='DeepSeek'?{max_tokens:[65536,131072,262144,393216][level]}:{};}
 const publicMessage=message=>Object.fromEntries(Object.entries(message).filter(([key])=>key!=='_provider'));
 function conversationContext(messages,configuration) {
  const history=[];let question;
@@ -104,10 +108,12 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
  }
  const budgetFailure=data=>data.error_code==='CONTEXT_BUDGET_EXCEEDED'||/^(当前问题或工具结果超过所选上下文预算|当前必要问题|当前问题与必要系统说明无法完整放入)/.test(data.error||'');
  function view(row) {
-  const recoverable=row.state==='failed'&&budgetFailure(row.data);
+  const outputLimited=outputLimitFailure(row.data),recoverable=row.state==='failed'&&(budgetFailure(row.data)||outputLimited);
   const activeLease=row.state==='running'&&Number.isFinite(row.lease_until)&&row.lease_until>Date.now();
-  const context=row.data.context||(recoverable?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),budget_limited:row.data.context_budget!=='unlimited',estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
-  return {id:row.id,state:row.state,backend:'api',step_busy:activeLease,lease_expires_at:activeLease?row.lease_until:null,stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,error_code:row.data.error_code||(recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,context,exports:row.data.exports||[],trace:row.data.trace||[],rounds:row.data.rounds||0,knowledge_node_ids:row.data.knowledge_node_ids||[],graph_selection:row.data.graph_selection||null};
+  const context=row.data.context||(recoverable&&!outputLimited?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),budget_limited:row.data.context_budget!=='unlimited',estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
+  const partial=row.state!=='done'&&(outputLimited||row.data.output_retry?.pending)?row.data.output_limit?.message?.content??row.data.output_limit?.content_preview??'':row.data.partial||'';
+  const error=row.data.error===legacyOutputLimit?'单轮输出被截断，已有研究进度已保留，可继续原研究。':row.data.error||null;
+  return {id:row.id,state:row.state,backend:'api',step_busy:activeLease,lease_expires_at:activeLease?row.lease_until:null,stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:typeof partial==='string'?partial:'',reply:row.data.reply||null,error,error_code:row.data.error_code||(outputLimited?'PROVIDER_OUTPUT_LIMIT':recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,resume_kind:recoverable?(outputLimited?'output_limit':'context_budget'):null,automatic_retry_pending:!!row.data.output_retry?.pending,context,exports:row.data.exports||[],trace:row.data.trace||[],rounds:row.data.rounds||0,knowledge_node_ids:row.data.knowledge_node_ids||[],graph_selection:row.data.graph_selection||null};
  }
  async function getSession(env,owner,id) {
   if(!idPattern.test(id||''))throw problem('会话标识无效');
@@ -117,10 +123,36 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
  async function saveRun(env,row,data,state='running',release=true) {
   const encoded=JSON.stringify(data);
   if(state==='running')assertRecord(data);
-  const ciphertext=await enc(env,data),lease=release?0:row.lease_until;
+  const ciphertext=await enc(env,data),lease=release?0:Date.now()+STEP_LEASE_MS;
   const result=await run(env,"UPDATE cloud_research_runs SET ciphertext=?,state=?,updated=?,lease_until=? WHERE id=? AND visitor_id=? AND state='running' AND ciphertext=? AND lease_until=?",ciphertext,state,Date.now(),lease,row.id,row.visitor_id,row.ciphertext,row.lease_until);
   if(result.meta?.changes??result.changes){row.ciphertext=ciphertext;row.lease_until=lease;row.data=data;return true;}
   return false;
+ }
+ async function offloadOutputMessage(env,row,info){
+  if(!info.message||typeof env.BUCKET?.put!=='function')return false;
+  const key='research-output/'+(await digest(row.visitor_id)).slice(0,40)+'/'+row.id+'/'+crypto.randomUUID();
+  try{
+   const ciphertext=await enc(env,{schema_version:1,run_id:row.id,provider:info.provider,model:info.model,message:info.message});
+   await env.BUCKET.put(key,ciphertext,{httpMetadata:{contentType:'text/plain'}});
+   info.message_ref={key,ciphertext_sha256:await digest(ciphertext)};info.content_preview=typeof info.message.content==='string'?[...info.message.content].slice(0,12000).join(''):'';info.storage='encrypted_object';delete info.message;return true;
+  }catch{return false;}
+ }
+ async function saveOutputLimit(env,row,data,message,cfg){
+  const prior=data.output_limit,info={provider:cfg.provider,model:cfg.model,attempts:(prior?.attempts||0)+1,finish_reason:'length',received_at:Date.now(),message:structuredClone(message),storage:'encrypted_run'};
+  const automatic=!(data.output_retry?.automatic_used);
+  data.output_retry={pending:automatic,automatic_used:true,increased_budget:true,budget_level:Math.max(1,data.output_retry?.budget_level||0)};
+  data.error=automatic?null:'本次输出仍达到模型上限。已保留研究过程，可继续当前研究。';data.error_code=automatic?null:'PROVIDER_OUTPUT_LIMIT';
+  data.stage=automatic?'模型输出达到上限，正在提高输出预算继续本次研究':'输出已保留，等待继续当前研究';
+  data.output_limit=info;
+  try{assertRecord(data)}catch(error){
+   if(error.code!=='RESEARCH_RECORD_LIMIT')throw error;
+   if(!await offloadOutputMessage(env,row,info)){
+    info.content_preview=typeof message.content==='string'?[...message.content].slice(0,12000).join(''):'';info.storage='preview_only';info.storage_error='OUTPUT_SNAPSHOT_STORAGE_UNAVAILABLE';delete info.message;
+   }
+   // The previous tool checkpoint always has priority over preview size.
+   for(;;){try{assertRecord(data);break}catch(error){if(error.code!=='RESEARCH_RECORD_LIMIT'||!info.content_preview)throw error;info.content_preview=[...info.content_preview].slice(0,Math.floor([...info.content_preview].length/2)).join('')}}
+  }
+  await saveRun(env,row,data,automatic?'running':'failed');
  }
  async function ownsLease(env,row) {
   const current=await one(env,"SELECT state,ciphertext,lease_until FROM cloud_research_runs WHERE id=? AND visitor_id=?",row.id,row.visitor_id);
@@ -135,7 +167,7 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
   const provider=providerMessage&&configuration&&current>=0?{provider:configuration.provider,model:configuration.model,messages:[...data.messages.slice(current),{role:'assistant',content:reply,...(typeof providerMessage.reasoning_content==='string'?{reasoning_content:providerMessage.reasoning_content}:{})}]}:null;
   const messages=[...session.data.messages,{role:'assistant',text:reply,research_agent:true,model_used:!!data.model_used,exports:data.exports||[],trace:data.trace||[],...(provider?{_provider:provider}:{})}].slice(-300);
   data.reply=reply;data.partial=reply;data.stage=state==='done'?'研究请求已结束':'研究请求未完成';
-  assertRecord(data);assertRecord({...session.data,messages});
+  try{assertRecord(data)}catch(error){if(error.code!=='RESEARCH_RECORD_LIMIT'||!await offloadOutputMessage(env,row,data.output_limit||{}))throw error;assertRecord(data)}assertRecord({...session.data,messages});
   // The condition also prevents a late response from turning a stopped run
   // into a successful exchange or overwriting a newer session after deletion.
   const encoded=await enc(env,data),sessionEncoded=await enc(env,{...session.data,messages});
@@ -218,7 +250,7 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
   // Ciphertext contains a fresh nonce as the lease ownership token. Both the
   // initial claim and every checkpoint use CAS, so an expired step cannot
   // overwrite a replacement step, even if their clock timestamps are equal.
-  const now=Date.now(),lease=now+240000,claimedData={...row.data,lease_owner:crypto.randomUUID()},ciphertext=await enc(env,claimedData);
+  const now=Date.now(),lease=now+STEP_LEASE_MS,claimedData={...row.data,lease_owner:crypto.randomUUID()},ciphertext=await enc(env,claimedData);
   const claimed=await run(env,"UPDATE cloud_research_runs SET lease_until=?,updated=?,ciphertext=? WHERE id=? AND visitor_id=? AND state='running' AND lease_until<? AND ciphertext=?",lease,now,ciphertext,id,identity.id,now,row.ciphertext);
   if(!(claimed.meta?.changes??claimed.changes))return json(view(await getRun(env,identity.id,id)));
   row={...row,data:claimedData,ciphertext,lease_until:lease};const data=row.data;
@@ -231,10 +263,16 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
    if(!data.pending) {
     const final=data.limit>0&&data.rounds>=data.limit,tools=final?[]:RESEARCH_TOOLS;
     const packed=packResearchContext(data.messages,data.context_budget??'auto',tools);data.context=packed.context;
-    const response=await remote(cfg,{messages:packed.messages,...(tools.length?{tools,tool_choice:'auto'}:{}),max_tokens:4096},request.signal);
-    data.rounds++;data.model_used=true;
+    const response=await remote(cfg,{messages:packed.messages,...(tools.length?{tools,tool_choice:'auto'}:{}),...researchOutputOptions(cfg,data.output_retry?.budget_level??(data.output_retry?.increased_budget?1:0))},request.signal);
+    data.model_used=true;
     const message=response.choices[0].message;
-    if(response.choices[0].finish_reason==='length')throw problem('模型输出达到上限，本次研究未完整返回；请缩小问题或继续追问。',502);
+    if(response.choices[0].finish_reason==='length'){
+     // A truncated tool call is not a protocol-complete assistant turn. Keep
+     // the actual response encrypted, but retry only the last durable context.
+     await saveOutputLimit(env,row,data,message,cfg);return json(view(await getRun(env,identity.id,id)));
+    }
+    data.rounds++;
+    if(data.output_retry)data.output_retry.pending=false;
     if(response.choices[0].finish_reason==='content_filter')throw problem('供应商限制了本次输出，研究未完整返回；本轮未执行工具。',502);
     const calls=message.tool_calls||[];
     if(!Array.isArray(calls)||calls.length>8)throw problem('单轮工具请求格式无效或数量过多');
@@ -364,8 +402,9 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
    }
    if(match[2]==='resume'&&method==='POST'){
     const body=await request.json(),budget=body.context_budget===undefined?(row.data.context_budget??'auto'):body.context_budget;resolveBudget(budget);
-    if(row.state!=='failed'||!budgetFailure(row.data))throw problem('此请求不是可恢复的上下文预算错误',409);
-    const data={...row.data,context_budget:budget,error:null,error_code:null,stage:'已调整预算，继续原研究请求'};
+    const outputLimited=outputLimitFailure(row.data);
+    if(row.state!=='failed'||!budgetFailure(row.data)&&!outputLimited)throw problem('此请求没有可恢复的上下文或输出预算错误',409);
+    const data={...row.data,context_budget:budget,error:null,error_code:null,stage:outputLimited?'保留已有工具和任务，继续原研究':'已调整预算，继续原研究请求',...(outputLimited?{output_retry:{pending:true,automatic_used:true,increased_budget:true,budget_level:Math.min(3,(row.data.output_retry?.budget_level||0)+1)}}:{})};
     assertRecord(data);
     // Do not execute tools or call a provider here. Preserve the durable run,
     // tool ids and submission keys; the next explicit step continues it.

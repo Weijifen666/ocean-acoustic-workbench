@@ -6,12 +6,14 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {setup,decrypt,encrypt,retrieve} from './test-support.mjs';
 import {assertMessagesBudget,estimateMessages} from '../server/context-budget.mjs';
+import {researchOutputOptions} from '../server/cloud-research.mjs';
 
 const assets=JSON.parse(readFileSync(new URL('../data/research-assets.json',import.meta.url),'utf8'));
 const cfg={provider:'DeepSeek',base_url:'https://api.deepseek.com',model:'deepseek-flash',api_key:'TEST-ONLY-RESEARCH-VISITOR-KEY'};
 const plan={solver:'kraken',template:'pekeris_100m',frequencies_hz:[50],source_depths_m:[50],receiver_depth_m:50,range_min_km:0.1,range_max_km:5};
 const toolCall=(name,args={},id='call-'+name)=>({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
 const provider=(content='',calls=[],finish='stop',reasoning='Provider reasoning retained for API continuity.')=>new Response(JSON.stringify({model:'reported-research-model',choices:[{finish_reason:finish,message:{role:'assistant',content,...(calls.length?{tool_calls:calls,reasoning_content:reasoning}:{})}}]}),{headers:{'content-type':'application/json'}});
+const limited=(content,reasoning_content='AUTHENTIC TRUNCATED REASONING',calls=[])=>Response.json({choices:[{finish_reason:'length',message:{role:'assistant',content,reasoning_content,...(calls.length?{tool_calls:calls}:{})}}]});
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 const chatBody=(overrides={})=>({session:'session-research-0001',request_id:'research-request-0001',message:'请分析海洋声学研究流程',backend:'api',rounds:40,...overrides});
 function harness(replies=[],options={}){
@@ -645,4 +647,83 @@ test('session rename and creation enforce UTF-8 capacity before changing the dur
   assert.equal(s.sqlite.prepare('SELECT count(*) AS n FROM cloud_research_runs').get().n,0);
   assert.equal(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions').get().ciphertext,ciphertext);
  }finally{s.sqlite.close();}
+});
+
+test('research output budgets use confirmed DeepSeek caps without imposing them on other providers',()=>{
+ assert.deepEqual([0,1,2,3,8].map(level=>researchOutputOptions({provider:'DeepSeek'},level).max_tokens),[65536,131072,262144,393216,393216]);
+ for(const name of ['Qwen','GLM','Kimi'])assert.deepEqual(researchOutputOptions({provider:name},3),{});
+});
+
+test('a length-limited response preserves seventeen completed tools and retries identical authentic context without executing truncated calls',async()=>{
+ const job='abcdef123456',calls=Array.from({length:17},(_,i)=>i===0?toolCall('submit_simulation',{plan},'original-submit'):toolCall('get_job',{id:job},'original-query-'+i));
+ const broken={id:'TRUNCATED-MUST-NOT-EXECUTE',type:'function',function:{name:'submit_simulation',arguments:'{"plan":'}};
+ const finalReasoning='REASONED '.repeat(8192),final=Response.json({choices:[{finish_reason:'stop',message:{role:'assistant',content:'完整的研究答复',reasoning_content:finalReasoning}}]});
+ const s=harness([provider('',calls.slice(0,8)),provider('',calls.slice(8,16)),provider('',calls.slice(16)),limited('真实但未完成的研究正文','PRIVATE AUTHENTIC LIMITED REASONING',[broken]),final]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie);
+  for(let i=0;i<3;i++)assert.equal((await step(s,cookie,id)).data.state,'running');
+  const before=await stored(s,id),original=structuredClone(before.data.messages),nodeCount=s.nodeRequests.length;
+  assert.equal(before.data.trace.length,17);assert.equal(s.submissions.size,1);
+  const truncated=await step(s,cookie,id);assert.equal(truncated.data.state,'running');assert.equal(truncated.data.automatic_retry_pending,true);assert.equal(truncated.data.partial,'真实但未完成的研究正文');assert.equal(truncated.data.rounds,3);assert.equal(truncated.data.trace.length,17);
+  assert(!JSON.stringify(truncated.data).includes('PRIVATE AUTHENTIC'));assert.equal(s.nodeRequests.length,nodeCount);
+  const checkpoint=await stored(s,id);assert.deepEqual(checkpoint.data.messages,original);assert.equal(checkpoint.data.output_limit.message.reasoning_content,'PRIVATE AUTHENTIC LIMITED REASONING');assert.deepEqual(checkpoint.data.output_limit.message.tool_calls,[broken]);assert.equal(checkpoint.lease_until,0);
+  const finished=await step(s,cookie,id);assert.equal(finished.data.state,'done');assert.equal(finished.data.reply,'完整的研究答复');assert.equal(finished.data.trace.length,17);assert.equal(finished.data.automatic_retry_pending,false);assert.equal(s.nodeRequests.length,nodeCount);assert.equal(s.submissions.size,1);
+  assert.equal(s.providerRequests[3].body.max_tokens,65536);assert.equal(s.providerRequests[4].body.max_tokens,131072);assert.deepEqual(s.providerRequests[3].body.messages,s.providerRequests[4].body.messages);assert(!JSON.stringify(s.providerRequests[4].body.messages).includes('TRUNCATED-MUST-NOT-EXECUTE'));completeToolGroups(s.providerRequests[4].body.messages);
+  const session=await decrypt(s.sqlite.prepare('SELECT ciphertext FROM cloud_research_sessions WHERE id=?').get('session-research-0001').ciphertext,s.env.GATEWAY_SECRET);assert.equal(session.messages.at(-1)._provider.messages.at(-1).reasoning_content,finalReasoning);assert.equal(session.messages.at(-1).trace.length,17);assert(!JSON.stringify((await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie)).data).includes('REASONED '));
+ }finally{s.sqlite.close()}
+});
+
+test('only one automatic output retry is allowed and manual resume uses the same run with a larger budget',async()=>{
+ const s=harness([limited('第一次真实片段'),limited('第二次真实片段'),provider('续跑后的完整答复')]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie),original=(await stored(s,id)).data.messages;
+  assert.equal((await step(s,cookie,id)).data.automatic_retry_pending,true);
+  const failure=(await step(s,cookie,id)).data;assert.equal(failure.state,'failed');assert.equal(failure.error_code,'PROVIDER_OUTPUT_LIMIT');assert.equal(failure.recoverable,true);assert.equal(failure.resume_kind,'output_limit');assert.equal(failure.automatic_retry_pending,false);assert.equal(failure.partial,'第二次真实片段');assert.equal(failure.step_busy,false);assert.equal(failure.lease_expires_at,null);
+  await step(s,cookie,id);assert.equal(s.providerRequests.length,2,'GETs and terminal step POSTs must not purchase another attempt');
+  const resumed=await s.call(`/api/research/runs/${id}/resume`,'POST',{},cookie);assert.equal(resumed.data.id,id);assert.equal(resumed.data.state,'running');assert.equal(s.providerRequests.length,2);assert.deepEqual((await stored(s,id)).data.messages,original);
+  const done=await step(s,cookie,id);assert.equal(done.data.reply,'续跑后的完整答复');assert.equal(s.providerRequests[2].body.max_tokens,262144);assert.equal(s.sqlite.prepare('SELECT COUNT(*) AS n FROM cloud_research_runs').get().n,1);assert.equal(s.nodeRequests.length,0);
+ }finally{s.sqlite.close()}
+});
+
+test('legacy output-limit failures without a code resume the original tool receipts instead of creating a new research run',async()=>{
+ const s=harness([provider('',[toolCall('submit_simulation',{plan},'legacy-submission')]),provider('旧研究继续完成')]);
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie);await step(s,cookie,id);const checkpoint=await stored(s,id),data={...checkpoint.data,error:'模型输出达到上限，本次研究未完整返回；请缩小问题或继续追问。',stage:'研究请求未完成'};delete data.error_code;
+  s.sqlite.prepare("UPDATE cloud_research_runs SET state='failed',lease_until=0,ciphertext=? WHERE id=?").run(await encrypt(data,s.env.GATEWAY_SECRET),id);
+  const legacy=(await get(s,cookie,id)).data;assert.equal(legacy.error_code,'PROVIDER_OUTPUT_LIMIT');assert.equal(legacy.recoverable,true);assert.equal(legacy.resume_kind,'output_limit');assert.equal(legacy.error,'单轮输出被截断，已有研究进度已保留，可继续原研究。');
+  const resumed=await s.call(`/api/research/runs/${id}/resume`,'POST',{},cookie);assert.equal(resumed.data.id,id);assert.deepEqual((await stored(s,id)).data.messages,data.messages);
+  assert.equal((await step(s,cookie,id)).data.reply,'旧研究继续完成');assert.equal(s.submissions.size,1);assert.equal(s.nodeRequests.length,1);assert.equal(s.providerRequests[1].body.max_tokens,131072);assert.equal(s.sqlite.prepare('SELECT COUNT(*) AS n FROM cloud_research_runs').get().n,1);
+ }finally{s.sqlite.close()}
+});
+
+test('oversized truncated reasoning is encrypted in visitor/run-scoped R2 while public state exposes only actual content',async()=>{
+ const reasoning='PRIVATE-REASONING-'.repeat(60000),objects=new Map(),s=harness([limited('真实正文预览',reasoning),provider('最终答复')]);s.env.BUCKET={put:async(key,value)=>objects.set(key,value)};
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie),before=(await stored(s,id)).data.messages,answer=(await step(s,cookie,id)).data,record=await stored(s,id);
+  assert.equal(answer.state,'running');assert.equal(answer.partial,'真实正文预览');assert(!JSON.stringify(answer).includes('PRIVATE-REASONING'));assert.deepEqual(record.data.messages,before);assert.equal(record.data.output_limit.storage,'encrypted_object');assert.equal(objects.size,1);
+  const ref=record.data.output_limit.message_ref;assert(ref.key.startsWith('research-output/'));assert(ref.key.includes('/'+id+'/'));assert(!objects.get(ref.key).includes('PRIVATE-REASONING'));assert.equal((await decrypt(objects.get(ref.key),s.env.GATEWAY_SECRET)).message.reasoning_content,reasoning);
+  assert.equal((await step(s,cookie,id)).data.state,'done');
+ }finally{s.sqlite.close()}
+});
+
+test('missing or failing offload storage preserves the durable research and allows same-run recovery',async()=>{
+ for(const bucket of [undefined,{put:async()=>{throw Error('TEST storage unavailable')}}]){
+  const s=harness([limited('仍可显示的真实正文','X'.repeat(950000)),provider('恢复完成')]);if(bucket)s.env.BUCKET=bucket;
+  try{
+   const cookie=await visitor(s),id=await start(s,cookie),before=(await stored(s,id)).data.messages,answer=(await step(s,cookie,id)).data,record=await stored(s,id);
+   assert.equal(answer.state,'running');assert.equal(answer.automatic_retry_pending,true);assert.equal(answer.partial,'仍可显示的真实正文');assert.equal(record.data.output_limit.storage,'preview_only');assert.equal(record.data.output_limit.storage_error,'OUTPUT_SNAPSHOT_STORAGE_UNAVAILABLE');assert.deepEqual(record.data.messages,before);assert.equal(record.lease_until,0);
+   assert.equal((await step(s,cookie,id)).data.reply,'恢复完成');assert.equal(s.nodeRequests.length,0);
+  }finally{s.sqlite.close()}
+ }
+});
+
+test('the six-minute step lease refreshes at provider and tool checkpoints with the CAS token kept in sync',async()=>{
+ const providerEntered=deferred(),providerRelease=deferred(),toolEntered=deferred(),toolRelease=deferred();
+ const s=harness([async()=>{providerEntered.resolve();await providerRelease.promise;return provider('',[toolCall('get_job',{id:'abcdef123456'},'lease-refresh-job')]);},provider('lease completion')],{onNode:async()=>{toolEntered.resolve();await toolRelease.promise;}});
+ try{
+  const cookie=await visitor(s),id=await start(s,cookie),pending=step(s,cookie,id);await providerEntered.promise;
+  const first=(await get(s,cookie,id)).data;assert(first.lease_expires_at>Date.now()+350000);await new Promise(resolve=>setTimeout(resolve,20));providerRelease.resolve();await toolEntered.promise;
+  const checkpoint=(await get(s,cookie,id)).data;assert(checkpoint.lease_expires_at>first.lease_expires_at);assert.equal(checkpoint.step_busy,true);const duplicate=await step(s,cookie,id);assert.equal(duplicate.data.step_busy,true);assert.equal(s.providerRequests.length,1);
+  toolRelease.resolve();assert.equal((await pending).data.state,'running');assert.equal((await get(s,cookie,id)).data.step_busy,false);assert.equal((await step(s,cookie,id)).data.state,'done');
+ }finally{providerRelease.resolve();toolRelease.resolve();s.sqlite.close()}
 });

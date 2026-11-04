@@ -7,57 +7,57 @@
       "prompt": "请载入 at-environment 技能，依据已收录的 AT tests 对应算例规划研究任务。我的目标是：",
       "read_only": true,
       "resource_count": 14,
-      "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
+      "sha256": "f6922890de7222cf9c301b5e273fa98409a21efa6d1b85e8824c844353ee7082",
       "resources": [
         {
           "path": "references/applicability.md",
-          "sha256": "539ffcf92b670be1b48ecd7f7fdf7c4bcfd2be53692a26aa9a0f8aacda27d764",
-          "size": 3879
+          "sha256": "a57580cade8552e8f246f0375f656d77e10cb6bfb5b9bd66d36417cdac689db5",
+          "size": 3549
         },
         {
           "path": "references/casebook-summary.json",
-          "sha256": "8a3c3f5860f71390293440686d2bf60c18abef8dae783cc26ccc4d33629dbacf",
-          "size": 11688
+          "sha256": "a0b61f0b9221751ea8277b0dba3d380013043296126573fbca430272495f209b",
+          "size": 11598
         },
         {
           "path": "references/casebook.json",
-          "sha256": "66157ca0edc68f39174138b26ebf013298dbf56c6eca6e3738d796923a650c3b",
-          "size": 135956
+          "sha256": "cd9544f9751e09b95b7e1bc1de1dc59ee225cc3bd5076cbbd75f1938220378c5",
+          "size": 135866
         },
         {
           "path": "references/creation-workflows.json",
-          "sha256": "5f223c770fdb21552e191278e1c607c0aa2fe63790f756ef52aec28ce3e6dffc",
-          "size": 9470
+          "sha256": "c15279a3ad539db62c392c0ac893c93b946f0a6f06c538b1ef996bf49bec69a4",
+          "size": 9198
         },
         {
           "path": "references/input-and-functions.md",
-          "sha256": "7ec85aa2b6687e6f2c4a01378eb517b552251a06736093e40be23ac00cfdcbdd",
-          "size": 2735
+          "sha256": "aead97f6a817d7de62c6f59b286092485079fba674432984aaf8372948ffba5c",
+          "size": 2405
         },
         {
           "path": "references/models.json",
-          "sha256": "b41e2ec2da778d6d179b3cb07a095cd88140b91c40449c2e6156b0822476bdfd",
-          "size": 34507
+          "sha256": "123e2538f9722495d546c795db82eaaee5f3c675f10d874590bdabcd2b93b68f",
+          "size": 33963
         },
         {
           "path": "references/ram-and-pe.md",
-          "sha256": "c33fac5c6f5ca7ad2c12128a6a6575bd219ad991c83dddaec4e5b79a5d8d1e94",
-          "size": 4498
+          "sha256": "3e052e6980ca3806a72b24e8e84b8faff54043382e4c1eca4c8779db3117cb3d",
+          "size": 4168
         },
         {
           "path": "references/scientific-evidence.md",
-          "sha256": "dd5cab626862baa85e958b1ca08f4f2b003179e721f42ca8570431a42b905daa",
-          "size": 6317
+          "sha256": "26cc0d886de23351a2967bf217e1e63a8728ff05d7ba602509317540634dba3d",
+          "size": 5199
         },
         {
           "path": "references/validation-latest.json",
-          "sha256": "70450acd527c2fad47a5ca3ff46fb144a32fe17bb9754576295ae859d643f32a",
-          "size": 22510
+          "sha256": "d7037169832a611555d521b44baa767f770a22a93baabc7ec4729df91469f550",
+          "size": 22420
         },
         {
           "path": "references/validation.md",
-          "sha256": "0b6830740b064b2193a3623ed7247602717eb7489379473aadfd78f9d4d113e5",
-          "size": 2523
+          "sha256": "f30cbbbe7a6fbbbf9ce214934ac0fa1198f3f8a228cd3f5383dc885b0649bccd",
+          "size": 2193
         },
         {
           "path": "scripts/read_ram_grid.py",
@@ -76,8 +76,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "e568bdc9e74860db03832c96b7abcd53ff04805224673fe7f1675866fa576271",
-          "size": 6897
+          "sha256": "f6922890de7222cf9c301b5e273fa98409a21efa6d1b85e8824c844353ee7082",
+          "size": 5818
         }
       ],
       "runtime_available": false,
@@ -90,7 +90,7 @@
       "prompt": "请载入 seasonal-layer-diagnostics 技能，先读取 120°E、20°N 的 WOA18 四季剖面，说明判据与缺测，再规划混合层季节诊断。单点气候态不得代替区域或瞬时观测。",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
+      "sha256": "8e8a808707ef8387d696ffab537d1dbf553075b5fd80423aabed1438c85d7d4e",
       "resources": [
         {
           "path": "scripts/analyze_profiles.py",
@@ -99,8 +99,8 @@
         },
         {
           "path": "SKILL.md",
-          "sha256": "cda37853338f19971ada7df916f0b9f979d48ec1830455545eaa93bdde9ddc42",
-          "size": 4671
+          "sha256": "8e8a808707ef8387d696ffab537d1dbf553075b5fd80423aabed1438c85d7d4e",
+          "size": 3553
         }
       ],
       "runtime_available": false,
@@ -113,12 +113,12 @@
       "prompt": "请载入 surface-duct-investigation 技能，读取 120°E、20°N 的 WOA18 四季近表层剖面，区分混合层与声道候选结构；先完成环境诊断，传播验证前列出缺失条件与节点能力。",
       "read_only": true,
       "resource_count": 1,
-      "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
+      "sha256": "3438679c098410284a6a71c36e865c3af6cb777119dcac27b28a653cd93c1363",
       "resources": [
         {
           "path": "SKILL.md",
-          "sha256": "d5011ba9073db4da01209f7ebd2bbd448f4c7c0a402c1ad7e76db19948b89106",
-          "size": 4635
+          "sha256": "3438679c098410284a6a71c36e865c3af6cb777119dcac27b28a653cd93c1363",
+          "size": 3517
         }
       ],
       "runtime_available": false,
@@ -132,17 +132,17 @@
       "prompt": "请载入 at-kraken 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "5bf99aa4ba200d94370ddd1f57f258bdd5bf34b4c5c7f8bcb45d5290260a266c",
+      "sha256": "150b14bfb61d63a11812c5de6c8ff8e65d528b2485fc73253bd38239ef9386aa",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "e1d4ecc1dbc62ead70748fb10c47a1934b87fb11089a993848db1eb361805660",
-          "size": 2599
+          "sha256": "5ab353cb2e96a5f9d224e76ab88d212f4c49cb3f7ac0bb58e3f512eabd67422d",
+          "size": 2269
         },
         {
           "path": "SKILL.md",
-          "sha256": "5bf99aa4ba200d94370ddd1f57f258bdd5bf34b4c5c7f8bcb45d5290260a266c",
-          "size": 1822
+          "sha256": "150b14bfb61d63a11812c5de6c8ff8e65d528b2485fc73253bd38239ef9386aa",
+          "size": 1492
         }
       ],
       "runtime_available": false,
@@ -156,17 +156,17 @@
       "prompt": "请载入 at-krakenc 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "d4735d26eeae8594158acfff6b3596054a7a088104772ea37de506a42b4fdb93",
+      "sha256": "692f2c5bc8235cc64d448597a88eb3c309af14b54337f012b621e897d9d36851",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "c8e100be1486efb98c0f6e1797c940d3f1dd0dc022d03897fd8149f779f41deb",
-          "size": 2376
+          "sha256": "2e55f06a6c625f7af156a720f971b7344d07efce650ebea407b661940e241f9b",
+          "size": 2046
         },
         {
           "path": "SKILL.md",
-          "sha256": "d4735d26eeae8594158acfff6b3596054a7a088104772ea37de506a42b4fdb93",
-          "size": 1831
+          "sha256": "692f2c5bc8235cc64d448597a88eb3c309af14b54337f012b621e897d9d36851",
+          "size": 1501
         }
       ],
       "runtime_available": false,
@@ -180,17 +180,17 @@
       "prompt": "请载入 at-scooter 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "02be4c9e0e006c0ab7905f2ec22209d4f6b3424ded212785a763b81f1fef6c68",
+      "sha256": "3331038ac3b912bc8958e12a1b30190bccbaabcba95e95c3d8de6f1dc37198bc",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "da3501883925f1a666258c794e8d2523518d7dd08eaa7f779f5ac7171ab261ee",
-          "size": 2265
+          "sha256": "0470330eb497d2bc79d1ae5b4aa8d3aa4fcec8d6440b90d7064d34685aa0cbbc",
+          "size": 1935
         },
         {
           "path": "SKILL.md",
-          "sha256": "02be4c9e0e006c0ab7905f2ec22209d4f6b3424ded212785a763b81f1fef6c68",
-          "size": 1827
+          "sha256": "3331038ac3b912bc8958e12a1b30190bccbaabcba95e95c3d8de6f1dc37198bc",
+          "size": 1497
         }
       ],
       "runtime_available": false,
@@ -204,17 +204,17 @@
       "prompt": "请载入 at-bellhop 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "f651cf78ee0d33a0a101a2fc2f5acd861d8afdb6db39549e7f986303f6d23bce",
+      "sha256": "51233b1a8b0a4fc9ade2bac82b1bd4ce15132e97a435b76c1c42530510eb9dd8",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "09e8e865983cc08849f6a99b097aac3567a5dbbb2415fc94c329fbc635211c68",
-          "size": 2156
+          "sha256": "ef0571cc420a5cf8ffcf2c951dc6f5e69df4953021ee1f602ed2d6346c824569",
+          "size": 1826
         },
         {
           "path": "SKILL.md",
-          "sha256": "f651cf78ee0d33a0a101a2fc2f5acd861d8afdb6db39549e7f986303f6d23bce",
-          "size": 1826
+          "sha256": "51233b1a8b0a4fc9ade2bac82b1bd4ce15132e97a435b76c1c42530510eb9dd8",
+          "size": 1496
         }
       ],
       "runtime_available": false,
@@ -228,17 +228,17 @@
       "prompt": "请载入 at-ram 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "75a4adc3cc4187bb3c07d9bb496f980018a33e5fad36604bad4fb79332ec0c7c",
+      "sha256": "75557937e7efa19f5b2c67cf01561ca627d36424162d4f7adeeaa03bb36fd48b",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "702ca1f347242971f0a2353cbaa9c2ff97d66c26cf68cd6ec1e212a7ef103a07",
-          "size": 2247
+          "sha256": "c6d96c8c28a0690e1784ad191846cdd47b6c4adce0c5cc4fdabbb0523404ff9b",
+          "size": 1917
         },
         {
           "path": "SKILL.md",
-          "sha256": "75a4adc3cc4187bb3c07d9bb496f980018a33e5fad36604bad4fb79332ec0c7c",
-          "size": 1800
+          "sha256": "75557937e7efa19f5b2c67cf01561ca627d36424162d4f7adeeaa03bb36fd48b",
+          "size": 1470
         }
       ],
       "runtime_available": false,
@@ -252,17 +252,17 @@
       "prompt": "请载入 at-simplepe 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "4f9fbbf1ee192f141e68baedabebf061f356810019baacc02784b6bfebc6f490",
+      "sha256": "c1ff879db29689d983b76a78bd951297b7c0513d322bc7ac4129e94ac5814a69",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "dad1fac01633bc583dce7c8e8dca31a7e036a6dabf126dace378e0dd6d1742bd",
-          "size": 1893
+          "sha256": "6b917dbc4757454361df957cc7e8d5067bd2f01561476521388eb95701b75452",
+          "size": 1563
         },
         {
           "path": "SKILL.md",
-          "sha256": "4f9fbbf1ee192f141e68baedabebf061f356810019baacc02784b6bfebc6f490",
-          "size": 1828
+          "sha256": "c1ff879db29689d983b76a78bd951297b7c0513d322bc7ac4129e94ac5814a69",
+          "size": 1498
         }
       ],
       "runtime_available": false,
@@ -276,17 +276,17 @@
       "prompt": "请载入 at-sparc 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "6a549c956e41595c51fc8b955e91dd14468f80feefb1e7c2be688c5740592c6a",
+      "sha256": "6dbbc30401af51efaf94463ad30f1e86de21538fb2dfc4baa4f36e7d774f1449",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "3890e07986b6d7242ff287ecedae7b716e96f36d120a973804fda36637c186af",
-          "size": 1910
+          "sha256": "b7984bfc7969a7529a3a3de89b6de66b10ef3a07d6a1ab9c6bd40a1e73d19fdd",
+          "size": 1580
         },
         {
           "path": "SKILL.md",
-          "sha256": "6a549c956e41595c51fc8b955e91dd14468f80feefb1e7c2be688c5740592c6a",
-          "size": 1810
+          "sha256": "6dbbc30401af51efaf94463ad30f1e86de21538fb2dfc4baa4f36e7d774f1449",
+          "size": 1480
         }
       ],
       "runtime_available": false,
@@ -300,17 +300,17 @@
       "prompt": "请载入 at-bellhop3d 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "27059083f3375ca9cbd04b87db56bc74c7fa54779b4002d701c6fdb752e301f8",
+      "sha256": "fa969e383a81114dded837f4f7fdef7a14a83e88389c29bc3fd6b6aadb471b50",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "c67e61dfab2c72785efc240d74ae816ed87d186af83e756a067e5a792366fce9",
-          "size": 1891
+          "sha256": "393fbe3accb73060871546947021b26a0f6501885bb2ffa384e13112d5567c5b",
+          "size": 1561
         },
         {
           "path": "SKILL.md",
-          "sha256": "27059083f3375ca9cbd04b87db56bc74c7fa54779b4002d701c6fdb752e301f8",
-          "size": 1849
+          "sha256": "fa969e383a81114dded837f4f7fdef7a14a83e88389c29bc3fd6b6aadb471b50",
+          "size": 1519
         }
       ],
       "runtime_available": false,
@@ -320,21 +320,21 @@
       "id": "at-krakel",
       "name": "KRAKEL 模型构造",
       "model": "krakel",
-      "description": "历史记录中曾编译并冒烟运行 KRAKEL，但弹性场后处理与收敛尚未核验；公共站不开放基线创建。",
+      "description": "KRAKEL基线配方尚未开放，弹性场后处理与收敛待核验。",
       "prompt": "请载入 at-krakel 技能及 references/workflow.md，先解释使用条件和所需环境，再依据我的目标形成输入与检查计划。我的目标是：",
       "read_only": true,
       "resource_count": 2,
-      "sha256": "b38a58e91bd8bd2e3bc9016e535c3965b87165524e5ff53d0bf3e5a93672a365",
+      "sha256": "fe11eca8fd4abccd73af79b0b615aba283d95c299a23b43aec94200af44a0368",
       "resources": [
         {
           "path": "references/workflow.md",
-          "sha256": "86c85bbfb0978430b94e29ee0b91d86d994557e5f2082a3585ee319e58947943",
-          "size": 1648
+          "sha256": "603832b5642c03259c4d827c7ce96de0672c901f573e2f7aba9f7bc5f3b73595",
+          "size": 1318
         },
         {
           "path": "SKILL.md",
-          "sha256": "b38a58e91bd8bd2e3bc9016e535c3965b87165524e5ff53d0bf3e5a93672a365",
-          "size": 2060
+          "sha256": "fe11eca8fd4abccd73af79b0b615aba283d95c299a23b43aec94200af44a0368",
+          "size": 1730
         }
       ],
       "runtime_available": false,
@@ -342,6 +342,6 @@
     }
   ],
   "scope": "public_read_only",
-  "note": "公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。",
-  "history_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。"
+  "note": "海洋声学参考资料与算例配方，可结合教材和通用声学知识使用。",
+  "history_scope": "原本地环境的算例与执行记录。"
 }

@@ -527,7 +527,7 @@
       ],
       "formula": "c = c(T, S, z)",
       "conditions": "",
-      "misconception": "示例剖面不等于指定海域的实测剖面。",
+      "misconception": "实际海域请使用对应地点和时段的温盐剖面。",
       "example": "",
       "diagram": "ssp",
       "tags": [
@@ -855,7 +855,7 @@
       ],
       "formula": "",
       "conditions": "",
-      "misconception": "有了水深，并不等于已经确定海底边界条件。",
+      "misconception": "海底边界需给出水深、介质声速、密度与吸收。",
       "example": "",
       "diagram": "boundary",
       "tags": [
@@ -1892,7 +1892,7 @@
       "color": "#ffcd73",
       "overview": "KRAKEN 生成模态文件，FIELD 读取模态与场计算输入，输出接收位置的复声压。",
       "key_points": [
-        "仅有模态文件并不等于已经得到所需网格声场。",
+        "KRAKEN求解模态，FIELD计算指定接收网格的复声压。",
         "项目包装函数已串联两步，不应无依据重复调用。"
       ],
       "references": [
@@ -1973,8 +1973,8 @@
       "color": "#ffcd73",
       "overview": "历史本地工作台曾用 MATLAB 与 KRAKEN / FIELD 复现 Munk 声道。公共站提供对应输入与流程；实际计算取决于本次连接节点。",
       "key_points": [
-        "历史记录包含 50/100 Hz 与 500/1000 m 源深四组检查；不代表当前公网节点已重跑。",
-        "新任务应独立保存 ENV、FLP、输出、图表与验证记录。"
+        "历史四组检查使用50/100 Hz与500/1000 m源深。",
+        "新任务保存独立的ENV、FLP、输出、图表与检查记录。"
       ],
       "references": [
         {
@@ -2080,7 +2080,7 @@
       "color": "#ff91bb",
       "overview": "接收深度影响所观测模态的权重。网页取最接近请求深度的网格点，并记录其实际深度与误差。",
       "key_points": [
-        "请求 1005 m 并不保证网格中恰有 1005 m。",
+        "实际接收深度取最近的输出网格点。",
         "比较曲线需要对齐实际接收深度。"
       ],
       "references": [
@@ -2131,7 +2131,7 @@
       "color": "#ff91bb",
       "overview": "声场图是离散距离与深度上的计算值。网格数量决定输出采样密度，不会自动改变物理环境。",
       "key_points": [
-        "更密的接收网格只是更密的场采样，不等于求解器内部误差已经收敛。",
+        "接收网格控制场输出采样；求解器内部网格单独设置并检查。",
         "输出图与 CSV 要保留明确的 m / km 单位。"
       ],
       "references": [
@@ -2284,7 +2284,7 @@
         }
       ],
       "formula": "",
-      "conditions": "教材特定条件和例子；间距不能当作通用常数。",
+      "conditions": "会聚区间距取决于具体剖面与声源位置。",
       "misconception": "",
       "example": "",
       "diagram": "rays",
@@ -2405,7 +2405,7 @@
         }
       ],
       "formula": "",
-      "conditions": "2001 年历史实验资料；不代表当前指定海域。",
+      "conditions": "2001年ASIAEX南海实验资料，使用时保留年份与站位。",
       "misconception": "",
       "example": "",
       "diagram": "observation",
@@ -6052,7 +6052,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6062,7 +6062,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6072,7 +6072,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6082,7 +6082,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6092,7 +6092,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6102,7 +6102,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6112,7 +6112,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6122,7 +6122,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6132,7 +6132,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6142,7 +6142,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6152,7 +6152,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6162,7 +6162,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6172,7 +6172,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6182,7 +6182,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6192,7 +6192,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6202,7 +6202,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6212,7 +6212,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6222,7 +6222,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6232,7 +6232,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6242,7 +6242,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6252,7 +6252,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6262,7 +6262,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6272,7 +6272,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6282,7 +6282,7 @@
       "label": "建议顺序",
       "type": "prerequisite",
       "group": "prerequisite",
-      "note": "教学建议的阅读顺序，不表示严格数学必要条件。",
+      "note": "建议的课程阅读顺序。",
       "references": []
     },
     {
@@ -6887,13 +6887,13 @@
       170
     ]
   },
-  "status": "人工课程知识与来源定位；69 个知识点、180 条关系。图中历史执行描述不是当前节点状态，教材页能否展示取决于已授权的来源服务。",
+  "status": "69个知识点、180条课程关系，提供讲解、图片、关联路径与资料索引。",
   "public_metadata": {
     "source": "backend/data/course_graph.json",
-    "source_sha256": "6f40d1225255db9646b7bdfa700f9a047e302ad0fb3a0b229dbb65a29a7b6cab",
+    "source_sha256": "1cfe0baf2ceb807e568713e4439e3fcbd04d8894034ddb0a034fb28971a32258",
     "knowledge_count": 69,
     "edge_count": 180,
     "source_hash_normalization": "utf8-lf",
-    "execution_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。"
+    "execution_scope": "原本地环境的算例与执行记录。"
   }
 }

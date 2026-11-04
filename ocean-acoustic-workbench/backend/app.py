@@ -178,6 +178,10 @@ async def app_lifespan(application):
         stop_executor()
 
 app=FastAPI(title='海洋声学工作台',docs_url='/api/docs',lifespan=app_lifespan)
+# The built bundle is ~1.4 MB of JS/CSS; compressing it cuts first load roughly
+# by 4x on a loopback connection that still serialises bytes.
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware,minimum_size=1024)
 RESEARCH=research_api.ResearchService(ROOT,LOCAL,STORE,config,lambda query:knowledge.retrieve(query))
 app.include_router(research_api.router(RESEARCH))
 app.include_router(simulation_studio.router(STORE,LOCAL,WORKER_WAKE))
@@ -210,7 +214,17 @@ async def local_guard(request:Request,call_next):
     if host not in ['127.0.0.1','localhost','testserver']:return Response('Local service only',status_code=403)
     origin=request.headers.get('origin')
     if request.method not in ['GET','HEAD','OPTIONS'] and origin and origin not in ['http://127.0.0.1:8765','http://localhost:8765','http://127.0.0.1:5173','http://localhost:5173']:return Response('Invalid origin',status_code=403)
-    return await call_next(request)
+    response=await call_next(request)
+    path=request.url.path
+    # Built assets carry a content hash in the filename, so a long immutable
+    # cache is safe there. HTML and API responses must stay fresh.
+    if path.startswith('/assets/') and response.status_code==200:
+        response.headers.setdefault('Cache-Control','public, max-age=31536000, immutable')
+    elif path.startswith('/api/'):
+        response.headers.setdefault('Cache-Control','no-store')
+    elif response.headers.get('content-type','').startswith('text/html'):
+        response.headers.setdefault('Cache-Control','no-cache')
+    return response
 
 @app.get('/api/health')
 def health():

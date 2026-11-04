@@ -28,8 +28,8 @@ export async function advanceResearchRun(identity,executionMode,options={}){
  return current;
 }
 export const RESEARCH_RECOVERY_DELAYS=[2000,4000,8000,8000,8000,8000];
-export async function resumeResearchRun(identity,contextBudget,advertised){
- return api('runs/'+identity+'/resume',{context_budget:normalizeResearchBudget(contextBudget,advertised)});
+export async function resumeResearchRun(identity,contextBudget,advertised,options={}){
+ return api('runs/'+identity+'/resume',{context_budget:normalizeResearchBudget(contextBudget,advertised)},undefined,options);
 }
 export function researchRequest({session,request_id,message,rounds,contextBudget,knowledgeNodes=[]},capabilities){
  const ids=knowledgeRequestIds(knowledgeNodes);
@@ -45,8 +45,10 @@ export function ResearchContextStatus({context}){
  return <div className="dialogue-toolbar" role="status" aria-label="研究上下文用量"><div>服务端输入估算：{Number.isFinite(context.estimated_input_tokens)?context.estimated_input_tokens.toLocaleString():'尚未提供'} tokens / {unlimited?'应用预算不限':<>预算 {Number.isFinite(context.budget_tokens)?context.budget_tokens.toLocaleString():'尚未提供'} tokens</>}<br/><small>按 UTF-8 字节保守估算。{unlimited&&'实际输入与输出上限由所选模型决定。'}{notes.length?notes.join('；')+'。':''}</small></div></div>;
 }
 export function ResearchBudgetRecovery({run,busy,onResume}){
- if(!run?.id||run.recoverable!==true||run.error_code!=='CONTEXT_BUDGET_EXCEEDED')return null;
- return <div className="dialogue-error" role="status"><p>上下文预算不足。请在“研究设置”中调大预算，再继续当前研究。</p><button className="button primary" disabled={busy} onClick={onResume}>调整预算并继续</button></div>;
+ if(!run?.id||run.recoverable!==true)return null;
+ const budget=run.error_code==='CONTEXT_BUDGET_EXCEEDED';
+ const message=budget?'上下文预算不足。请在“研究设置”中调大预算，再继续当前研究。':run.error_code==='PROVIDER_OUTPUT_LIMIT'?'本轮回答达到输出上限，研究进度已保存。':'研究进度已保存，可以继续当前研究。';
+ return <div className="dialogue-error" role="status"><p>{message}</p><button className="button primary" disabled={busy} onClick={onResume}>{budget?'调整预算并继续':'继续原研究'}</button></div>;
 }
 const labels={dsh:'DSH',codex:'Codex',api:'模型接口'};
 export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},openSettings}){
@@ -63,8 +65,8 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  // contains no Key and is never persisted or copied into another identity.
  const pendingRef=useRef(null),lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false),currentSession=useRef(session),pollControl=useRef(null),recoveryControl=useRef(null);
  currentSession.current=session;
- const budgetPaused=run?.recoverable===true&&run.error_code==='CONTEXT_BUDGET_EXCEEDED';
- const busy=submitting||(run?.state==='running'&&!budgetPaused);
+ const recoverablePaused=run?.recoverable===true;
+ const busy=submitting||(run?.state==='running'&&!recoverablePaused);
  function chooseBackend(value){setBackend(value);localStorage.setItem('ocean-cloud-research-v1-backend',value)}
  const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
  useEffect(()=>{loadSessions()},[]);
@@ -80,7 +82,7 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  },[session]);
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
  useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);try{setKnowledgeNodes(normalizeKnowledgeSelection(draft.knowledge_nodes||[]))}catch(error){setError(error.message)}follow.current=true}},[draft]);
- useEffect(()=>{if(run?.state!=='running'||budgetPaused||stepPaused)return;
+ useEffect(()=>{if(run?.state!=='running'||recoverablePaused||stepPaused)return;
   let alive=true,timer=null,terminal=null,reconciling=false,failures=0;
   const controller=new AbortController(),options={signal:controller.signal};pollControl.current=controller;
   const active=()=>alive&&!controller.signal.aborted&&currentSession.current===session;
@@ -102,7 +104,7 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
    const delay=RESEARCH_RECOVERY_DELAYS[failures++];setError('');setConnectionRecovery({attempt:failures,total:RESEARCH_RECOVERY_DELAYS.length,history:!!terminal});schedule(delay);
   }};
   poll();return()=>{alive=false;clearTimeout(timer);controller.abort();if(pollControl.current===controller)pollControl.current=null}
- },[run?.id,run?.state,session,cap?.execution_mode,budgetPaused,stepPaused]);
+ },[run?.id,run?.state,session,cap?.execution_mode,recoverablePaused,stepPaused]);
  useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial&&!run?.exports?.length)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial,run?.exports?.length]);
  async function submitPending(entry){
   if(sending.current||entry.payload.session!==currentSession.current)return;
@@ -152,7 +154,14 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
   catch(e){if(!controller.signal.aborted&&currentSession.current===target)setError(e.message)}
   finally{if(recoveryControl.current===controller)recoveryControl.current=null}
  }
- async function resume(){if(sending.current||pendingRef.current||busy||loading||!run?.recoverable)return;sending.current=true;setSubmitting(true);setError('');try{const result=await resumeResearchRun(run.id,contextBudget,cap?.context_budgets);setRun(old=>({...old,...result,id:old.id,state:result.state||'running',recoverable:result.recoverable===true,error:result.error||'',error_code:result.error_code||null}));follow.current=true}catch(e){setError(e.message);if(e.context)setRun(old=>({...old,context:e.context,error_code:e.code||old.error_code,recoverable:e.recoverable??old.recoverable}))}finally{sending.current=false;setSubmitting(false)}}
+ async function resume(){
+  if(sending.current||pendingRef.current||busy||loading||!run?.recoverable)return;
+  sending.current=true;setSubmitting(true);setError('');
+  const target=session,id=run.id,controller=new AbortController();recoveryControl.current=controller;
+  try{const result=await resumeResearchRun(id,contextBudget,cap?.context_budgets,{signal:controller.signal});if(controller.signal.aborted||currentSession.current!==target)return;setRun(old=>old?.id===id?{...old,...result,id,state:result.state||'running',recoverable:result.recoverable===true,error:result.error||'',error_code:result.error_code||null}:old);follow.current=true}
+  catch(e){if(!controller.signal.aborted&&currentSession.current===target){setError(e.message);if(e.context)setRun(old=>old?.id===id?{...old,context:e.context,error_code:e.code||old.error_code,recoverable:e.recoverable??old.recoverable}:old)}}
+  finally{sending.current=false;if(!controller.signal.aborted&&currentSession.current===target)setSubmitting(false);if(recoveryControl.current===controller)recoveryControl.current=null}
+ }
  function switchSession(next){if(pendingRef.current)return;pollControl.current?.abort();recoveryControl.current?.abort();currentSession.current=next;onDraftConsumed?.(draft?.id);localStorage.setItem('ocean-cloud-research-v1-session',next);setSession(next)}
  function newSession(){if(busy||pendingRef.current)return;switchSession(crypto.randomUUID());loadSessions()}
  async function renameSession(item){if(pendingRef.current)return;const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value},'PATCH');loadSessions()}catch(e){setError(e.message)}}
@@ -191,11 +200,12 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
     {!loading&&!messages.length&&<div className="dialogue-welcome"><Waves size={36}/><h2>从一个声学问题开始</h2><p>查阅课程资料、查询海洋环境数据，开展声学研究。</p><QuestionSuggestions mode="agent" onSelect={value=>{if(!pendingRef.current)setText(value)}}/></div>}
     {messages.map((row,i)=><DialogueMessage key={row.id||i} role={row.role} text={row.text} index={i} onCopy={copy} renderAnswer={value=><ChatMessage text={value}/>}>{row.role!=='user'&&row.exports?.length>0?<JobExports items={row.exports}/>:null}</DialogueMessage>)}
     {busy&&<DialogueMessage role="assistant" text={run?.partial||''} streaming backend={run?.backend||backend} renderAnswer={value=><ChatMessage text={value}/>}>{run?.exports?.length>0?<JobExports items={run.exports}/>:null}</DialogueMessage>}
+    {!busy&&recoverablePaused&&run?.partial&&<DialogueMessage role="assistant" text={run.partial} renderAnswer={value=><ChatMessage text={value}/>} />}
     {!busy&&run?.state!=='done'&&run?.exports?.length>0&&<DialogueMessage role="assistant"><JobExports items={run.exports}/></DialogueMessage>}
    </div>
    {run?.trace?.length>0&&<details className="dialogue-trace"><summary>实际工具调用 · {run.trace.length} 次</summary><div>{run.trace.map((item,i)=><details key={i}><summary>{i+1}. {item.tool} · {item.status}</summary><pre>{JSON.stringify(item.arguments,null,2)}</pre></details>)}</div></details>}
    {busy&&<div className="dialogue-runtime" role="status"><Loader2 size={16} className="spin"/>{labels[run?.backend||backend]} · {run?.stage||'正在提交'}{run?.elapsed_seconds!=null&&` · ${run.elapsed_seconds} 秒`}{run?.model&&` · ${run.model}`}<button className="button" disabled={!run?.id} onClick={stop}><Square size={13}/>停止当前请求</button></div>}
-   {error&&<div className="dialogue-error" role="alert">{error}{!pendingSend&&!stepPaused&&!text.trim()&&<button className="button" disabled={busy||!!pendingSend} onClick={()=>setText([...messages].reverse().find(row=>row.role==='user')?.text||'')}>编辑上一问题</button>}</div>}
+   {error&&<div className="dialogue-error" role="alert">{error}{!pendingSend&&!stepPaused&&!recoverablePaused&&!text.trim()&&<button className="button" disabled={busy||!!pendingSend} onClick={()=>setText([...messages].reverse().find(row=>row.role==='user')?.text||'')}>编辑上一问题</button>}</div>}
    <div className="dialogue-composer"><textarea aria-label="输入问题" placeholder="描述你的研究目标、环境来源与希望得到的结果…" value={text} disabled={!!pendingSend} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();send()}}}/><div><span><BookOpen size={13}/>技能 · 资料 · 在线环境数据</span><button className="button primary" aria-label="发送问题" disabled={busy||loading||!!pendingSend||!text.trim()||!cap?.api_configured} onClick={send}><ArrowUp size={18}/></button></div></div>
   </section><aside id="dialogue-context-panel" className={'panel dialogue-context'+(sidebarShown?'':' is-collapsed')} hidden={!sidebarShown}><div className="sessions-block"><div className="sessions-head"><h3>对话</h3><button className="button dialogue-context-close" aria-label="收起会话与资料" title="收起会话与资料" onClick={()=>setSidebarShown(false)}><X size={15}/></button><button className="button" disabled={busy||!!pendingSend} onClick={newSession}>＋ 新对话</button></div><div className="sessions-list">{!sessions.length&&<p className="sessions-empty">还没有会话，发一条消息就会自动建一个。</p>}{sessions.map(item=><div key={item.id} className={'sessions-item'+(item.id===session?' active':'')} aria-disabled={busy||!!pendingSend} onClick={()=>{if(!busy&&!pendingSend&&item.id!==session)switchSession(item.id)}}><div className="sessions-title">{item.title||'未命名会话'}</div><div className="sessions-meta">{item.count} 条 · {(item.updated||'').replace('T',' ').slice(0,16)}</div><div className="sessions-actions"><button disabled={busy||!!pendingSend} onClick={e=>{e.stopPropagation();renameSession(item)}}>改名</button><button disabled={busy||!!pendingSend} onClick={e=>{e.stopPropagation();removeSession(item)}}>删除</button></div></div>)}</div></div><details className="dialogue-context-notes"><summary>资料与使用说明</summary><h3>当前工作上下文</h3><p><BookOpen size={18}/>课程知识与教材原页</p><p><FlaskConical size={18}/>模型 Skill 与研究记录</p><p><Waves size={18}/>WOA18 温盐声速剖面{cap&&!cap.ocean_data_available&&<small>在线数据暂不可用</small>}</p><div className="dialogue-note">使用本人配置的模型 API，结合课程资料、Skill 和环境数据开展研究。DSH / Codex 可在本地完整工作台使用。{cap?.script_execution===true?' 已连接脚本执行器。':' MATLAB 仿真使用共享计算节点。'}</div><p className="dialogue-note">清空聊天会创建新会话，可撤销。计算结果见“任务与结果”。</p><button className="button" onClick={openSettings}><Settings2 size={15}/>模型与环境设置</button></details></aside></div>
  </div>;

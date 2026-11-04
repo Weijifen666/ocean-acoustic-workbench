@@ -180,9 +180,19 @@ async function sessionChangeIgnoresLateStatus(){
  await act(async()=>release(Response.json({id:'recovery-run',state:'running',step_busy:false,partial:'STALE_OLD_SESSION'})));
  assert.equal(steps().length,0);assert.equal(timers.size,0);assert(!text().includes('STALE_OLD_SESSION'));assert(!text().includes('上一会话中的请求'));
 }
+async function outputLimitResumesOriginalResearch(){
+ setup((path,body)=>{
+  if(path==='chat'){const accepted=accept(body,'failed');serverRun={...serverRun,recoverable:true,error_code:'PROVIDER_OUTPUT_LIMIT',partial:'PARTIAL_ANSWER_SAVED',error:'本轮输出达到上限'};return accepted}
+  if(path==='runs/recovery-run/resume'){serverRun={...serverRun,state:'running',recoverable:false,error_code:null,error:null};return Response.json(serverRun)}
+ });
+ await mount();await enter('不要重新运行已有仿真');await submit();
+ assert(text().includes('PARTIAL_ANSWER_SAVED'));assert.equal(buttons('继续原研究').length,1);assert.equal(buttons('调整预算并继续').length,0);assert.equal(buttons('编辑上一问题').length,0);assert.equal(steps().length,0);
+ await click('继续原研究');
+ assert.equal(chats().length,1,'Output recovery must not create another research request');assert.equal(calls.filter(row=>row.path==='runs/recovery-run/resume').length,1);assert.equal(steps().length,1);assert(text().includes(answer.text));assert.equal(timers.size,0);
+}
 async function main(){
- const cases=[lostAcknowledgement,offlineBeforeAcceptance,()=>bodyOrGatewayFailure(false),()=>bodyOrGatewayFailure(true),acknowledgedThenReadFails,graphAcknowledgementRecovery,pendingCannotSwitchSession,rejectedSendRetainsGraph,lostStepResponse,activeLeaseIsReadOnly,disconnectBeforePostAcceptance,boundedOfflineRecovery,stopCancelsRecovery,unmountIgnoresLateStatus,terminalHistoryRetriesAlone,sessionChangeIgnoresLateStatus];
- try{for(const scenario of cases){try{await scenario()}finally{await clean()}}console.log('Public chat recovery: 16 scenarios passed')}
+ const cases=[lostAcknowledgement,offlineBeforeAcceptance,()=>bodyOrGatewayFailure(false),()=>bodyOrGatewayFailure(true),acknowledgedThenReadFails,graphAcknowledgementRecovery,pendingCannotSwitchSession,rejectedSendRetainsGraph,lostStepResponse,activeLeaseIsReadOnly,disconnectBeforePostAcceptance,boundedOfflineRecovery,stopCancelsRecovery,unmountIgnoresLateStatus,terminalHistoryRetriesAlone,sessionChangeIgnoresLateStatus,outputLimitResumesOriginalResearch];
+ try{for(const scenario of cases){try{await scenario()}finally{await clean()}}console.log('Public chat recovery: 17 scenarios passed')}
  finally{global.fetch=original.fetch;global.setTimeout=original.setTimeout;global.clearTimeout=original.clearTimeout}
 }
 main().then(()=>process.exit(0),error=>{console.error(error);process.exit(1)});

@@ -16,7 +16,7 @@ test('real public workbench reconciles connections without duplicate steps and c
    nodePaths:[fileURLToPath(new URL('../node_modules',import.meta.url))],loader:{'.css':'empty'},logLevel:'silent'});
   const result=spawnSync(process.execPath,[outfile],{encoding:'utf8',timeout:25000,windowsHide:true});
   assert.equal(result.status,0,result.stderr||result.stdout);
-  assert.match(result.stdout,/Public chat recovery: 16 scenarios passed/);
+  assert.match(result.stdout,/Public chat recovery: 17 scenarios passed/);
  }finally{
   if(path.dirname(directory)!==base||!path.basename(directory).startsWith('ocean-chat-recovery-'))throw Error('Unexpected recovery test output path');
   await rm(directory,{recursive:true,force:true});

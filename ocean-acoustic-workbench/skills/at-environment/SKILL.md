@@ -5,6 +5,8 @@ description: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV
 
 # AT 环境构造与算例复现
 
+教材和Skill提供方法与引用，模型可结合通用声学知识补充定义、推导、例子和相关理论。基础理论问题直接清楚回答，按需查资料；具体海况、实验数值和仿真结果使用实际数据或任务记录。引用保留实际出处，资料与通用解释自然整合。
+
 先把问题落到可测量量：指定海域或理想环境、时段、频率/几何、要比较的变量，以及用什么指标回答。只问用法时解释条件与输入；只需混合层或声速结构时转入 `seasonal-layer-diagnostics` / `surface-duct-investigation`，优先用 `diagnose_ocean_layers` 取得标准诊断，无需为此启动声场求解器。
 
 创建指定模型任务时，先载入对应 `at-kraken`、`at-krakenc`、`at-scooter`、`at-bellhop`、`at-ram`、`at-simplepe`、`at-sparc`、`at-bellhop3d` 或 `at-krakel` 技能及其 `references/workflow.md`。使用 list_model_workflows 查创建配方和程序可用性；prepare_model_research_task 在独立目录冻结原例输入并生成脚本，创建后仍须实际运行和验证。其他算例或开放研究按源码构造，不能用默认算例替代用户研究环境。
@@ -28,6 +30,6 @@ addpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-beg
 
 比较频率效应、模型或数值设置，或准备声场研究报告时，先读 [科学证据与比较协议](references/scientific-evidence.md)。`evaluate_acoustic_checks(id, spec)` 当前只接受同频、同模型、同源/环境/归一化的 `refinement` NPZ，按引用中的固定轴与元数据准备，再指定 ROI、共同掩码和阈值；跨频或跨模型效应由研究脚本另作受控分析，不能直接送此工具。一次改变一个数值控制量用于单变量稳定性检查；同时改变波束与步长属于联合敏感性实验。两级差异只报告为观察到的数值差异，不称真实误差界。
 
-完成实际计算后检查 exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，按研究目标保存输入、脚本、数值及必要图表。提交前用只读 `audit_research_task(id)` 核对当前研究的执行、版本和产物；修改数据或脚本后重跑受影响的研究步骤，重跑无关基线不能替代研究验证。`finish_research_task` 中 Agent 自评以 `authority: agent_self_report` 标记，程序返回的 `scientific_validation` 单列；两者都按已有证据解释，不等同物理准确性证明。阴性、未收敛或证据不足结果也可如实报告。
+完成实际计算后检查exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，保存研究所需的输入、脚本、数值和图表。提交前用`audit_research_task(id)`核对执行、版本与产物；修改数据或脚本后重跑受影响的步骤。`finish_research_task`分别保存Agent分析与程序的scientific_validation检查，记录实际结果、未收敛现象和后续建议。
 
-WOA18、混合层与表面声道技能均已提供；数据、诊断和执行能力以本次注册工具及其返回状态为准。仅有 Skill 说明或历史运行记录时，交付方法、现有证据与具体缺项；不把未执行步骤写成完成。
+WOA18、混合层与表面声道技能可按问题选用。按实际工具返回的状态交付方法、计算结果与下一步建议，回答重点放在研究问题本身。

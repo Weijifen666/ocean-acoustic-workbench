@@ -19,7 +19,7 @@
 | 课程资料包或自己有权使用的教材 | 私有原页、教材全文检索、包内AT | 可选；公开图谱与公开知识不依赖私有PDF |
 | WOA18/ETOPO1 数据接口或本地原始数据 | 环境剖面、地图与季节诊断 | 做海洋环境研究时配置 |
 
-本轮实际仿真使用 MATLAB R2024a。不要把某个维护者电脑的版本和路径当作所有机器的要求；其他 MATLAB/AT 组合应先运行检查与小算例。当前求解器发现和配方主要针对Windows `.exe`，本文不宣称Linux/macOS已完成相同验收。
+本轮实际仿真使用 MATLAB R2024a。请填写自己的MATLAB/AT路径，并运行小算例检查。当前教程针对Windows `.exe`求解器。
 
 在 PowerShell 检查：
 
@@ -80,7 +80,7 @@ npm.cmd run build
 .\.venv\Scripts\python.exe backend/init_local.py --matlab 'C:/Program Files/MATLAB/R2024a/bin/matlab.exe' --toolbox 'D:/Tools/at'
 ```
 
-初始化只补缺失文件，不覆盖已有个人配置。若已经初始化过，后续改路径请在网页“模型与环境”中保存，不能期待再次传参覆盖原配置。没有AT的用户可以先浏览图谱、公开资料或配置模型，不能据此认定求解器已可运行。
+初始化只补缺失文件，不覆盖已有个人配置。若已经初始化过，后续改路径请在网页“模型与环境”中保存，不能期待再次传参覆盖原配置。没有AT时可先浏览图谱、公开资料或配置模型。
 
 无课程包时，私有PDF原页和全文索引为空。自备AT时，根目录应同时包含 `bin/`、MATLAB读取/绘图函数和原始 `tests/`。不要把“AT目录”填写为 `bin/` 本身。
 
@@ -102,7 +102,7 @@ which('kraken.exe','-all')
 
 输出应属于你选择的那套AT。旧exe与新版 `.mod/.shd` 读取器可能不兼容；不要对混合版本目录直接 `addpath(genpath(...))`，把旧读取器和 `matlab2026` 一起加入。工作台的模型配方会检查所需exe与算例输入，缺失时修路径或补完整发行包，不通过修改“available”字段假装就绪。
 
-KRAKEL目前仍未开放基线创建。九张模型资料卡不代表九种求解器都能创建和运行。
+KRAKEL目前仍未开放基线创建。可创建的配方见模型目录。
 
 ## 4. 配置海洋环境数据
 
@@ -114,7 +114,7 @@ KRAKEL目前仍未开放基线创建。九张模型资料卡不代表九种求�
 $env:OCEAN_DATA_URL = 'https://ocean-acoustic-data-workbench.huuiihhuuiii.chatgpt.site'
 ```
 
-这使用已发布的WOA18/ETOPO1数据接口，无需下载原始整包，也不需要模型Key。工作台会检查实际数据目录和激活版本；配置了URL不等于网络一定可达。年度、月度与季度温盐数据属于气候态，不是今天的实测海况。
+这使用已发布的WOA18/ETOPO1数据接口，无需下载原始整包，也不需要模型Key。工作台检查接口连接与数据版本。年度、月度和季度数据为WOA18气候平均。
 
 ### 使用自己的本地数据
 
@@ -133,7 +133,7 @@ $env:OCEAN_DATA_DIR = 'D:/Course/ocean-data'
 
 1. 启动工作台后打开“模型与环境”。
 2. 选择实际供应商、账户已开通的具体模型和对应接口地址，填写自己的API Key。
-3. 可先查询账户模型，再测试当前模型，成功后保存。目录预设只表示程序知道该标识，不保证你的账户有额度和工具调用权限。
+3. 可先查询账户模型，再测试当前模型，成功后保存。请使用账户已开通且有额度的模型。
 4. 在“对话工作台 → 研究代理 → 对话后端”选择“现有模型接口”。
 
 当前预设供应商包括 DeepSeek、阿里云百炼、Moonshot Kimi 和智谱GLM。按供应商官方API地域和产品线配置；例如按量模型API、Coding Plan及不同地域的Key不能随意混用。接口测试只证明这一请求被接受，不代替实际工具调用和复杂研究验收。
@@ -142,7 +142,7 @@ Key在本机 `.local/config.json` 和 `.local/model-profiles.json` 中保存，�
 
 ### 使用 DSH Harness
 
-1. 从 [DeepSeek官方Harness页面](https://www.deepseek.com/harness/)下载Windows桌面版。当前桥接支持已安装桌面包的ACP入口；仅运行 `npx ... web` 不等于安装了该桌面布局。
+1. 从 [DeepSeek官方Harness页面](https://www.deepseek.com/harness/)下载Windows桌面版。桥接使用已安装桌面版的ACP入口。
 2. 先在DSH中配置自己的模型供应商或登录方式，并完成一次真实短对话。DSH凭据由DSH自身管理，不从工作台API设置自动复制。
 3. 标准安装位置会被尝试发现；自定义安装时，在启动后端的同一终端指定实际程序：
 
@@ -159,7 +159,7 @@ $env:OCEAN_DSH_EXECUTABLE = 'C:/Program Files/DeepSeek Harness/DeepSeek Harness.
 Invoke-RestMethod 'http://127.0.0.1:8765/api/research/dsh/status'
 ```
 
-`available=true` 表示ACP启动与握手成功，`authenticated=null` 不表示模型已认证。随后发送：“只列出研究技能并加载 at-environment，说明适用范围，不执行计算。”查看真实工具调用记录和最终回答，才能验证模型与MCP链路。
+`available=true` 表示ACP启动与握手成功，`authenticated=null`时需发送一次对话检查模型连接。随后发送：“只列出研究技能并加载 at-environment，说明适用范围，不执行计算。”查看真实工具调用记录和最终回答，才能验证模型与MCP链路。
 
 工作台按任务注册临时MCP工具。DSH的模型设置、上下文管理和会话由DSH处理；模型在哪台机器推理，取决于其连接的服务。本项目不随DSH桥接下载大模型权重。
 
@@ -205,15 +205,15 @@ Invoke-RestMethod 'http://127.0.0.1:8765/api/research/capabilities'
 
 ### 先验证 MATLAB 编程与运行
 
-打开本地工作台的“MATLAB 与代码”，默认语言为“MATLAB · 主工作流”。点击“检查本机 MATLAB 环境”核对路径，回到代码页载入示例并点击“在本机运行 MATLAB”。到“任务与结果”核对SUCCEEDED、真实MATLAB日志与profile.png。只显示“已发现本机 MATLAB”表示找到程序文件，不代表许可证和脚本已通过。
+打开本地工作台的“MATLAB 与代码”，默认语言为“MATLAB · 主工作流”。点击“检查本机 MATLAB 环境”核对路径，回到代码页载入示例并点击“在本机运行 MATLAB”。到“任务与结果”核对SUCCEEDED、真实MATLAB日志与profile.png。“已发现本机MATLAB”显示路径状态，运行结果见任务页。
 
 需要模型编写或修改.m脚本时点击“让AI检查或修改”，模型按草稿ID读取当前代码；保存修改匹配修订号，运行时冻结该版本。项目文件页可读已配置工程；代码草稿与研究任务默认写独立目录，不直接覆盖原工程。代码最多50,000字节，CSV最多100,000字节。
 
 Python保留为辅助分析：语言选择“Python · 辅助分析”，载入示例并点击“在浏览器运行 Python”，可检查标准输出、PNG和JSON下载。它与MATLAB执行是不同入口。
 
-本轮已实际通过浏览器Python示例（6个样本、JSON与PNG）、10秒超时、初始化/运行中停止，以及本机Python/MATLAB读取CSV和输出CSV/PNG。网页本机任务可从“任务与结果”取消。Python输入CSV是全局变量input_csv/INPUT_CSV中的文本，也可读input.csv，不能当作环境变量或文件路径。
+本轮已实际通过浏览器Python示例（6个样本、JSON与PNG）、10秒超时、初始化/运行中停止，以及本机Python/MATLAB读取CSV和输出CSV/PNG。网页本机任务可从“任务与结果”取消。Python输入CSV是全局变量input_csv/INPUT_CSV中的文本，也可读input.csv，直接读取该文本变量或input.csv即可。
 
-浏览器计算使用WASM/Pyodide，首次需下载并校验约27MB公开运行依赖；随后在禁用网络的隔离线程内执行，只接收明确载入的CSV。支持Python标准库、NumPy与Matplotlib，不提供任意pip安装、MATLAB/AT二进制或本机磁盘访问。它会占用当前设备的浏览器资源，与云端大模型推理是两件事。可选10/20/60秒运行上限，点击停止会终止该计算线程。保存的是浏览器运行回执，不能据此声称服务端复算或物理精度已获证明。
+浏览器计算使用WASM/Pyodide，首次需下载并校验约27MB公开运行依赖；随后在禁用网络的隔离线程内执行，只接收明确载入的CSV。支持Python标准库、NumPy与Matplotlib，不提供任意pip安装、MATLAB/AT二进制或本机磁盘访问。它会占用当前设备的浏览器资源，与云端大模型推理是两件事。可选10/20/60秒运行上限，点击停止会终止该计算线程。运行结果保存在代码工作区。
 
 本地完整工作台的“在本机运行 MATLAB / Python”：先保存草稿，再把该ID和修订交给本机执行器；Python与MATLAB都从独立任务目录读取`input.csv`，并提供`input_csv`和`INPUT_CSV`变量。任务记录保存源修订及代码、CSV的SHA256，结果以“任务与结果”的真实状态、退出日志和产物为准。没有配置MATLAB时明确报错，不把MATLAB源码交给Python执行。运行期间若另一窗口修改了草稿，旧任务仍保留，但不会把旧输出挂到新代码版本。
 
@@ -235,7 +235,7 @@ Python保留为辅助分析：语言选择“Python · 辅助分析”，载入�
 
 ### 数据与结果分析
 
-在海洋数据页用120°E、20°N读取年平均和一个月份，核对实际温盐格点、有效层深度与缺测；CSV/JSON导出后可用于自己的分析。点击“用于声场仿真”后再确认有效水深、频率、源/接收深度和海底参数，单点剖面不等于完整传播环境。
+在海洋数据页用120°E、20°N读取年平均和一个月份，核对实际温盐格点、有效层深度与缺测；CSV/JSON导出后可用于自己的分析。点击“用于声场仿真”后再确认有效水深、频率、源/接收深度和海底参数，此处使用单点剖面与平底环境。
 
 需要混合层研究时，让研究代理加载 `seasonal-layer-diagnostics`，实际调用标准诊断工具，保留温度和位密度判据、数据版本与缺测状态。已有声场做数值比较时保持环境、输出坐标、参考约定和有效掩码一致。数据分析、执行成功、数值稳定和物理精度分别报告，不能相互代替。
 
@@ -243,11 +243,11 @@ Python保留为辅助分析：语言选择“Python · 辅助分析”，载入�
 
 停止Agent只停止继续调度；已经提交的计算在任务页分别取消。上游繁忙、预算不足或Agent未完成归档时，先查看原任务和已有文件，再续接；不要为“重试”重复计算同一任务。
 
-[上一轮实际验收](FUNCTIONAL_VALIDATION_2026-11-03.md)中，直接计算的八个模型配方与四季诊断通过；DSH只读技能调用通过，但自主诊断归档两次未通过。它们属于不同验收层，教程不保证每个模型都能在固定时间内自动完成所有研究。
+[上一轮实际验收](FUNCTIONAL_VALIDATION_2026-11-03.md)中，直接计算的八个模型配方与四季诊断通过；DSH只读技能调用通过，但自主诊断归档两次未通过。后续模型运行记录见最新功能验收。
 
 ## 8. 教材全文与私有数据
 
-课程包导入原件不等于全文已建立索引。按 [知识入库说明](KNOWLEDGE_IMPORT.md)创建包含所有目标来源的manifest，再运行：
+导入课程包后，按下面步骤建立全文索引。按 [知识入库说明](KNOWLEDGE_IMPORT.md)创建包含所有目标来源的manifest，再运行：
 
 ```powershell
 .\.venv\Scripts\python.exe backend/ingestion.py --manifest .local/kb/my-manifest.json
@@ -269,7 +269,7 @@ npm.cmd run build
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p "test_*.py"
 ```
 
-软件回归通过不等于已经使用真实Key或MATLAB。升级后再做第7节的小型实际任务；供应商、DSH和AT更新也应重复这一层检查。当前程序和验证协议见 [科研检查说明](RESEARCH_SCIENCE_VALIDATION.md)。
+升级后再做第7节的小型实际任务；供应商、DSH和AT更新也应重复这一层检查。当前程序和验证协议见 [科研检查说明](RESEARCH_SCIENCE_VALIDATION.md)。
 
 需要自定义运行目录的部署者，可先用 `init_local.py --runtime-dir` 初始化对应目录，再在启动后端前设置同一 `OCEAN_RUNTIME_DIR`。课程包导入与工具箱安装的路径支持应以对应脚本为准；不要只改一处环境变量后假定所有历史缓存都已经迁移。普通用户优先沿用默认 `.local/`。
 
@@ -280,10 +280,10 @@ npm.cmd run build
 | 打开8765失败 | 看前台输出或启动日志；确认Python来自本项目虚拟环境、网页已经构建，端口由正确工作台占用 |
 | 默认DSH报未安装 | 配置官方桌面版与实际exe路径，或先切“现有模型接口”；API后端不要求DSH |
 | DSH“就绪”但无法回答 | 就绪只证明ACP握手；在DSH自身检查模型配置、凭据、额度和网络，再做只读技能试用 |
-| API返回401/403/429 | 核对官方地域、Key、模型权限和额度；请求失败不等于换个Harness就能绕过服务限制 |
+| API返回401/403/429 | 核对官方地域、Key、模型权限和额度；API和Harness均需有效凭据与可用额度 |
 | MATLAB可用但某配方不可用 | 检查完整AT根目录、对应exe、原始tests输入及读取器版本；看 `missing_inputs` 与 `missing_executables` |
 | Python研究脚本缺numpy/gsw | 确认后端用安装过完整requirements的虚拟环境启动；不要只给主进程临时加PYTHONPATH代替依赖安装 |
-| 海洋数据未连接 | 确认在后端启动前设置OCEAN_DATA_URL或本地目录，检查接口网络与版本；陆地/缺测拒绝不等于网站故障 |
+| 海洋数据未连接 | 确认在后端启动前设置OCEAN_DATA_URL或本地目录，检查接口网络与版本；陆地或缺测点请更换位置 |
 | 原页图片不可用 | 检查对应授权PDF是否导入该运行目录；公开图谱与来源名称不会自动提供原件 |
 | 只看到代码没有图表 | 检查是否实际调用运行工具、进程退出码及任务报告；聊天文本不能充当计算结果 |
 | 换了DSH模型但工作台API没变 | 两套模型配置分别维护，先确认正在使用的“对话后端” |

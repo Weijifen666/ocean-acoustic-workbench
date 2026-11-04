@@ -6,10 +6,15 @@ import {createPublicOceanKnowledge} from './server/open-ocean-retrieval.mjs';
 import {resolveVisitorIdentity,visitorCookie} from './server/identity.mjs';
 import {handleOceanData} from './server/ocean-data.mjs';
 import {handleOceanPublish} from './server/ocean-publish.mjs';
+import {handleCourseKnowledgePublish} from './server/course-knowledge-publish.mjs';
 import {createResearchCatalog} from './server/research-catalog.mjs';
 import {createCoursePageHandler} from './server/course-images.mjs';
 const json=(data,status=200,headers={})=>new Response(JSON.stringify(data),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...headers}});
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const sleep=(ms,signal)=>new Promise(resolve=>{
+ if(signal?.aborted)return resolve(false);
+ const finish=value=>{clearTimeout(timer);signal?.removeEventListener('abort',abort);resolve(value)},abort=()=>finish(false),timer=setTimeout(()=>finish(true),ms);
+ signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();
+});
 const encoder=new TextEncoder();
 const bytes64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 function base64(b){let s='';for(let i=0;i<b.length;i+=8192)s+=String.fromCharCode(...b.subarray(i,i+8192));return btoa(s)}
@@ -49,17 +54,22 @@ async function bridge(request,env,ctx,path){
 }
 async function dynamic(request,env,ctx,url){
  if(request.method!=='GET'&&request.method!=='HEAD'&&request.headers.get('origin')!==url.origin)return json({detail:'请从当前网站提交请求'},403);
+ if(request.signal.aborted)return json({detail:'请求已停止'},499);
  const store=db(env),heart=await store.one("SELECT seen FROM bridge_state WHERE id='matlab'");
+ if(request.signal.aborted)return json({detail:'请求已停止'},499);
  if(!heart||Date.now()-heart.seen>15000){if(url.pathname==='/api/health')return json(offline());return json({detail:'MATLAB 计算节点暂未连接。知识图谱仍可浏览；请稍后重试。'},503)}
  const body=await request.text();if(body.length>65536)return json({detail:'请求内容过长'},413);
  const queued=await store.one("SELECT COUNT(*) AS n FROM bridge_requests WHERE state!='done' AND created>?",Date.now()-95000);if(queued.n>=80)return json({detail:'访问繁忙，请稍后重试'},429);
  const identity=await resolveVisitorIdentity(request,env);
  const id=crypto.randomUUID(),payload=await encrypt({path:url.pathname+url.search,method:request.method,body,headers:{cookie:'ocean_visitor='+identity.node_id,origin:url.origin,'idempotency-key':request.headers.get('idempotency-key')||'','x-ocean-client-ip':request.headers.get('cf-connecting-ip')||'cloud-visitor'}},computeSecret(env));
+ if(request.signal.aborted)return json({detail:'请求已停止'},499);
  await store.run("INSERT INTO bridge_requests(id,created,state,payload) VALUES(?,?,'queued',?)",id,Date.now(),payload);
  try{
   for(let i=0;i<44;i++){
    if(request.signal.aborted)return json({detail:'请求已停止'},499);
-   await sleep(i<4?500:2000);const row=await store.one('SELECT state FROM bridge_requests WHERE id=?',id);
+   if(!await sleep(i<4?500:2000,request.signal))return json({detail:'请求已停止'},499);
+   const row=await store.one('SELECT state FROM bridge_requests WHERE id=?',id);
+   if(request.signal.aborted)return json({detail:'请求已停止'},499);
    if(row?.state==='done'){
     const object=await env.BUCKET.get('rpc/'+id);if(!object)throw Error('missing response');
     const result=await decrypt(await object.text(),computeSecret(env)),headers=new Headers(result.headers);
@@ -74,6 +84,7 @@ const cloudApi=createCloudModels({catalog:MODELS,graph:GRAPH,retrieve:createCour
 export default {async fetch(request,env,ctx){
  const url=new URL(request.url);
  try{
+  const knowledgePublish=await handleCourseKnowledgePublish(request,env);if(knowledgePublish)return knowledgePublish;
   const publish=await handleOceanPublish(request,env);if(publish)return publish;
   const ocean=await handleOceanData(request,env);if(ocean)return ocean;
   if(url.pathname.startsWith('/_bridge/'))return await bridge(request,env,ctx,url.pathname);

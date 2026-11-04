@@ -94,7 +94,7 @@ export function OceanPointSummary({selection, periodLabel, busy, error, result, 
     <div className="ocean-point-heading"><strong>{busy ? '正在读取所选点…' : error ? '该点暂未取得剖面' : result ? '剖面已读取' : '请选择海洋位置'}</strong>{busy && <Loader2 size={15} className="spin"/>}</div>
     {selection && <p className="ocean-point-coordinate">请求坐标 {number(selection.lon, 4)}°，{number(selection.lat, 4)}° · {periodLabel}</p>}
     {error && !busy && <p className="ocean-point-error">{error}</p>}
-    {busy && <p>正在查询温盐、原始地形与声速；当前位置标记不代表已有有效数据。</p>}
+    {busy && <p>正在查询当前位置的温盐、地形与声速…</p>}
     {result && !busy && !error && <>
       <p className="ocean-point-grid">实际温盐格点 {number(result.selected?.lon, 2)}°，{number(result.selected?.lat, 2)}°</p>
       <dl className="ocean-point-values"><div><dt>有效层</dt><dd>{result.rows.length}</dd></div><div><dt>坐标水深</dt><dd>{number(Number.isFinite(result.bottom?.elevation_m) ? -result.bottom.elevation_m : undefined, 0)} m</dd></div><div><dt>有效剖面至</dt><dd>{number(result.rows.at(-1)?.depth_m, 0)} m</dd></div></dl>

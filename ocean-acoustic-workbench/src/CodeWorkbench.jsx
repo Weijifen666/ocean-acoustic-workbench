@@ -84,7 +84,7 @@ export default function CodeWorkbench({api=defaultApi,publicMode=true,onAsk,onRu
    </div>
    {language==='python'&&<p className="code-runtime-note">Python 是辅助分析环境，首次校验约27MB固定依赖；支持标准库、NumPy与Matplotlib，计算占用当前设备的浏览器资源。它不能调用本机 MATLAB 或读取本机工程目录。</p>}
    {stage&&<p role="status" className="code-stage">{stage}</p>}
-   {((busy&&executionMode==='browser')||result)&&<section className="code-output" aria-label="代码运行结果"><div className="code-result-heading"><h2>运行结果</h2><span>{result?.status||'运行中'}{result?.seconds!=null?' · '+result.seconds+' s':''}</span></div><p>浏览器返回的代码运行记录；不等于服务端独立验证或物理精度证明。</p>
+   {((busy&&executionMode==='browser')||result)&&<section className="code-output" aria-label="代码运行结果"><div className="code-result-heading"><h2>运行结果</h2><span>{result?.status||'运行中'}{result?.seconds!=null?' · '+result.seconds+' s':''}</span></div><p>本次运行使用浏览器Python环境，结果随代码保存。</p>
     <pre aria-label="标准输出">{result?.stdout??stream.stdout??''}</pre>{(result?.stderr||stream.stderr)&&<pre className={result?.status==='succeeded'?'code-diagnostics':'code-stderr'} aria-label={result?.status==='succeeded'?'运行警告与诊断':'运行错误'}>{result?.stderr||stream.stderr}</pre>}
     {(result?.warnings||[]).map((item,index)=><p key={index}>{item}</p>)}
     <div className="code-artifacts">{(result?.artifacts||[]).map((item,index)=><article key={index}>{safeImage(item)&&<img alt={item.name} src={safeImage(item)}/>}<div><span>{item.name}</span><button onClick={()=>{try{download(item.name,outputBytes(item),item.mime)}catch{setError('该结果文件无法解码，请重新运行')}}}><Download size={15}/>下载</button></div></article>)}</div>

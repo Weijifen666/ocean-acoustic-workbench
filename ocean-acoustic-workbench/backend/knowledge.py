@@ -14,7 +14,7 @@ def graph_data():
         extra=media.get(n['id'],{})
         n['diagram']=n.get('diagram') or extra.get('diagram','')
         n['images']=[]
-        if n.get('diagram'):n['images'].append({'url':'/assets/knowledge/'+n['diagram']+'.svg','caption':'本项目原创原理示意 · 非教材原图、非仿真结果','kind':'authored_diagram'})
+        if n.get('diagram'):n['images'].append({'url':'/assets/knowledge/'+n['diagram']+'.svg','caption':'本项目原创原理示意','kind':'authored_diagram'})
         for i,r in enumerate(n.get('references',[])):
             if r.get('pdf_page'):n['images'].append({'url':f"/api/source/{r['source_id']}/page/{r['pdf_page']}",'caption':f"教材原页 · {r['source_id']} · PDF 第 {r['pdf_page']} 页",'kind':'source_page','source_id':r['source_id'],'pdf_page':r['pdf_page'],'source_url':f"/api/source/{r['source_id']}/page/{r['pdf_page']}"})
             else:r['code_url']=f"/api/knowledge/code?node={n['id']}&reference={i}"
@@ -104,9 +104,9 @@ def retrieval_status():
         chunks=retrieval.load_chunks(CHUNKS)
         report=retrieval.load_index_report(CHUNKS)
         status.update({'source_chunks':len(chunks),'source_documents':len({c['source_id'] for c in chunks}),'needs_ocr_pages':report.get('needs_ocr_pages',len(report.get('warnings',[]))),'index_ready':bool(chunks),'index_revision':report.get('index_revision',''),'warnings':report.get('warnings',[]),'scope':'原页片段 + 有适用条件的课程卡 + 一跳课程关联。扫描页未做 OCR；空白/异常提取页须人工处理。'})
-    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors','maintained_query_rules','RRF'],'ranking_note':'明确术语保留概念优先；命中人工上下文改写规则时，最多四路 BM25/图谱候选排行以 RRF 融合。候选相关不代表回答命题已核验；未接入向量检索或神经重排。'})
+    status.update({'mode':'hybrid_course_rag','cards':status['reviewed_cards'],'indexed_sources':status['source_documents'],'indexed_pages':len({(c['source_id'],c['pdf_page']) for c in chunks if c.get('pdf_page') is not None}),'chunks':status['source_chunks'],'needs_ocr':status['needs_ocr_pages'],'methods':['BM25','bilingual_term_aliases','typed_graph_context','lexical_rank_with_concept_priors','maintained_query_rules','RRF'],'ranking_note':'术语查询优先概念卡；命中语境规则时，融合最多四路BM25/图谱检索结果。'})
     legacy=sum(c.get('ingestion_version',1)<2 for c in chunks)
-    status['text_integrity']={'required_ingestion_version':2,'index_ingestion_version':report.get('ingestion_version'),'legacy_chunks':legacy,'requires_rebuild':bool(legacy),'display_policy':'保留文本层 Unicode；NFKC 仅用于检索字段。','math_layout_verified':False,'note':'旧索引中的上/下标损失无法反推，须从授权原文重新入库；文本提取并不等于公式、表格或 OCR 已核验。'}
+    status['text_integrity']={'required_ingestion_version':2,'index_ingestion_version':report.get('ingestion_version'),'legacy_chunks':legacy,'requires_rebuild':bool(legacy),'display_policy':'保留文本层 Unicode；NFKC 仅用于检索字段。','math_layout_verified':False,'note':'旧索引请从授权原文重建；公式、表格与扫描页待复核。'}
     rows=source_coverage(chunks,report)
     coverage={field:sum(row.get(field) or 0 for row in rows) for field in ['total_pages','selected_pages','processed_pages','indexed_pages','failed_or_needs_ocr_pages','blank_or_short_pages','unreadable_pages']}
     if not any(row.get('total_pages') is not None for row in rows):coverage['total_pages']=None
@@ -114,10 +114,10 @@ def retrieval_status():
     coverage['failed_or_needs_ocr_pages']=status['needs_ocr_pages']
     coverage['coverage_ratio']=round(coverage['indexed_pages']/coverage['total_pages'],6) if coverage['total_pages'] else None
     coverage['selected_success_ratio']=round(coverage['indexed_pages']/coverage['selected_pages'],6) if coverage['selected_pages'] else None
-    status.update({'source_coverage':rows,'coverage':coverage,'processed_sources':len(rows),'coverage_note':'覆盖率为成功入库的原页数 / 资料 PDF 总页数；空白或短文本不等于已确认空白，更不表示 OCR 已完成。未知总页数保留 null。'})
+    status.update({'source_coverage':rows,'coverage':coverage,'processed_sources':len(rows),'coverage_note':'覆盖率为成功入库PDF页数/总页数；空白与短页待复核，未知总页数记为null。'})
     status['public_ocean']=public_ocean.public_ocean_status()
     status['web_sources']=status['public_ocean']['web_sources']
-    status['knowledge_note']='课程 PDF 原页与公开官方网页是两个独立索引；公开网页不计入 PDF 页数。快照刷新不等于实时观测查询。'
+    status['knowledge_note']='课程PDF与官方网页分别建立索引，网页快照按来源清单更新。'
     return status
 def citations_for(evidence):
     citations=[];seen=set()
@@ -148,7 +148,7 @@ def shortest_path(source,target):
     queue=collections.deque([(source,[source],[])]);visited={source}
     while queue:
         current,nodes,edges=queue.popleft()
-        if current==target:return {'nodes':nodes,'edges':edges,'direction_note':'按概念关联查找连接，允许逆向遍历；不代表因果推导。'}
+        if current==target:return {'nodes':nodes,'edges':edges,'direction_note':'按课程概念关联查找连接，支持双向遍历。'}
         for e in g['edges']:
             if e['group']!='related' or current not in [e['source'],e['target']]:continue
             other=e['target'] if current==e['source'] else e['source']

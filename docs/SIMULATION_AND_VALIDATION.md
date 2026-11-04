@@ -27,7 +27,7 @@
 
 可取的是把环境、源/接收几何和求解器分开，输出比较使用明确阈值，记录通过、失败、跳过，且把数值回归产物作为构建结果而非反复提交源仓库。其公布的 benchmark 数量是作者的参考证据，本研究没有重跑，不能写成我们的通过结果。
 
-需要保留判断：`config.py` 的 `from_dict` 忽略未知字段，dataclass 类型注释不能替代 Pydantic 数值验证；`skills/make_env.py` 会补默认声速、海底声速、密度等参数；`skills/run_sim.py` 给出的简单 success 不代表所有物理和结果有效性均已校验。当前项目的固定模板、数值 JSON 和 ENV roundtrip 已经更严格，不应因为对方功能多就原样替换。
+需要保留判断：`config.py` 的 `from_dict` 忽略未知字段，dataclass 类型注释不能替代 Pydantic 数值验证；`skills/make_env.py` 会补默认声速、海底声速、密度等参数；`skills/run_sim.py`返回执行状态，数值结果另行校验。当前项目的固定模板、数值 JSON 和 ENV roundtrip 已经更严格，不应因为对方功能多就原样替换。
 
 ### arlpy
 
@@ -37,7 +37,7 @@
 
 OpenHands 的[工具架构](https://docs.openhands.dev/sdk/arch/tool-system)将输入与观察结果用 Pydantic 明确定义。可在本项目中独立实现同样的接口：`preview_simulation(plan) -> validation + cases`、`get_simulation_result(job_id) -> measured data + provenance`，既可被网页调用，也可将来暴露给模型。
 
-LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgraph/interrupts)强调节点重跑时副作用要幂等。本项目提交接口已支持稳定 `Idempotency-Key`，同一标识与相同参数返回已有任务，不因网络重试重复计算；模型尚不能自行提交任务。
+LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgraph/interrupts)强调节点重跑时副作用要幂等。本项目提交接口支持稳定的`Idempotency-Key`，同一标识和参数返回已有任务；本节记录的早期版本通过表单确认后提交。
 
 ## 当前项目已有能力
 
@@ -59,7 +59,7 @@ LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgr
 
 将 `Plan` 提取到 `backend/simulation_schema.py`，使用 `ConfigDict(extra='forbid', allow_inf_nan=False)`，模板用 Literal；跨字段校验放在模型 validator，不依赖调用方额外记得 `checked()`。前端和模型工具从同一个 JSON schema 获取字段。保留现有 API 字段，避免重写全部界面。
 
-可加“命题示例”而不宣称 LLM 已解析：50/100 Hz × 500/1000 m 源深比较；1000 m 接收深度、1–50 km 距离。每条示例具有目的、参数、需要读取的知识点和预期产物。用户点击后只填参数，仍预览再计算。
+可添加以下命题示例：50/100 Hz × 500/1000 m 源深比较；1000 m 接收深度、1–50 km 距离。每条示例具有目的、参数、需要读取的知识点和预期产物。用户点击后只填参数，仍预览再计算。
 
 自然语言解析若本轮接入，应输出 `{plan, missing_fields, assumptions, unsupported_requests}`。明确单位换算；缺少关键参数或要求当前不支持的浅海/射线/自定义海底，不能默默用 Munk 替代，也不允许让模型提供原始脚本。可先实现单位清楚、模式有限的确定性解析；模型版本以后再接。
 
@@ -75,7 +75,7 @@ LangGraph [恢复/interrupt 文档](https://docs.langchain.com/oss/python/langgr
 
 给问答加入只读 `get_simulation_result`：拿到该用户拥有的 job_id，提供 manifest、统计量和曲线抽样。回答应把实测数值、模型假设、课程解释分开，引用任务编号；任务失败或未完成时不能编造结论。LLM 不需要获得所有二维矩阵，更无需获得主机本地路径。
 
-可先实现确定性的分析卡：实际/请求接收深度差、有效样本比例、TL 中位数/范围、该接收深度曲线最低 TL 对应距离；标注这是当前曲线的数值特点，不等于声道轴、最佳通信距离或测得的海域事实。
+可先实现确定性的分析卡：实际/请求接收深度差、有效样本比例、TL 中位数/范围、该接收深度曲线最低 TL 对应距离；标注统计所用曲线、距离范围和接收深度。
 
 ### P1：错误修复边界
 
@@ -154,4 +154,4 @@ CI 可以运行 schema、数值结果 fixture 和权限测试；真实 MATLAB �
 
 ## 仍未实现的后续范围
 
-用大模型解析任意自然语言、多步 Agent 自动执行、多环境/多求解器、求解器数值收敛基准、MATLAB 迁移至独立常驻计算主机、自动修改访客本机 MATLAB 项目仍需单独实现和实际验证。通用 OpenHands / LangGraph 运行时不是现有依赖。仅改变 FIELD 输出采样网格不能证明 KRAKEN 环境离散与模态解收敛。
+用大模型解析任意自然语言、多步 Agent 自动执行、多环境/多求解器、求解器数值收敛基准、MATLAB 迁移至独立常驻计算主机、自动修改访客本机 MATLAB 项目仍需单独实现和实际验证。通用 OpenHands / LangGraph 运行时不是现有依赖。KRAKEN内部离散与FIELD输出网格应分别做收敛检查。

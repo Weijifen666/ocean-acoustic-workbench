@@ -312,7 +312,7 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
             </button>
           </div>
           <p className="model-test-hint">
-            {action === "test" ? `正在等待真实回答（${elapsed} 秒）。供应商可能排队，最多等待 180 秒。` : "测试会发起一次短模型调用，可能消耗少量 Token；模型列表返回不代表生成调用成功。"}
+            {action === "test" ? `正在等待真实回答（${elapsed} 秒）。供应商可能排队，最多等待 180 秒。` : "点击测试会发起一次短模型调用，使用少量Token。"}
             {action === "test" && <button type="button" onClick={() => activeRequest.current?.abort()}>停止测试</button>}
           </p>
           {result && (
@@ -380,7 +380,7 @@ export default function ModelPanel({ cfg, setCfg, onSave, busy, notify }) {
           <div className="model-scope-note">
             <AlertCircle size={13} />
             <span>
-              官方文档中的模型预设不代表账户权限已开通。知识图谱和共享模板仿真可独立使用；自动修改代码仍待接入。
+              选择账户已开通的模型，测试后保存。知识图谱和模板仿真可独立使用。
             </span>
           </div>
         </div>

@@ -24,9 +24,9 @@ const publicRoot = path.join(repo, 'ocean-acoustic-public');
 const skillIds = ['at-environment', 'seasonal-layer-diagnostics', 'surface-duct-investigation',
   'at-kraken', 'at-krakenc', 'at-scooter', 'at-bellhop', 'at-ram', 'at-simplepe', 'at-sparc', 'at-bellhop3d', 'at-krakel'];
 const json = value => JSON.stringify(value, null, 2) + '\n';
-const publicNote = '公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。';
-const scientificToolNote = '公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。';
-const historical = '历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。';
+const publicNote = '海洋声学参考资料与算例配方，可结合教材和通用声学知识使用。';
+const scientificToolNote = '公共站通过 get_ocean_profile、diagnose_seasonal_layers（温度判据，density_mld=not_computed）及 preview_simulation/submit_simulation 查询环境、诊断和提交三模型计算。开放研究的创建、写文件、run_research_script及完整数值审计在本地工作台执行。';
+const historical = '原本地环境的算例与执行记录。';
 const sourceFiles = [];
 
 function read(relative) {
@@ -71,19 +71,19 @@ function write(relative, text) {
 
 const rawModels = read('skills/at-environment/references/models.json');
 const library = JSON.parse(redact(rawModels.raw));
-library.scope = historical + ' 保留模型条件、输入格式、调用链及原始输入快照；公共站仅展示，实时节点能力另行检查。';
+library.scope = historical + ' 包含模型条件、输入格式、调用链与输入快照。';
 for (const model of library.models) {
   model.status = '历史记录 · ' + model.status.replace(/^移植前记录\s*·\s*/, '');
   model.integration = model.id === 'krakel'
-    ? '公共站提供方法与历史源码经验。KRAKEL 弹性场后处理及收敛未核验，尚无受支持的创建配方。'
-    : '公共站提供使用条件、经典输入快照与创建配方；实际准备和执行任务需要已授权且在线的计算节点。';
+    ? 'KRAKEL提供方法与源码参考，基线创建配方尚未开放。'
+    : '提供使用条件、输入快照和模型配方；计算入口见当前工具列表。';
   model.execution_context = 'historical_local_record';
   model.runtime_available = false;
   model.experience = (model.experience || []).map(text => text.replaceAll('本轮', '历史审计中').replaceAll('本机', '原本地环境'));
 }
 const rawRecipes = read('skills/at-environment/references/creation-workflows.json');
 const recipes = JSON.parse(redact(rawRecipes.raw));
-recipes.scope = '模型创建配方资料。supported 表示存在已固化的输入与检查流程，不表示当前公网节点可执行。';
+recipes.scope = '模型创建配方与输入检查流程，supported标记已提供的配方。';
 for (const model of recipes.models) {
   model.recipe_supported = model.supported;
   model.available = false;
@@ -91,9 +91,9 @@ for (const model of recipes.models) {
   model.runtime = model.id === 'ram' ? 'Python + RAM' : model.id === 'simplepe' ? 'MATLAB' : 'MATLAB + AT';
   model.runtime_status = 'requires_connected_compute_node';
   model.execution_context = 'historical_local_record';
-  model.availability_reason = model.supported ? '公共站只读资料；实际执行须检查已连接计算节点。' : '未提供受支持的创建配方；不能创建经典基线。';
+  model.availability_reason = model.supported ? '配方可供查阅，计算入口见当前工具列表。' : '基线创建配方尚未提供。';
   if (!model.supported) {
-    model.unavailable_reason = '历史记录中曾编译并冒烟运行 KRAKEL，但弹性场后处理与收敛尚未核验；公共站不开放基线创建。';
+    model.unavailable_reason = 'KRAKEL基线配方尚未开放，弹性场后处理与收敛待核验。';
     model.limitations = ['KRAKEL 弹性场后处理、FIELD 兼容与 Ahmad 弹性收敛待独立验证。', historical];
   }
 }
@@ -182,7 +182,7 @@ for (const model of library.models) for (const example of model.examples || []) 
 }
 addProject('@workbench/PUBLIC_RESEARCH_README.md', '# 公共研究资料\n\n' + publicNote + '\n\n' +
   '目录提供 12 个 Skill、9 类模型经验与 8 个受支持的模型创建配方；KRAKEL 保留为待验证条目。\n\n' +
-  '输入样例与脚本均为只读源代码快照，不代表页面已执行。旧算例中记录的输出、可执行文件状态、误差与审计日期属于历史本地环境。\n\n' +
+  '输入样例与脚本供查阅、学习和规划；执行记录附有原环境与审计日期。\n\n' +
   '资料不包含教材全文、个人会话、私有任务、配置密钥或本机数据路径。海洋数据由单独的数据接口按需读取。\n', {label: 'PUBLIC_RESEARCH_README.md'});
 const projectFiles = Object.values(projectContents).map(({content,...file}) => file).sort((a,b) => a.path.localeCompare(b.path));
 
@@ -211,7 +211,7 @@ for (const node of graph.nodes) for (const ref of node.references || []) {
   sourcesById.set(ref.source_id, ref.source_id === 'PROJECT'
     ? {id: 'PROJECT', name: '工作台项目源码与计算流程', type: '.code', available: true,
       public_access: 'reviewed_source_snapshots', extraction_state: 'not_applicable', duplicate_of: null,
-      reading_scope: '仅共享目录明确列出的源码与输入；其余定位不代表已公开全文', index_status: '代码片段与流程已关联'}
+      reading_scope: '共享源码、输入快照与资料定位', index_status: '代码片段与流程已关联'}
     : {id: ref.source_id, name: ref.title || ref.source_id, type: '.reference', available: false,
       public_access: 'metadata_only', reading_scope: '以知识卡提供的页码或定位为准', index_status: '课程来源定位'});
 }
@@ -251,7 +251,7 @@ for (const node of graph.nodes) {
     knowledgeCode[node.id + ':' + index] = item ? {node_id: node.id, reference_index: index, locator: ref.locator,
       ...item, metadata: {...item.metadata, source_id: ref.source_id}} : {
       node_id: node.id, reference_index: index, locator: ref.locator, kind: 'text', read_only: true, scope: 'public_read_only',
-      content: '此引用用于定位原 AT/工作台源码。本公共资料包尚未收录该文件全文，请按定位查阅对应版本；这里不以其他文件替代。\n',
+      content: '本条提供AT/工作台源码定位；全文请查阅所列版本。\n',
       metadata: {source_id: ref.source_id, content_available: false}};
     knowledgeCode[node.id + ':' + index].sha256 ||= hash(knowledgeCode[node.id + ':' + index].content);
     knowledgeCode[node.id + ':' + index].size ||= Buffer.byteLength(knowledgeCode[node.id + ':' + index].content);
@@ -259,10 +259,10 @@ for (const node of graph.nodes) {
   if (node.id === 'munk_case') {
     node.label = 'Munk 声场仿真案例';
     node.overview = '历史本地工作台曾用 MATLAB 与 KRAKEN / FIELD 复现 Munk 声道。公共站提供对应输入与流程；实际计算取决于本次连接节点。';
-    node.key_points = ['历史记录包含 50/100 Hz 与 500/1000 m 源深四组检查；不代表当前公网节点已重跑。', '新任务应独立保存 ENV、FLP、输出、图表与验证记录。'];
+    node.key_points = ['历史四组检查使用50/100 Hz与500/1000 m源深。', '新任务保存独立的ENV、FLP、输出、图表与检查记录。'];
   }
 }
-graph.status = '人工课程知识与来源定位；69 个知识点、180 条关系。图中历史执行描述不是当前节点状态，教材页能否展示取决于已授权的来源服务。';
+graph.status = '69个知识点、180条课程关系，提供讲解、图片、关联路径与资料索引。';
 graph.public_metadata = {source: 'backend/data/course_graph.json', source_sha256: graphSource.source_sha256,
   knowledge_count: graph.nodes.filter(node => node.kind === 'knowledge').length, edge_count: graph.edges.length,
   source_hash_normalization: 'utf8-lf', execution_scope: historical};

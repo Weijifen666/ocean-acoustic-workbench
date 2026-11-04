@@ -411,7 +411,7 @@ export function EvidenceDrawer({ rows, initial = 0, onClose, onKnowledge }) {
           )}
           {row.fetched_at && (
             <p className="evidence-condition">
-              采集时间：{row.fetched_at}；采集时间不等于观测时间。
+              采集时间：{row.fetched_at}。
             </p>
           )}
           <p className="evidence-disclosure">

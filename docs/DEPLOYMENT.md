@@ -2,7 +2,7 @@
 
 ## 本地计算节点
 
-先按根 README 安装依赖、构建本地页面并导入自己有权使用的资源包。确认 `http://127.0.0.1:8765/api/health` 中 MATLAB 和求解器可用。原始资源不足时，图谱与目录可构建，但教材图片和真实仿真不能据此认定已接通。
+先按根 README 安装依赖、构建本地页面并导入自己有权使用的资源包。确认 `http://127.0.0.1:8765/api/health` 中 MATLAB 和求解器可用。教材图片需导入原件，真实仿真需配置计算环境。
 
 `backend/install_toolbox.py` 将本地 `.local/at-input.zip` 安装到当前用户的 Documents/MATLAB/AcousticsToolbox，并为 MATLAB startup.m 增加 AT 路径；它保留已有 startup.m 的备份。执行后重启 MATLAB 验证。
 
@@ -26,8 +26,22 @@ npm.cmd run build
 | `GATEWAY_SECRET` | Secret | 已有用户配置、对话与笔记的 AES-GCM 加密；升级时保留 |
 | `COMPUTE_BRIDGE_SECRET` | Secret | 专属计算节点认证与 RPC 加密；独立于用户数据加密密钥 |
 | `DATA_PUBLISH_TOKEN` | Secret | 维护者发布海洋数据；浏览器不需要 |
+| `COURSE_KNOWLEDGE_PUBLISH_TOKEN` | Secret | 专用于发布云端教材索引；独立于模型Key和计算桥接密钥 |
 
 当前项目使用 Sites 部署。每个部署者创建自己的站点，将 `ocean-acoustic-public/hosting.example.json` 复制为仓库根目录的 `.openai/hosting.json`，填入实际 Site project_id，并保持 `d1: DB`、`r2: BUCKET`。通过 Sites 标准源码推送、归档、保存版本、部署流程发布；生产网址及绑定由平台返回。`.openai/hosting.json` 不提交本仓库。直接使用其他 Workers 平台时，需要自行配置等效 DB/BUCKET 绑定、应用 `ocean-acoustic-public/drizzle/*.sql` 迁移及设置 Secret；本仓库未提供已验证的其他平台自动部署流程。
+
+## 发布云端教材索引
+
+公共API问答读取云端投喂库。维护者先用已安装项目依赖的Python导出授权教材索引，再使用独立发布令牌上传。在仓库根目录执行，路径和版本换成自己的值：
+
+```powershell
+.\ocean-acoustic-workbench\.venv\Scripts\python.exe scripts/export-course-knowledge.py --database 'D:/Course/private/chunks.sqlite3' --output '.local/course-bundles/course-v1' --version course-v1
+.\ocean-acoustic-workbench\.venv\Scripts\python.exe scripts/publish-course-knowledge.py --site-url 'https://你的工作台域名' --bundle '.local/course-bundles/course-v1'
+```
+
+先在站点服务端配置专用Secret `COURSE_KNOWLEDGE_PUBLISH_TOKEN`，然后按提示隐藏输入同一发布令牌。上传器读取`manifest.json`与`chunks.json.gz`，先校验版本、大小和SHA256；成功只显示版本、片段/来源/页数、压缩字节、清单哈希及是否复用。令牌通过隐藏输入提供，不放进命令参数、配置文件或Git。
+
+自动化已有安全管道时，可在上传命令后加`--token-stdin`，程序显示准备提示后从标准输入读取一行令牌。连接中断或HTTP 502/503/504时，最多尝试3次，始终使用同一版本和内容；结果丢失后仍用原资料包重试，服务端按版本幂等处理。上传目录、原文与本地索引保留在私有目录，GitHub只保存工具源码。实际入库状态和数量见网站知识库页面。
 
 ## 连接节点
 
@@ -49,20 +63,20 @@ npm.cmd run build
 
 公开访问需将站点受众明确设为 Public。访客 Cookie 隔离各自配置与任务；公网模型密钥和对话按访客加密保存于 D1，计算节点重启不影响配置；页面提供清除全部密钥按钮。清除浏览器 Cookie 后无法找回旧访客任务。单批最多 4 组计算，整个节点最多 16 组排队/运行任务；只执行经过参数校验的课程模板。
 
-图谱、模型目录和关联查询在云端运行。教材原页 PNG 需节点有原始 PDF，并在首次成功读取后缓存到 R2。节点离线时仿真和私有原文索引不可用；云端课程知识卡与模型问答仍可使用。公共 Agent 只读课程共享代码，不能访问用户设备上的文件。
+公共API问答从云端投喂资料、课程图谱和公开网页索引检索；教材图片按已发布资源提供。本地DSH可读取自己的教材与工程，MATLAB节点负责仿真计算。公共Agent通过共享快照查看项目代码。
 
 部署后分别验证匿名打开网页、模型配置隔离、教材图片、仿真提交、结果图及下载。不要把仅成功构建页面当成 MATLAB 或云端模型已接通。
 
 
 ## v0.4 知识与验证
 
-[私有知识入库](KNOWLEDGE_IMPORT.md)说明PDF/DOCX/TXT/Markdown的导入与引用边界。新增D1迁移创建cloud_visitors表，不改已应用迁移。模型配置与对话由云端直接处理；MATLAB仿真和原文索引由节点提供。每个新结果生成validation、analysis和manifest.json文件哈希，未报告的外部求解器版本保留null。
+[私有知识入库](KNOWLEDGE_IMPORT.md)说明PDF/DOCX/TXT/Markdown的导入与引用边界。新增D1迁移创建cloud_visitors表，不改已应用迁移。模型配置、对话和公共资料检索由云端处理；MATLAB节点提供仿真计算。每个新结果生成validation、analysis和manifest.json文件哈希，未报告的外部求解器版本保留null。
 
 ## 2026-10-15 节点数据库升级与恢复
 
 本地 SQLite schema version 2 是追加式迁移，保留既有 jobs/messages 行及原始运行目录。启动服务 lifespan 时运行迁移；升级前通过 SQLite backup API 在 `.local/backups/` 保存 `workbench.pre-queue-v2.<时间>.<随机值>.sqlite3`，备份包含数据库及当时有效 WAL 数据。迁移事务失败会回滚；未知的更高 schema 版本会拒绝启动，不自动降级。该备份含私有消息，继续保留在 `.local`，不能上传 GitHub。
 
-执行器以数据库事务持久领取 `QUEUED`，持有节点操作系统文件锁，状态事件可在任务详情的 `events` 查看。服务仍按单 MATLAB 执行器部署；文件锁防止误启动第二执行器，不代表所有 PDF/缓存模块已支持多进程部署。旧的排队任务跨重启保留，不再在模块导入时批量判失败。
+执行器以数据库事务持久领取 `QUEUED`，持有节点操作系统文件锁，状态事件可在任务详情的 `events` 查看。服务仍按单 MATLAB 执行器部署；文件锁用于保持单执行器运行；当前按单进程部署。旧的排队任务跨重启保留，不再在模块导入时批量判失败。
 
 若发现上次遗留 `RUNNING`，服务将其标为 `INTERRUPTED` 并暂停队列。管理员先检查并结束残留的本项目 MATLAB/求解器进程，再通过本地队列管理恢复；公网访客没有暂停/恢复整个节点的权限。该策略不会猜测某个残留文件就是完整成功结果，也不会自动重跑已经可能产生副作用的任务。正常停止服务会终止它管理的活动进程，并保留真实中断状态。
 

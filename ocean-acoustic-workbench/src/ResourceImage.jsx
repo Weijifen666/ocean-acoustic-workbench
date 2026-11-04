@@ -36,6 +36,6 @@ export function KnowledgeImageGallery({images=[],onOpen}) {
   return <>
     <p className="drawer-help">原理示意由本项目绘制；教材原页与补充教材页保留各自标注，加载后可点击放大。</p>
     {visible.map(im=><KnowledgeImageButton key={im.url} image={im} className="knowledge-source-image" loading="lazy" onOpen={onOpen} onUnavailable={url=>setUnavailable(old=>({...old,[url]:true}))}/>)}
-    {!!missing.length&&<details className="drawer-help"><summary>{missing.length} 张图片暂不可用</summary><p>教材原件未随项目分发，原页需资料节点提供。原始来源仍保留；示意图和补充教材页不冒充缺失的原课件。</p><ul>{missing.map(im=><li key={im.url}>{im.caption}</li>)}</ul><button type="button" onClick={()=>setUnavailable({})}>重试图片</button></details>}
+    {!!missing.length&&<details className="drawer-help"><summary>{missing.length} 张图片暂不可用</summary><p>教材原件未随项目分发，原页需资料节点提供。</p><ul>{missing.map(im=><li key={im.url}>{im.caption}</li>)}</ul><button type="button" onClick={()=>setUnavailable({})}>重试图片</button></details>}
   </>;
 }

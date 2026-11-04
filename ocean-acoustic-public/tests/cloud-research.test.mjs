@@ -73,6 +73,36 @@ test('no-key research and all GET polling remain free and never start computatio
  const history=await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);assert.equal(history.data.length,2);assert.equal(history.data[1].model_used,false);s.sqlite.close();
 });
 
+test('concept questions combine course evidence and pretrained knowledge without forcing a simulation Skill',async()=>{
+ const question='什么是简正波？请解释定义和物理原理。',reply='简正波是波导中满足波动方程与边界条件的独立传播模态。';
+ const s=harness([provider(reply)]),cookie=await visitor(s);
+ try{
+  const id=await start(s,cookie,chatBody({message:question,knowledge_node_ids:['normal_mode_field']}));
+  assert.equal(s.providerRequests.length,0,'Creating a conceptual request only prepares its evidence');
+  const completed=await step(s,cookie,id);
+  assert.equal(completed.data.state,'done');assert.equal(completed.data.reply,reply);
+  assert.equal(s.providerRequests.length,1);assert.equal(completed.data.trace.length,0,'A direct theory answer does not require a Skill/tool round');
+  const request=s.providerRequests[0].body,system=request.messages.filter(message=>message.role==='system').map(message=>message.content).join('\n');
+  const guidance=system.split('\nEXPLICIT-GRAPH-SELECTION')[0];
+  assert.match(guidance,/综合用户提供的课程资料、云端检索资料与模型预训练通用知识回答/);
+  assert.match(guidance,/知识卡用于定位术语、证据和引用，回答应围绕问题充分展开/);
+  assert.match(guidance,/模型通用知识可用于补充解释，不能伪装为文档原话或捏造出处/);
+  assert.match(guidance,/资料有冲突时具体解释假设、符号、适用范围与结论的差别/);
+  assert.match(guidance,/Skill用于组织方法和工具流程，也可结合通用知识补充推导与说明/);
+  assert.match(guidance,/已有资料足够时直接回答，无需加载仿真Skill/);
+  assert.match(guidance,/仿真、编程与数据诊断任务再发现并加载对应Skill/);
+  assert.match(guidance,/不要在每次回答中罗列权限清单、自我免责/);
+  assert.match(guidance,/海况数值须来自匹配的实际数据/);
+  assert.match(guidance,/实验和仿真数值须来自实际记录或工具结果/);
+  assert.doesNotMatch(guidance,/不等于/);
+  assert.match(system,/normal_mode_field/);assert(request.messages.some(message=>message.role==='user'&&message.content===question));
+  assert.equal(request.tool_choice,'auto');
+  for(const name of ['load_research_skill','search_knowledge','submit_simulation'])assert(request.tools.some(tool=>tool.function.name===name),name+' remains available when needed');
+  assert(!request.tools.some(tool=>tool.function.name==='run_python_script'));
+  assert.equal(s.nodeRequests.length,0);assert.equal(s.oceanRequests.length,0);
+ }finally{s.sqlite.close()}
+});
+
 test('real provider tool_calls load assets, run diagnostics, submit fixed jobs and persist the exchange',async()=>{
  const skill=assets.skills[0].id;
  const calls=[toolCall('load_research_skill',{id:skill}),toolCall('diagnose_seasonal_layers',{lon:120,lat:20}),toolCall('preview_simulation',{plan}),toolCall('submit_simulation',{plan})];
@@ -176,7 +206,7 @@ test('logged-in identity sends its server-derived node cookie and never forwards
  await account(`/api/research/runs/${started.data.id}/step`,'POST',{});
  assert.equal(s.nodeRequests.length,1);assert.match(s.nodeRequests[0].headers.cookie,/^ocean_visitor=[a-f0-9]{64}$/);
  assert.notEqual(s.nodeRequests[0].headers.cookie,'ocean_visitor='+'A'.repeat(64));
- assert.equal(s.knowledgeRequests.length,1);
+ assert.equal(s.knowledgeRequests.length,0,'Public API retrieval stays in cloud storage');
  for(const node of [...s.nodeRequests,...s.knowledgeRequests]){
   assert.equal(node.headers.cookie,s.nodeRequests[0].headers.cookie);
   for(const name of ['authorization','oai-authenticated-user-id','oai-authenticated-user-email'])assert.equal(node.headers[name],undefined,name);
@@ -433,7 +463,7 @@ test('offline, foreign, missing and empty jobs never produce invented exports or
  }
 });
 
-test('research uses the same authorized full-text and public evidence path at start and in knowledge tools',async()=>{
+test('research uses the same cloud evidence path at start and in knowledge tools without querying local materials',async()=>{
  const privateRow={id:'D-S17-research-regression',label:'授权教材检索测试',source_id:'S17',pdf_page:375,text:'TEST ONLY: private evidence returned by the visitor-scoped node.',evidence_type:'source_excerpt'};
  const publicRow={id:'O-NOAA-research-regression',label:'NOAA公开资料检索测试',source_id:'NOAA-TEST',url:'https://oceanservice.noaa.gov/facts/acidification.html',text:'TEST ONLY: public snapshot evidence.',evidence_type:'public_web_excerpt'};
  for(const online of [true,false]){
@@ -443,10 +473,10 @@ test('research uses the same authorized full-text and public evidence path at st
    const cookie=await visitor(s),id=await start(s,cookie,chatBody({message:'专项检索测试'}));
    assert.equal((await step(s,cookie,id)).data.state,'running');
    const initial=s.providerRequests[0].body.messages[0].content;
-   assert(initial.includes(publicRow.id));assert.equal(initial.includes(privateRow.id),online);
+   assert(initial.includes(publicRow.id));assert.equal(initial.includes(privateRow.id),false);
    const checkpoint=await stored(s,id),result=JSON.parse(checkpoint.data.messages.find(m=>m.tool_call_id==='lookup-evidence').content);
-   assert(result.matches.some(row=>row.id===publicRow.id));assert.equal(result.matches.some(row=>row.id===privateRow.id),online);
-   assert.equal(s.knowledgeRequests.length,online?2:0);
+   assert(result.matches.some(row=>row.id===publicRow.id));assert.equal(result.matches.some(row=>row.id===privateRow.id),false);
+   assert.equal(s.knowledgeRequests.length,0);
    for(const request of s.knowledgeRequests){assert.match(request.headers.cookie,/^ocean_visitor=/);assert.equal(request.headers.authorization,undefined);assert.ok(!JSON.stringify(request).includes(cfg.api_key));}
    assert.equal((await step(s,cookie,id)).data.state,'done');
   }finally{s.sqlite.close();}

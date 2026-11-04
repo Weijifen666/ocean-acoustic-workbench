@@ -9,6 +9,7 @@ import {resolveVisitorIdentity,visitorCookie} from './identity.mjs';
 import {createWorkspaceApi} from './workspaces.mjs';
 import {createCloudResearch} from './cloud-research.mjs';
 import {createGraphTools} from './graph-tools.mjs';
+import {createCourseDocumentIndex} from './course-document-index.mjs';
 export function defaults(catalog){const provider=catalog.providers.find(p=>p.id==='Qwen')||catalog.providers[0],model=catalog.models.find(m=>m.provider===provider.id&&m.id==='qwen3.7-plus')||catalog.models.find(m=>m.provider===provider.id);return {provider:provider.id,base_url:provider.base_url,model:model.id,api_key:''}}
 export const publicConfig=cfg=>({provider:cfg.provider,base_url:cfg.base_url,model:cfg.model,api_key_set:!!cfg.api_key,public_mode:true,storage:'cloud_encrypted'});
 export function validateConnection(cfg,catalog){
@@ -152,6 +153,7 @@ async function remoteStream(cfg,catalog,body,fetcher,onDelta,signal){
 }
 export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,proxy,heartbeat,template='',fetcher=fetch,publicKnowledge=null,researchAssets=null,oceanQuery=null,knowledgeCount=46,sourceCount=20}){
  const workspaceApi=createWorkspaceApi({encrypt,decrypt});
+ const courseDocuments=createCourseDocumentIndex();
  const graphApi=graph?createGraphTools(graph):null;
  const resolveSelection=ids=>{if(!Array.isArray(ids)||ids.length>8||ids.some(id=>typeof id!=='string'))throw Object.assign(new Error('最多选择8个知识点ID'),{status:422});if(!graphApi){if(ids.length)throw Object.assign(new Error('课程知识图谱尚未连接'),{status:503});return {node_ids:[],nodes:[],edges:[],selection_scope:'current_request',read_only:true}}return graphApi.selection(ids)};
  const publicStatus=()=>publicKnowledge?.publicOceanStatus?.()||{registered_sources:0,indexed_sources:0,chunks:0,web_sources:[],live_web_search:false};
@@ -185,12 +187,36 @@ export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,p
   }
   throw Error('配置正在更新，请稍后重试');
  }
- function ownRequest(request,id,path){const headers=new Headers({origin:new URL(request.url).origin,cookie:'ocean_visitor='+id});const ip=request.headers.get('cf-connecting-ip');if(ip)headers.set('cf-connecting-ip',ip);return new Request(new URL(path,request.url),{method:'GET',headers})}
- async function evidenceFor(q,request,env,ctx,id){
-  if(await heartbeat(env)){
-   try{const r=await proxy(ownRequest(request,id,'/api/knowledge/search?q='+encodeURIComponent(q)),env,ctx);if(r.ok){const rows=await r.json();if(Array.isArray(rows))return mergeEvidence(rows,publicRetrieve(q),q)}}catch{}
+ function ownRequest(request,id,path,signal=request.signal){const headers=new Headers({origin:new URL(request.url).origin,cookie:'ocean_visitor='+id});const ip=request.headers.get('cf-connecting-ip');if(ip)headers.set('cf-connecting-ip',ip);return new Request(new URL(path,request.url),{method:'GET',headers,signal})}
+ async function optionalNodeJson(request,id,path,env,ctx){
+  // These reads enrich cloud answers; they must not inherit the long solver
+  // RPC deadline. Abort the actual bridge request as well as bounding this wait.
+  const controller=new AbortController(),cancelled=()=>Object.assign(new Error('请求已停止'),{status:499,code:'CANCELLED'});
+  let timedOut=false;const abort=()=>controller.abort(),timer=setTimeout(()=>{timedOut=true;controller.abort()},4000);
+  request.signal.addEventListener('abort',abort,{once:true});if(request.signal.aborted)abort();
+  async function bounded(operation){
+   if(controller.signal.aborted)throw cancelled();
+   let onAbort;
+   try{return await Promise.race([Promise.resolve().then(()=>{if(controller.signal.aborted)throw cancelled();return operation()}),new Promise((_,reject)=>{onAbort=()=>reject(cancelled());controller.signal.addEventListener('abort',onAbort,{once:true});if(controller.signal.aborted)onAbort()})])}
+   finally{if(onAbort)controller.signal.removeEventListener('abort',onAbort)}
   }
-  return mergeEvidence(retrieve(q),publicRetrieve(q),q);
+  try{
+   if(!await bounded(()=>heartbeat(env)))return {data:null,node_status:'offline'};
+   if(controller.signal.aborted)throw cancelled();
+   const response=await bounded(()=>proxy(ownRequest(request,id,path,controller.signal),env,ctx));
+   if(!response.ok)return {data:null,node_status:'unresponsive'};
+   const data=await bounded(()=>response.json());
+   return {data,node_status:'online'};
+  }catch(error){
+   if(request.signal.aborted)throw cancelled();
+   return {data:null,node_status:timedOut?'timeout':'unresponsive'};
+  }finally{clearTimeout(timer);request.signal.removeEventListener('abort',abort)}
+ }
+ async function evidenceFor(q,request,env,ctx,id){
+  // Website API questions use the uploaded cloud corpus. MATLAB/desktop nodes
+  // participate only in explicit compute tools, never in knowledge retrieval.
+  const cards=retrieve(q),documents=await courseDocuments.search(q,env,cards);
+  return mergeEvidence([...cards,...documents.matches],publicRetrieve(q),q).map(row=>({...row,retrieval:{...row.retrieval,storage:'cloud',local_node_used:false,course_documents_state:documents.status.state}}));
  }
  const researchApi=createCloudResearch({assets:researchAssets,graph,encrypt,decrypt,retrieve,retrieveEvidence:(q,request,env,ctx,identity)=>evidenceFor(q,request,env,ctx,identity.node_id),heartbeat,proxy,oceanQuery,remote:async(cfg,body,signal)=>{
   try{return await remote(cfg,catalog,body,fetcher,signal)}catch(error){if(!error.status)error.status=502;throw error}
@@ -230,12 +256,15 @@ export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,p
    if(path==='/api/knowledge/gaps')return finish(json(session.data.gaps||[]));
    if(path==='/api/knowledge/search')return finish(json(await evidenceFor(url.searchParams.get('q')||'',request,env,ctx,session.node_id)));
    if(path==='/api/knowledge/status'||path==='/api/knowledge/public-sources'){
-    if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.node_id,'/api/knowledge/status'),env,ctx);if(r.ok){const data=await r.json(),ocean=data.public_ocean||publicStatus();return finish(json(path.endsWith('public-sources')?(data.web_sources||ocean.web_sources):{...data,public_ocean:ocean,web_sources:data.web_sources||ocean.web_sources}))}}catch{}}
     const ocean=publicStatus();
-    return finish(json(path.endsWith('public-sources')?ocean.web_sources:{mode:'ocean_document_rag',cards:knowledgeCount,indexed_sources:0,indexed_pages:0,chunks:0,needs_ocr:0,source_coverage:[],coverage:null,public_ocean:ocean,web_sources:ocean.web_sources,methods:['BM25','typed_graph_context','public_document_bm25'],training_required:false,node_online:false,scope:'计算节点离线，当前仍可检索云端课程知识卡与公开海洋网页快照；私有教材全文索引未连接。'}));
+    if(path.endsWith('public-sources'))return finish(json(ocean.web_sources));
+    const documents=await courseDocuments.status(env);
+    return finish(json({mode:'cloud_course_rag',retrieval_scope:'cloud_only',cards:knowledgeCount,indexed_sources:documents.indexed_sources||0,indexed_pages:documents.indexed_pages||0,chunks:documents.chunks||0,needs_ocr:documents.needs_ocr??(documents.source_coverage||[]).reduce((sum,row)=>sum+(row.failed_or_needs_ocr_pages||0),0),source_coverage:documents.source_coverage||[],course_documents:documents,public_ocean:ocean,web_sources:ocean.web_sources,methods:['BM25','typed_graph_context','cloud_document_bm25','public_document_bm25'],local_materials_used:false,training_performed:false,scope:'云端课程知识卡、已上传教材片段与公开资料'}));
    }
    if(path==='/api/health'||path==='/api/environment/check'){
-    let data={version:'0.7.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true};if(await heartbeat(env)){try{const r=await proxy(ownRequest(request,session.node_id,'/api/health'),env,ctx);if(r.ok)data={...data,...await r.json(),offline:false}}catch{}}
+    const node=await optionalNodeJson(request,session.node_id,'/api/health',env,ctx);
+    let data={version:'0.7.0',public_mode:true,matlab_available:false,solver_available:false,knowledge_cards:46,sources:20,paused:false,offline:true,node_status:node.node_status,node_health_verified:false,...(node.node_status==='timeout'?{node_notice:'计算节点响应超时，未确认MATLAB可用；云端知识检索与模型问答仍可继续。'}:{})};
+    if(node.data&&typeof node.data==='object'&&!Array.isArray(node.data))data={...data,...node.data,offline:false,node_status:'online',node_health_verified:true};
     if(path==='/api/environment/check')return finish(json({checks:[{name:'MATLAB 计算节点',ok:data.matlab_available,detail:data.matlab_available?'计算节点已连接':'仅仿真依赖计算节点，云端知识卡和模型问答仍可用'},{name:'KRAKEN / FIELD',ok:data.solver_available,detail:'固定 Munk 模板，结果按输入和坐标验证'},{name:'你的模型 API Key',ok:!!cfg.api_key,detail:cfg.api_key?'云端加密保存，未代表已通过调用测试':'填写供应商 Key 后可调用模型'}]}));
     const model=catalog.models.find(m=>m.id===cfg.model&&m.provider===cfg.provider),provider=catalog.providers.find(p=>p.id===cfg.provider);return finish(json({...data,version:'0.7.0',knowledge_cards:knowledgeCount,sources:sourceCount,model_configured:!!cfg.api_key,model_name:model?.name||cfg.model,provider_name:provider?.name||cfg.provider,cloud_model_available:true,model_storage:'cloud_encrypted'}));
    }

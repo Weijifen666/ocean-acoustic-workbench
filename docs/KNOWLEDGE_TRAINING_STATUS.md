@@ -1,6 +1,6 @@
 # 资料接入、知识提炼与模型训练的实际状态
 
-截至2026-11-03，本项目没有对DeepSeek、Kimi、GLM、Qwen等接入模型实施领域蒸馏、微调、LoRA训练或权重更新，也没有生成项目专用的模型权重/适配器。普通聊天API Key仅用于调用现有模型；不代表具备修改供应商模型参数的权限。本地Harness和Skill也不是训练流程。
+截至2026-11-03，本项目没有对DeepSeek、Kimi、GLM、Qwen等接入模型实施领域蒸馏、微调、LoRA训练或权重更新，也没有生成项目专用的模型权重/适配器。模型调用使用聊天API；领域资料通过RAG和Skill接入。
 
 ## 已实现的知识接入
 
@@ -12,11 +12,11 @@
 | Skill | 按任务读取工作说明和资源，指导工具调用 | 否 |
 | 训练、蒸馏或微调 | 未接入训练任务、训练数据集、优化器、权重产物和训练后评测 | 未执行 |
 
-代码依据：`backend/ingestion.py`生成片段与索引，`backend/knowledge.py`组织概念卡，`server/context-budget.mjs`组装本次参考上下文，`server/cloud-models.mjs`调用`/chat/completions`，`backend/research_skills.py`读取Skill。资料长期存放在项目知识库中，不等于供应商模型永久记住这些资料。`acoustic_cookbook.py`中的“Distilled from AT test cases”指整理算例，不表示训练过一个学生模型。
+代码依据：`backend/ingestion.py`生成片段与索引，`backend/knowledge.py`组织概念卡，`server/context-budget.mjs`组装本次参考上下文，`server/cloud-models.mjs`调用`/chat/completions`，`backend/research_skills.py`读取Skill。资料保存在项目知识库，回答时检索使用。`acoustic_cookbook.py`中的“Distilled from AT test cases”指整理AT算例。
 
 ## 本次界面精简
 
-图谱详情不再显示“来源定位”卡片，“图片与来源”改为“图片”；图片页不再堆叠PDF页码链接，内部资料编号式图片标题改为知识点图片标签。必要示意图、教材图片、放大、关联知识与提问保留。底层引用元数据及整个学习资源库保留，用于检索、纠错与资料维护；隐藏定位UI不等于删除原资料或完成模型训练。
+图谱详情不再显示“来源定位”卡片，“图片与来源”改为“图片”；图片页不再堆叠PDF页码链接，内部资料编号式图片标题改为知识点图片标签。必要示意图、教材图片、放大、关联知识与提问保留。底层引用元数据及整个学习资源库保留，用于检索、纠错与资料维护；原资料和引用元数据继续保留。
 
 此界面调整已于正式第20版发布：源提交`3db0f64ec09623860daee9682bf54971b397461f`，部署`appgdep_6ae9cc1264b08191aa035ef6dd12304c`，环境修订仍为3。GitHub界面提交`58dbdc7`。18项检索/知识/界面相关测试通过，生产构建通过；实际浏览器核查RAM知识点讲解、三张图片保留、详情无来源定位卡及原内部编号标题。此次没有执行模型训练或额外付费模型调用。
 

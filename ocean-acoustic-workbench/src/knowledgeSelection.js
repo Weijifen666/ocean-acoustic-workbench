@@ -21,5 +21,5 @@ export function createKnowledgeDraft(value){
  const names=nodes.map(n=>'“'+n.label+'”').join('、');
  return {id:crypto.randomUUID(),knowledge_nodes:nodes,text:nodes.length===1
   ?`请解释知识图谱中的${names}，结合公式、适用条件和相关知识点，并给出资料出处。`
-  :`请结合知识图谱中选取的${names}，解释各自的适用条件并查找它们已有的关联路径，区分课程层级、建议先学和概念关联，给出资料出处；关联路径不等于物理因果。`};
+  :`请结合知识图谱中选取的${names}，解释各自的适用条件并查找它们已有的关联路径，区分课程层级、建议先学和概念关联，给出资料出处。`};
 }

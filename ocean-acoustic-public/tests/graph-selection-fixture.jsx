@@ -11,7 +11,7 @@ let selected=toggleKnowledgeSelection([],munk);
 selected=toggleKnowledgeSelection(selected,ssp);
 const draft=createKnowledgeDraft(selected);
 assert.deepEqual(knowledgeRequestIds(draft.knowledge_nodes),['munk_profile','sound_speed_profile']);
-assert.match(draft.text,/关联路径不等于物理因果/);
+assert.match(draft.text,/区分课程层级、建议先学和概念关联/);
 const markup=renderToStaticMarkup(<GraphSelection nodes={selected} onRemove={()=>{}} onClear={()=>{}}/>);
 assert.match(markup,/本次问题的图谱上下文/);assert.match(markup,/移除知识点 Munk 理想剖面/);assert.match(markup,/清除选取/);
 assert.equal(renderToStaticMarkup(<GraphSelection nodes={[]}/>),'');

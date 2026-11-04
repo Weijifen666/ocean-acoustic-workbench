@@ -26,7 +26,7 @@ test('all five graph tools really dispatch and selected cards use only canonical
   assert.equal(start.r.status,202,JSON.stringify(start.data));
   const initial=await saved(s,start.data.id),system=initial.messages[0].content;
   for(const id of initial.knowledge_node_ids){const node=graph.nodes.find(node=>node.id===id);assert(system.includes(node.source_claim_ids[0]));assert(system.includes(node.overview))}
-  assert.match(system,/不等于物理因果/);
+  assert.match(system,/物理因果或证明须有相应证据/);
   assert.equal((await step(s,cookie,start.data.id)).data.state,'running');
   assert(tools.every(tool=>s.requests[0].tools.some(spec=>spec.function.name===tool.function.name)));
   const current=await saved(s,start.data.id),results=current.messages.filter(message=>message.role==='tool').map(message=>JSON.parse(message.content));

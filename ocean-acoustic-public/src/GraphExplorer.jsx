@@ -1040,7 +1040,7 @@ function KnowledgeIndexStatus({ status, cards }) {
           <BookOpen size={15} />
           课程知识库
         </h3>
-        <p>{cards} 张知识卡可直接浏览。全文资料检索状态由计算节点提供。</p>
+        <p>{cards} 张知识卡可直接浏览。教材入库与检索状态见下方资料列表。</p>
       </div>
     );
   return (
@@ -1174,7 +1174,7 @@ function PublicOceanResources({ status }) {
         </div>
       </details>
       <p className="public-source-note">
-        网页快照按清单定期检查并保留来源时间；访问日期不等于观测日期。动态数据入口尚未接通实时海况，不作为当前海温或海平面数值。中文标题与导读由本项目整理。
+        网页快照按清单更新，并保留来源与采集时间。动态数据入口尚未接通实时海况，不作为当前海温或海平面数值。中文标题与导读由本项目整理。
       </p>
     </section>
   );

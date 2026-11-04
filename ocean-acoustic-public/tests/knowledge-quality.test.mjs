@@ -83,9 +83,9 @@ test('cloud online and offline merges never re-add generic profile pages to Munk
  }
 });
 
-test('Cox-only cloud merge keeps an actual named excerpt or returns empty without public padding',async()=>{
+test('Cox-only cloud merge does not query a local node or fill missing cloud evidence with public padding',async()=>{
  for(const online of [false,true]){
-  const cox={id:'COX-RAW',source_id:'S18',pdf_page:400,evidence_type:'source_excerpt',text:'Cox-Munk surface roughness model.'},state=setup(undefined,{publicKnowledge:publicOcean,heartbeat:async()=>online,proxy:async()=>new Response(JSON.stringify([cox]),{headers:{'content-type':'application/json'}})});
-  try{const first=await state.call('/api/config'),answer=await state.call('/api/chat','POST',{message:'Cox–Munk 海面粗糙度模型是什么',knowledge_mode:'course'},first.cookie);assert.equal(answer.r.status,200);assert.deepEqual(answer.data.evidence.map(row=>row.id),online?['COX-RAW']:[]);assert.equal(answer.data.model_used,false)}finally{state.sqlite.close()}
+  let nodeCalls=0;const cox={id:'COX-RAW',source_id:'S18',pdf_page:400,evidence_type:'source_excerpt',text:'Cox-Munk surface roughness model.'},state=setup(undefined,{publicKnowledge:publicOcean,heartbeat:async()=>online,proxy:async()=>{nodeCalls++;return new Response(JSON.stringify([cox]),{headers:{'content-type':'application/json'}})}});
+  try{const first=await state.call('/api/config'),answer=await state.call('/api/chat','POST',{message:'Cox–Munk 海面粗糙度模型是什么',knowledge_mode:'course'},first.cookie);assert.equal(answer.r.status,200);assert.deepEqual(answer.data.evidence,[]);assert.equal(nodeCalls,0);assert.equal(answer.data.model_used,false)}finally{state.sqlite.close()}
  }
 });

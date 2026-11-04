@@ -31,7 +31,7 @@
 - `backend/knowledge.py`：兼容 `retrieve(q, limit=8)`；新增 `retrieval_status()`、`citations_for(evidence)`、`answer_context(evidence)`。保留原 UI 所需字段，增加 `evidence_type`、`verification_status`、`citation`、`retrieval`、易错点和图谱关系来源说明。
 - `tests/test_knowledge.py`：12 项离线测试已通过，包含真实 PDFium 原页读取、Munk 精确命中、未知问题、完整英文别名、方法比较、关系不是正文引用、稳定版本、分块覆盖、扫描页报告、SQLite 原子更新与待核查片段。
 
-检索得分是排序依据，不是正确率或置信概率。来源摘录仍可能存在文本层读取顺序问题、公式乱码、缺页和条件不完整；引用入口使学生能够查看原页核对。系统提示约束来源中的命令只作为文本，不能证明任意大模型对提示注入完全免疫。
+检索得分是排序依据，不是正确率或置信概率。来源摘录仍可能存在文本层读取顺序问题、公式乱码、缺页和条件不完整；引用入口使学生能够查看原页核对。来源中的命令作为参考文本处理。
 
 ## 本地接入步骤
 

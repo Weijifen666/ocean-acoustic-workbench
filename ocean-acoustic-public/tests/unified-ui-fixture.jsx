@@ -44,7 +44,7 @@ const restoredDialogue=renderToStaticMarkup(<DialogueWorkbench openSettings={noO
 assert.match(restoredDialogue, /<option value="65536" selected="">64K/);
 assert.match(restoredDialogue, /aria-label="Agent工具轮数"[^>]*value="8"/);
 globalThis.localStorage.getItem=()=>null;
-assert.match(dialogue, /不执行任意 Python \/ MATLAB 脚本/);
+assert.match(dialogue, /MATLAB 仿真使用共享计算节点/);
 assert.equal(researchRounds('', 1000), 0);
 assert.equal(researchRounds(1001, 1000), 0);
 assert.equal(researchRounds(0, 1000), 0);
@@ -67,7 +67,7 @@ assert.match(status,/3 条较早对话未发送/);
 const unlimitedStatus=renderToStaticMarkup(<ResearchContextStatus context={{estimated_input_tokens:90000,budget_tokens:null,budget_limited:false}}/>);
 assert.match(unlimitedStatus,/90,000/);
 assert.match(unlimitedStatus,/应用预算不限/);
-assert.match(unlimitedStatus,/模型接口仍有自身的上下文与输出限制/);
+assert.match(unlimitedStatus,/实际输入与输出上限由所选模型决定/);
 assert.doesNotMatch(unlimitedStatus,/NaN|nullK|模型无限/);
 const recovery=renderToStaticMarkup(<ResearchBudgetRecovery run={{id:'same-run',recoverable:true,error_code:'CONTEXT_BUDGET_EXCEEDED'}} onResume={noOp}/>);
 assert.match(recovery,/调整预算并继续/);

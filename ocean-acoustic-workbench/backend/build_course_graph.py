@@ -36,13 +36,13 @@ add('spherical_spreading','球面扩展','basics','均匀、无界、无损介�
 add('cylindrical_spreading','柱面扩展','basics','在理想平面边界波导的远场，声能受垂向限制，几何扩展趋向柱面形式。',['点源近场仍可能表现为球面扩展，随后经历过渡。','10 log₁₀ 的斜率不能作为任意真实波导的完整损失模型。'],[ref(34)],formula='理想远场扩展斜率：10 log₁₀ r',conditions='理想波导远场；实际截距与近场过渡、边界和损耗有关。',mistake='不要把这条理想扩展律直接替代 KRAKEN 声场。',diagram='spreading')
 add('helmholtz','Helmholtz 方程','basics','对时间变量进行频域变换后，波动方程转化为 Helmholtz 方程。多种声传播方法是在不同条件下求解这一类问题。',['局部波数由频率与声速确定。','问题维度、边界、声源几何和环境变化决定合适的求解方法。'],[ref(90),ref(91)],formula='∇²p + k²p = 0；k = 2πf / c',conditions='此处写出恒密度、无源区域的简式；变密度、源项和边界应另行处理。',diagram='methods')
 
-add('sound_speed_profile','声速剖面 SSP','environment','声速剖面描述声速随深度的变化，是判断折射、声道及模型环境的重要输入。',['典型剖面可含混合层、温跃层与深层近等温区。','真实剖面可能随距离、季节和时间变化。'],[ref(22),ref(23)],formula='c = c(T, S, z)',mistake='示例剖面不等于指定海域的实测剖面。',diagram='ssp')
+add('sound_speed_profile','声速剖面 SSP','environment','声速剖面描述声速随深度的变化，是判断折射、声道及模型环境的重要输入。',['典型剖面可含混合层、温跃层与深层近等温区。','真实剖面可能随距离、季节和时间变化。'],[ref(22),ref(23)],formula='c = c(T, S, z)',mistake='实际海域请使用对应地点和时段的温盐剖面。',diagram='ssp')
 add('temperature_salinity','温度、盐度与压力','environment','海水声速由温度、盐度与静压力等因素共同决定；深度常作为静压力的代理量进入经验公式。',['上层海洋的季节与日变化会改变声速结构。','高精度走时应用应选择与条件匹配的声速公式。'],[ref(22)],conditions='经验声速公式有自己的温盐深适用范围；不能无限外推。',diagram='ssp')
 add('deep_sound_channel','深海声道','environment','深海声道的轴线对应声速极小值附近；部分声能可以经内部折射长距离传播，减少与有损边界的相互作用。',['不是所有发射角都被声道约束。','轴线深度与有效角度范围随海域和剖面变化。'],[ref(23),ref(43),ref(44)],mistake='不能把某个海域示例的声道轴深度当作全球常数。',diagram='ssp')
 add('surface_duct','表面声道','environment','近海面混合层可形成表面声道。被束缚的传播路径反复与海面相互作用，传播效果受海况、混合层和频率影响。',['浅声道在低频下可能不能有效束缚声能。','上层加热可破坏原有导声结构。'],[ref(44),ref(45)],conditions='教材所述近表层环境；声道有效性应由具体剖面和频率判断。',diagram='ssp')
 add('pressure_release_surface','压力释放海面','environment','理想压力释放边界要求海面处声压为零。在相应模态问题中，垂向模态函数在海面也为零。',['这是边界理想化，不是对任意粗糙海面散射的完整描述。','数值结果中的近零残差不宜直接解释为巨大但有意义的 TL。'],[ref(357,locator='式 5.4')],formula='p(z = 0) = 0',conditions='理想压力释放边界。',diagram='boundary')
 add('rigid_bottom','刚性海底边界','environment','理想刚性海底对应法向速度为零，并使相应模态的法向导数为零。',['真实海底通常不能一概当作刚性边界。','吸收、流体半空间和弹性底条件需要分别建模。'],[ref(357,locator='式 5.4')],formula='∂p/∂n = 0',conditions='理想刚性边界。',diagram='boundary')
-add('seabed','海底介质与损耗','environment','海底结构与介质参数会影响反射和能量损耗，尤其在浅水、低频或较多海底相互作用的情形下。',['海底可具有分层沉积物和更深的地壳结构。','密度、声速、吸收及弹性性质不能只用一个“水深”参数代替。'],[ref(27),ref(28)],mistake='有了水深，并不等于已经确定海底边界条件。',diagram='boundary')
+add('seabed','海底介质与损耗','environment','海底结构与介质参数会影响反射和能量损耗，尤其在浅水、低频或较多海底相互作用的情形下。',['海底可具有分层沉积物和更深的地壳结构。','密度、声速、吸收及弹性性质不能只用一个“水深”参数代替。'],[ref(27),ref(28)],mistake='海底边界需给出水深、介质声速、密度与吸收。',diagram='boundary')
 add('range_dependence','距离相关环境','environment','声速、水深或底质随传播距离改变时，环境具有距离相关性。距离无关假设是便于计算的近似。',['海洋锋面和海山是教材中的距离相关例子。','环境变化可引起折射、模态耦合或额外边界作用。'],[ref(51),ref(52),ref(53)],conditions='须依据具体环境判断近似是否合理。',diagram='methods')
 add('munk_profile','Munk 理想剖面','environment','Munk 剖面是研究深海传播特性的理想声速模型，可用于展示深声道及模态形态。',['教材给出连续解析剖面；教师工具包使用离散深度—声速输入。','本项目运行的是工具包的 5000 m Munk 示例。'],[ref(375),ref(376),code('at/tests/Munk/MunkK.env')],formula='c(z) = c₀[1 + ε(η − 1 + e⁻η)]；η = 2(z − zₐ)/B',conditions='参数与离散输入以所用示例为准，不能把理想模型当作实测环境。',diagram='ssp',simulation=True)
 
@@ -63,19 +63,19 @@ add('bellhop','BELLHOP 工具','toolbox','BELLHOP 是教师包提供的射线/�
 add('ram','RAM 工具','toolbox','RAM 是资料包中的抛物方程求解工具。可与 PE 原理一起学习，理解沿距离步进的波场计算。',['工具输入与 KRAKEN 的 ENV / FLP 工作流不同。','接入前应核对运行输入、输出读取及网格约定。'],[code('at/ram.m'),ref(477),ref(478)],conditions='工具包已安装；网页尚未接入 RAM 任务提交。',diagram='methods')
 add('env_file','ENV 环境文件','toolbox','ENV 描述频率、介质层、声速剖面和边界等信息。参数值、格式与求解器选项需要同时正确。',['本模板检查标题、介质层数和源深标记后才修改输入。','生成后用 read_env 回读，核对实际频率与源深。'],[code('at/tests/Munk/MunkK.env'),code('at/ReadWrite/read_env.m'),code('backend/matlab/run_ocean_case.m')],diagram='pipeline')
 add('flp_file','FLP 场计算文件','toolbox','FLP 指定 FIELD 场计算的选项及源、接收深度和距离网格，与模态文件共同生成声场。',['ENV 和 FLP 中的源深需要一致。','接收深度与距离采样决定最终声场网格。'],[code('at/tests/Munk/MunkK.flp'),code('backend/matlab/run_ocean_case.m')],diagram='pipeline')
-add('field_executable','FIELD 与模态文件','toolbox','KRAKEN 生成模态文件，FIELD 读取模态与场计算输入，输出接收位置的复声压。',['仅有模态文件并不等于已经得到所需网格声场。','项目包装函数已串联两步，不应无依据重复调用。'],[code('at/kraken.m:8–17')],diagram='pipeline')
+add('field_executable','FIELD 与模态文件','toolbox','KRAKEN 生成模态文件，FIELD 读取模态与场计算输入，输出接收位置的复声压。',['KRAKEN求解模态，FIELD计算指定接收网格的复声压。','项目包装函数已串联两步，不应无依据重复调用。'],[code('at/kraken.m:8–17')],diagram='pipeline')
 add('binary_shd_pressure','SHD 复声压输出','toolbox','本包二进制 SHD 读取器返回指定频率的复声压数组，按方位、源深、接收深、距离组织。',['读取器的维度约定需核对，不能只看数组大小猜含义。','复声压既有幅值也有相位；转换 TL 使用幅值。'],[code('at/ReadWrite/read_shd_bin.m:96–102'),code('backend/matlab/run_ocean_case.m')],formula='θ × zₛ × zᵣ × r',conditions='所核对的本包 reader 与指定频率；其他格式/版本需要重新核查。',diagram='pipeline')
 add('munk_case','Munk 网页仿真案例','toolbox','已接通 MATLAB R2024a 与 KRAKEN / FIELD，可以在网页选择频率、源深和接收网格并得到本次计算结果。',['已完成 50/100 Hz 与 500/1000 m 源深四组核验。','每次任务保存 ENV、FLP、SHD、PRT、CSV、JSON 和图表。'],[code('at/tests/Munk/MunkK.env'),code('backend/matlab/run_ocean_case.m')],conditions='5000 m 理想深海示例，当前频率输入范围 10–200 Hz。',diagram='pipeline',simulation=True)
 
 add('transmission_loss','传播损失 TL','analysis','传播损失比较接收场与同源参考场的强度或声压。判断 TL 数值之前，应先明确参考场、阻抗与求和约定。',['本网页按 AT FIELD 归一化复声压计算 −20 log₁₀|p|。','TL 是场与参考的比值，不是直接测量的声压级。'],[ref(33),ref(359),code('backend/matlab/run_ocean_case.m')],formula='TL = −20 log₁₀(|p| / |p₀|)',conditions='声压式采用相同阻抗约定；网页归一化参考遵循 AT FIELD。',diagram='spreading',simulation=True)
-add('receiver_depth','接收深度与采样','analysis','接收深度影响所观测模态的权重。网页取最接近请求深度的网格点，并记录其实际深度与误差。',['请求 1005 m 并不保证网格中恰有 1005 m。','比较曲线需要对齐实际接收深度。'],[ref(359),code('backend/matlab/run_ocean_case.m')],diagram='grid',simulation=True)
-add('range_depth_grid','距离—深度网格','analysis','声场图是离散距离与深度上的计算值。网格数量决定输出采样密度，不会自动改变物理环境。',['更密的接收网格只是更密的场采样，不等于求解器内部误差已经收敛。','输出图与 CSV 要保留明确的 m / km 单位。'],[code('backend/matlab/run_ocean_case.m')],conditions='这里说明本网页输出采样；求解器内部网格与精度控制需另外检查。',diagram='grid')
+add('receiver_depth','接收深度与采样','analysis','接收深度影响所观测模态的权重。网页取最接近请求深度的网格点，并记录其实际深度与误差。',['实际接收深度取最近的输出网格点。','比较曲线需要对齐实际接收深度。'],[ref(359),code('backend/matlab/run_ocean_case.m')],diagram='grid',simulation=True)
+add('range_depth_grid','距离—深度网格','analysis','声场图是离散距离与深度上的计算值。网格数量决定输出采样密度，不会自动改变物理环境。',['接收网格控制场输出采样；求解器内部网格单独设置并检查。','输出图与 CSV 要保留明确的 m / km 单位。'],[code('backend/matlab/run_ocean_case.m')],conditions='这里说明本网页输出采样；求解器内部网格与精度控制需另外检查。',diagram='grid')
 add('near_zero_pressure','近零声压与无效值','analysis','声压近零时，对数换算会产生很大的 TL 或无穷值。需要区分物理零值与数值残差。',['当前实现过滤 |p| < 10⁻¹² 及非有限 TL。','有效比例反映本次网格的可显示值比例，不是模型准确率。'],[ref(357),code('backend/matlab/run_ocean_case.m')],mistake='99.6% 的有效比例不能解释为仿真有 99.6% 的准确率。',diagram='grid')
 add('comparison','控制变量比较','analysis','比较频率或源深的影响时，应固定其他输入、参考约定、接收深度和读图尺度。',['本网页声场图统一使用 40–110 dB 色标。','不能仅凭全网格中位 TL 判断某个接收位置的最优方案。'],[code('backend/matlab/run_ocean_case.m'),code('backend/app.py:plot_result')],conditions='项目分析约定；实际最优目标还需明确距离、接收位置、带宽等。',diagram='grid',simulation=True)
-add('convergence_zone','会聚区','analysis','在特定深海剖面和源位置条件下，折射路径可在距离方向周期性聚焦，产生较高声强区。',['教材示例的会聚区间距随剖面与海域变化。','几何阴影区在波动解中仍可出现有限声能。'],[ref(40),ref(41),ref(42)],conditions='教材特定条件和例子；间距不能当作通用常数。',diagram='rays')
+add('convergence_zone','会聚区','analysis','在特定深海剖面和源位置条件下，折射路径可在距离方向周期性聚焦，产生较高声强区。',['教材示例的会聚区间距随剖面与海域变化。','几何阴影区在波动解中仍可出现有限声能。'],[ref(40),ref(41),ref(42)],conditions='会聚区间距取决于具体剖面与声源位置。',diagram='rays')
 
 add('ctd','CTD 与环境观测','observations','CTD 观测提供温度、盐度和深度相关信息，是认识水体环境、进一步构建声速剖面的资料来源。',['必须同时记录站位、采样时间、深度和变量单位。','温盐图表与可直接计算的原始数据文件不是同一种资料。'],[ref(54,'S15','3.7 节、表 38'),ref(84,'S07','10.1 节')],diagram='observation')
-add('ASIAEX_CTD','ASIAEX 2001 实验','observations','报告介绍 ASIAEX 南海实验的船载 CTD 温盐观测，并提供位置与水深等信息。',['可用于学习实验环境和观测组织。','年份和站位是不可省略的上下文。'],[ref(54,'S15','3.7 节、表 38')],conditions='2001 年历史实验资料；不代表当前指定海域。',diagram='observation',tags=['实验资料'])
+add('ASIAEX_CTD','ASIAEX 2001 实验','observations','报告介绍 ASIAEX 南海实验的船载 CTD 温盐观测，并提供位置与水深等信息。',['可用于学习实验环境和观测组织。','年份和站位是不可省略的上下文。'],[ref(54,'S15','3.7 节、表 38')],conditions='2001年ASIAEX南海实验资料，使用时保留年份与站位。',diagram='observation',tags=['实验资料'])
 add('SW06_CTD','SW06 2006 实验','observations','SW06 报告描述船载 CTD 对实验区域的空间温盐观测，配有观测位置表。',['可与 ASIAEX 比较观测组织与环境资料表达方式。','复现实验声场还需要原始数据与声源接收器条件。'],[ref(84,'S07','10.1 节')],conditions='2006 年历史实验；当前项目未宣称复现实验声场。',diagram='observation',tags=['实验资料'])
 add('temperature_salinity_profiles','温盐观测到声速输入','observations','使用观测环境建模，需要把温盐深资料按适用声速公式转换，并检查单位、剖面范围和采样信息。',['报告图片可帮助理解，但不能直接作为原始数值数据。','当前 Munk 案例仍使用教师示例，不使用报告中的观测数据。'],[ref(22),ref(54,'S15'),ref(84,'S07')],conditions='这里是资料处理的教学流程；尚未接入观测数据导入。',diagram='observation')
 add('validation','示例与实验验证','observations','数值示例成功运行验证了调用流程。要验证真实海域预测，还需独立观测数据、匹配实验条件与误差分析。',['运行成功、图像漂亮和物理准确是不同层次。','环境、源和接收条件需与验证数据对齐。'],[ref(52),ref(53),code('backend/matlab/run_ocean_case.m')],mistake='不要把 Munk 示例跑通写成 ASIAEX 或 SW06 实验已经复现。',diagram='observation')
@@ -98,7 +98,7 @@ paths=[
  {'id':'choose','title':'进阶：比较传播方法','description':'从共同方程走向不同近似与环境条件。','nodes':['helmholtz','snell','ray_method','caustic_shadow','gaussian_beams','normal_mode_field','range_dependence','coupled_modes','parabolic_equation','validation']}]
 for p in paths:
  for a,b in zip(p['nodes'],p['nodes'][1:]):
-  if not any(e['source']==a and e['target']==b and e['group']=='prerequisite' for e in edges):edge(a,b,'建议顺序','prerequisite','教学建议的阅读顺序，不表示严格数学必要条件。')
+  if not any(e['source']==a and e['target']==b and e['group']=='prerequisite' for e in edges):edge(a,b,'建议顺序','prerequisite','建议的课程阅读顺序。')
 graph={'schema_version':'0.2','title':'海洋声学课程知识图谱','chapters':[{'id':id,'label':label,'color':color,'description':desc,'number':i} for i,(id,label,color,desc) in enumerate(chapters,1)],'nodes':nodes,'edges':edges,'learning_paths':paths,'reference_design':{'title':'智慧树知识图谱使用手册','url':'https://jwc.shnu.edu.cn/_upload/article/files/26/c4/b28fc1cf49408c3fd3980aa81320/2f28c218-42a8-4d05-9ca0-4bc2bea382cc.pdf','pages':[164,165,167,169,170]},'status':'人工整理课程结构与知识说明；逐项提供所用教材页码或代码定位。'}
 out=ROOT/'backend/data';out.mkdir(exist_ok=True)
 (out/'course_graph.json').write_text(json.dumps(graph,ensure_ascii=False,indent=2),encoding='utf-8')

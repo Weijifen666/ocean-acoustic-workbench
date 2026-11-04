@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-11-04T18:34:45.486589+08:00",
+  "site_url": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "deployment_version": 25,
+  "cloud_index": {
+    "retrieval_scope": "cloud_only",
+    "indexed_sources": 5,
+    "indexed_pages": 1789,
+    "chunks": 4101,
+    "local_materials_used": false
+  },
+  "streamed_step": {
+    "creation_http": 202,
+    "stream_http": 200,
+    "content_type": "application/x-ndjson",
+    "headers_ms": 672,
+    "first_frame_ms": 672,
+    "heartbeats": 1,
+    "final_state": "done",
+    "lease_cleared": true,
+    "history_roles": [
+      "user",
+      "assistant"
+    ],
+    "same_request_reuses_run": true,
+    "provider_call": false,
+    "scope": "Isolated anonymous session without a model key; verifies deployed HTTP transport and durable state."
+  }
+}

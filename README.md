@@ -53,6 +53,8 @@ MATLAB、AT、DSH和教材按所需功能另行配置。完整步骤见[本地�
 
 2026-11-04更新：5份资料的4101个正文片段已导入云端R2，API问答直接检索教材、课程卡与公开资料，结合模型已有知识组织回答；新增发送状态确认与同请求恢复，修正“简正波”的中文及英文术语检索，并精简界面和文档。云端教材入库状态可在[知识库接口](https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site/api/knowledge/status)查看，维护者操作见[教材导入](docs/KNOWLEDGE_IMPORT.md)。
 
+**第25版已发布**：DeepSeek研究任务采用64K单轮输出预算，首次截断后自动提高到128K重试；仍被截断时可在原会话点击“继续原研究”。已有工具记录和计算任务保留。长步骤使用连接心跳，短暂断网时先核对云端进度再恢复。272项回归测试通过，包含17次工具调用后的截断恢复；公网流式接口与云端教材索引已实际检查，见[部署回执](docs/validation/2026-11-04/deployment-v25.json)、[公网接口检查](docs/validation/2026-11-04/public-api-v25.json)及[教材检索检查](docs/validation/2026-11-04/cloud-course-rag-v24.json)。
+
 2026-11-03的字体、MATLAB主工作流和图谱图片更新见[第22版回执](docs/validation/2026-11-03/deployment-v22.json)，其中记录MATLAB自检任务`7d129b357c19`及公网101×101声场任务`b091fc34424c`。
 
 真实浏览器Python、保存与下载、DSH技能调用、MATLAB脚本、模型修码和结果读取见[功能验收记录](docs/DUAL_WORKBENCH_ACCEPTANCE.md)。早期执行失败及对应修复保存在各版本记录中。

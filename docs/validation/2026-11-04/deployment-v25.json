@@ -1,0 +1,35 @@
+{
+  "project_id": "appgprj_6ac7626759b88191938139bc53264883",
+  "version_number": 25,
+  "version_id": "appgprj_6ac7626759b88191938139bc53264883~appgver_d79c760842148191841f64e6a8188fa6",
+  "source_commit": "f85de979b5674678c46b5bff6f8d170c06827fe1",
+  "github_commit": "f42f6ec7518a850b8339d2148d38a334c33a32f5",
+  "deployment_id": "appgdep_6aeb0a00dc908191a54fccc1de8856f1",
+  "status": "succeeded",
+  "url": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "env_set_revision": 4,
+  "updated_at": "2026-11-04T10:33:57.801368+00:00",
+  "archive_storage": {
+    "archive_format": "tar",
+    "sediment_file_id": "file_000000001df8821194a3fed9eb156c28",
+    "content_hash": "sha256:3b5e1666d957bc9507b417998a2c9f631bce8a126f1966d80b8346c568dcab62",
+    "size_bytes": 7249920,
+    "file_count": 13
+  },
+  "tests": {
+    "public": {
+      "passed": 272,
+      "failed": 0
+    },
+    "research_and_stream_targeted": {
+      "passed": 43,
+      "failed": 0
+    },
+    "react_interaction_scenarios": 17
+  },
+  "validation": {
+    "paid_model_call_this_run": false,
+    "browser_automation": "Stopped because the computer-use tool could not reliably identify the browser URL.",
+    "known_record_limit_bytes": 900000
+  }
+}

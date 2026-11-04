@@ -60,11 +60,11 @@ GET `/api/knowledge/status` 显示 `source_coverage` 和 `coverage`，区分资�
 维护者完成本地入库后，从仓库根目录执行：
 
 ```powershell
-python scripts/export-course-knowledge.py --help
-python scripts/publish-course-knowledge.py --site-url https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site --bundle <导出的私有版本目录>
+python scripts/export-course-knowledge.py --database ocean-acoustic-workbench/.local/kb/chunks.sqlite3 --output .local/course-knowledge-export/course-20261104-v2 --version course-20261104-v2
+python scripts/publish-course-knowledge.py --site-url https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site --bundle .local/course-knowledge-export/course-20261104-v2
 ```
 
-导出参数按`--help`指定源SQLite、输出目录和新版本标识。发布命令会隐藏输入专用发布令牌。维护者在Sites运行环境设置`COURSE_KNOWLEDGE_PUBLISH_TOKEN`并部署应用，使其与输入值一致；该令牌独立于模型Key和MATLAB桥接密钥。
+示例使用下一版标识`course-20261104-v2`，后续更新时更换版本与目录。发布命令会隐藏输入专用发布令牌。维护者在Sites运行环境设置`COURSE_KNOWLEDGE_PUBLISH_TOKEN`并部署应用，使其与输入值一致；该令牌独立于模型Key和MATLAB桥接密钥。
 
 导入接口校验Gzip完整性、SHA-256、来源和页数，再写入版本对象，最后原子切换`course-knowledge/current.json`。连接中断时重发相同版本；内容发生变化时使用新版本标识。导出目录保持私有，不提交到GitHub。发布后检查`GET /api/knowledge/status`的`course_documents.index_ready`、版本、页数和片段数，再通过`GET /api/knowledge/search?q=简正波`确认实际命中。
 

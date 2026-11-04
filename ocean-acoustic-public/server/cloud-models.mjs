@@ -40,7 +40,7 @@ export async function providerResponseError(response){
   }
  }catch{/* Invalid, interrupted or oversized error responses use a fixed fallback. */}
  const contextLimit=/context[_\s-]*length[_\s-]*exceeded|context\s+window|maximum\s+context\s+length|input[\s_-]*tokens?\s+exceeds?\b|prompt[\s_-]+(?:is[\s_-]+)?too[\s_-]+long/i;
- if(fields.some(value=>typeof value==='string'&&contextLimit.test(value)))return transportError('模型输入超过当前模型的上下文窗口，请减少历史与资料输入，或选择窗口更大的模型。','PROVIDER_CONTEXT_LIMIT');
+ if(fields.some(value=>typeof value==='string'&&contextLimit.test(value)))return transportError('已超过模型自身的上下文限制，请减少历史与资料输入，或选择窗口更大的模型。','PROVIDER_CONTEXT_LIMIT');
  const status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:502;
  return transportError(`供应商返回 HTTP ${status}：${providerError(status)}`,'PROVIDER_RESPONSE');
 }

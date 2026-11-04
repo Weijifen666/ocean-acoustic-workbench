@@ -55,7 +55,7 @@ test('all 12 skills expose complete registered resources with reproducible sourc
   assert.ok(api.readSkill('seasonal-layer-diagnostics', 'scripts/analyze_profiles.py').content.includes('sigma0'));
 });
 
-test('scientific protocol is complete and public skills route missing local tools without claiming equivalent diagnostics', () => {
+test('scientific protocol is complete and public skills state their tool routes and diagnostic method', () => {
   const resource = api.readSkill('at-environment', 'references/scientific-evidence.md');
   const source = fs.readFileSync(new URL('../../ocean-acoustic-workbench/skills/at-environment/references/scientific-evidence.md', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
   assert.equal(resource.source_sha256, sha(source));
@@ -65,9 +65,9 @@ test('scientific protocol is complete and public skills route missing local tool
     assert(resource.content.includes(requirement), requirement);
   assert.equal(api.readProjectFile('@workbench/skills/at-environment/references/scientific-evidence.md').sha256, resource.sha256);
   for (const text of [resource.content, ...['at-environment','seasonal-layer-diagnostics','surface-duct-investigation'].map(id => api.readSkill(id).content)]) {
-    assert(text.indexOf('公网工具路由') < text.indexOf('# '));
-    for (const boundary of ['只调用当前请求实际注册的工具', '节点在线也不会自动授予', 'diagnose_seasonal_layers', '原位温度', '不能冒充本地位温/位密度双判据', 'density_mld=not_computed', '不归档研究任务', '不自行重写算法'])
-      assert(text.includes(boundary), boundary);
+    assert(text.indexOf('公共站通过') >= 0 && text.indexOf('公共站通过') < text.indexOf('# '));
+    for (const route of ['get_ocean_profile', 'diagnose_seasonal_layers', '温度判据', 'density_mld=not_computed', 'preview_simulation', 'submit_simulation', 'run_research_script', '本地工作台执行'])
+      assert(text.includes(route), route);
   }
 });
 
@@ -81,8 +81,9 @@ test('nine recipe and experience models retain eight supported recipes without c
   const krakel = models.find(model => model.id === 'krakel');
   assert.equal(krakel.supported, false);
   assert.equal(krakel.recipe_supported, false);
-  assert.match(krakel.unavailable_reason, /尚未核验/);
-  assert.match(api.readSkill('at-krakel').content, /只读知识/);
+  assert.match(krakel.unavailable_reason, /待核验/);
+  assert.match(api.readSkill('at-krakel').content, /当前只提供模型资料与流程核对，未开放已固化的基线创建/);
+  assert.match(api.readSkill('at-krakel').content, /supported:false/);
 });
 
 test('skill path traversal, encoded paths, absolute paths, unknown IDs and inherited keys cannot escape allowlist', () => {
@@ -158,7 +159,7 @@ test('snapshots are immutable to callers and all public data exclude machine pat
   const serialized = JSON.stringify(assets);
   assert.doesNotMatch(serialized, /(?<![A-Za-z0-9])[A-Z]:[\\/]|\/(?:Users|home)\/|\bsk-[A-Za-z0-9_-]{24,}\b/);
   assert.doesNotMatch(serialized, /尚未移植，涉及这些数据|新版固定表单仍为Munk/);
-  assert.ok(Object.values(assets.resources).filter(resource => resource.path.endsWith('.md')).every(resource => resource.content.includes('公共资料适用范围')));
+  assert.ok(Object.values(assets.resources).filter(resource => resource.path.endsWith('.md')).every(resource => resource.content.includes('海洋声学参考资料与算例配方，可结合教材和通用声学知识使用。')));
 });
 
 test('empty assets are safe for existing integrations and never provide filesystem fallback', () => {

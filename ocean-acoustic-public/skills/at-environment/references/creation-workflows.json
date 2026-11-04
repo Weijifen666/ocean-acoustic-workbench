@@ -35,7 +35,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "krakenc",
@@ -71,7 +71,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "scooter",
@@ -106,7 +106,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "bellhop",
@@ -137,7 +137,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "ram",
@@ -169,7 +169,7 @@
       "runtime": "Python + RAM",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "simplepe",
@@ -202,7 +202,7 @@
       "runtime": "MATLAB",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "sparc",
@@ -237,7 +237,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "bellhop3d",
@@ -268,7 +268,7 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "公共站只读资料；实际执行须检查已连接计算节点。"
+      "availability_reason": "配方可供查阅，计算入口见当前工具列表。"
     },
     {
       "id": "krakel",
@@ -285,10 +285,10 @@
       "output": "",
       "axis": "source_depth",
       "supported": false,
-      "unavailable_reason": "历史记录中曾编译并冒烟运行 KRAKEL，但弹性场后处理与收敛尚未核验；公共站不开放基线创建。",
+      "unavailable_reason": "KRAKEL基线配方尚未开放，弹性场后处理与收敛待核验。",
       "limitations": [
         "KRAKEL 弹性场后处理、FIELD 兼容与 Ahmad 弹性收敛待独立验证。",
-        "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。"
+        "原本地环境的算例与执行记录。"
       ],
       "recipe_supported": false,
       "available": false,
@@ -296,8 +296,8 @@
       "runtime": "MATLAB + AT",
       "runtime_status": "requires_connected_compute_node",
       "execution_context": "historical_local_record",
-      "availability_reason": "未提供受支持的创建配方；不能创建经典基线。"
+      "availability_reason": "基线创建配方尚未提供。"
     }
   ],
-  "scope": "模型创建配方资料。supported 表示存在已固化的输入与检查流程，不表示当前公网节点可执行。"
+  "scope": "模型创建配方与输入检查流程，supported标记已提供的配方。"
 }

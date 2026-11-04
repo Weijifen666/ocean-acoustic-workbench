@@ -3,11 +3,13 @@ name: at-environment
 description: 根据本机 Acoustic Toolbox 的 tests 和 MATLAB 源码构造 ENV、FLP 及运行链，复现、扩展和核验声场算例。用于实际 AT 研究与输入格式核对。
 ---
 
-> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。
+> 海洋声学参考资料与算例配方，可结合教材和通用声学知识使用。
 
-> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。
+> 公共站通过 get_ocean_profile、diagnose_seasonal_layers（温度判据，density_mld=not_computed）及 preview_simulation/submit_simulation 查询环境、诊断和提交三模型计算。开放研究的创建、写文件、run_research_script及完整数值审计在本地工作台执行。
 
 # AT 环境构造与算例复现
+
+教材和Skill提供方法与引用，模型可结合通用声学知识补充定义、推导、例子和相关理论。基础理论问题直接清楚回答，按需查资料；具体海况、实验数值和仿真结果使用实际数据或任务记录。引用保留实际出处，资料与通用解释自然整合。
 
 先把问题落到可测量量：指定海域或理想环境、时段、频率/几何、要比较的变量，以及用什么指标回答。只问用法时解释条件与输入；只需混合层或声速结构时转入 `seasonal-layer-diagnostics` / `surface-duct-investigation`，优先用 `diagnose_ocean_layers` 取得标准诊断，无需为此启动声场求解器。
 
@@ -32,6 +34,6 @@ addpath(strjoin(parts,pathsep),'-begin'); addpath(fullfile(AT,'ReadWrite'),'-beg
 
 比较频率效应、模型或数值设置，或准备声场研究报告时，先读 [科学证据与比较协议](references/scientific-evidence.md)。`evaluate_acoustic_checks(id, spec)` 当前只接受同频、同模型、同源/环境/归一化的 `refinement` NPZ，按引用中的固定轴与元数据准备，再指定 ROI、共同掩码和阈值；跨频或跨模型效应由研究脚本另作受控分析，不能直接送此工具。一次改变一个数值控制量用于单变量稳定性检查；同时改变波束与步长属于联合敏感性实验。两级差异只报告为观察到的数值差异，不称真实误差界。
 
-完成实际计算后检查 exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，按研究目标保存输入、脚本、数值及必要图表。提交前用只读 `audit_research_task(id)` 核对当前研究的执行、版本和产物；修改数据或脚本后重跑受影响的研究步骤，重跑无关基线不能替代研究验证。`finish_research_task` 中 Agent 自评以 `authority: agent_self_report` 标记，程序返回的 `scientific_validation` 单列；两者都按已有证据解释，不等同物理准确性证明。阴性、未收敛或证据不足结果也可如实报告。
+完成实际计算后检查exe/PRT、输入与输出坐标、叠加方式、源归一化和有效覆盖，保存研究所需的输入、脚本、数值和图表。提交前用`audit_research_task(id)`核对执行、版本与产物；修改数据或脚本后重跑受影响的步骤。`finish_research_task`分别保存Agent分析与程序的scientific_validation检查，记录实际结果、未收敛现象和后续建议。
 
-WOA18、混合层与表面声道技能均已提供；数据、诊断和执行能力以本次注册工具及其返回状态为准。仅有 Skill 说明或历史运行记录时，交付方法、现有证据与具体缺项；不把未执行步骤写成完成。
+WOA18、混合层与表面声道技能可按问题选用。按实际工具返回的状态交付方法、计算结果与下一步建议，回答重点放在研究问题本身。

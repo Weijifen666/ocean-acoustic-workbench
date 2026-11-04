@@ -1,6 +1,6 @@
 {
   "audit_date": "2026-10-22",
-  "scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。 Fresh execution and structural/numerical checks, not universal physical accuracy validation.",
+  "scope": "原本地环境的算例与执行记录。 Fresh execution and structural/numerical checks, not universal physical accuracy validation.",
   "executions": [
     {
       "id": "RAM-wedge-original",
@@ -765,6 +765,6 @@
       "note": "AT tests/head，100 Hz，r=200 m z=50 m；首波为头部波（快于直达波 0.137 s），与理论一致。"
     }
   },
-  "public_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。",
+  "public_scope": "原本地环境的算例与执行记录。",
   "execution_context": "historical_local_record"
 }

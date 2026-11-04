@@ -1,6 +1,6 @@
-> 公共资料适用范围：本文件是只读知识与可复核的构造配方。执行、写文件和本机工具调用仅适用于已授权且在线的计算节点；先查询本次能力与模型可用性。历史执行记录不证明当前节点可用，也不证明任意新环境的数值收敛或物理精度。节点未连接时完成资料检索、条件核对与输入计划，并明确指出待执行项。
+> 海洋声学参考资料与算例配方，可结合教材和通用声学知识使用。
 
-> 公网工具路由（先于下文本地流程适用）：只调用当前请求实际注册的工具。下文 diagnose_ocean_layers、prepare_model_research_task、create_research_task、write_research_file、run_research_script、evaluate_acoustic_checks、audit_research_task、finish_research_task、list_at_examples 和 read_at_file 的步骤仅在这些工具已注册且有相应权限时执行；节点在线也不会自动授予这些权限。当前公网可用 diagnose_seasonal_layers 做单点四季的原位温度阈值和声速候选结构诊断，不能冒充本地位温/位密度双判据；density_mld=not_computed 必须保留。它不归档研究任务或生成任务文件，不接受研究 id；标准工具、脚本执行或归档工具缺失时，交付已返回的诊断子集、方法差异和未完成项，不自行重写算法、编造任务或声称检查已通过。传播仅按当前注册的受限 preview_simulation/submit_simulation 流程进行；不适配时如实说明。本文脚本与 NPZ 协议可供阅读和规划，不代表公网已执行。
+> 公共站通过 get_ocean_profile、diagnose_seasonal_layers（温度判据，density_mld=not_computed）及 preview_simulation/submit_simulation 查询环境、诊断和提交三模型计算。开放研究的创建、写文件、run_research_script及完整数值审计在本地工作台执行。
 
 # 科学证据与比较协议
 

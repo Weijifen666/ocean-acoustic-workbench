@@ -1,7 +1,7 @@
 {
   "audit_date": "2026-10-22",
   "execution_count": 18,
-  "scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。 调用结构梳理与部分算例执行；全量变体和物理精度未验证。",
+  "scope": "原本地环境的算例与执行记录。 调用结构梳理与部分算例执行；全量变体和物理精度未验证。",
   "families": [
     {
       "family": "3DAtlantic",
@@ -416,6 +416,6 @@
       }
     ]
   },
-  "public_scope": "历史本地审阅和运行记录；不是本次公网节点的执行或精度验证。",
+  "public_scope": "原本地环境的算例与执行记录。",
   "execution_context": "historical_local_record"
 }

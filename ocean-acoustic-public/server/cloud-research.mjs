@@ -105,8 +105,9 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
  const budgetFailure=data=>data.error_code==='CONTEXT_BUDGET_EXCEEDED'||/^(当前问题或工具结果超过所选上下文预算|当前必要问题|当前问题与必要系统说明无法完整放入)/.test(data.error||'');
  function view(row) {
   const recoverable=row.state==='failed'&&budgetFailure(row.data);
+  const activeLease=row.state==='running'&&Number.isFinite(row.lease_until)&&row.lease_until>Date.now();
   const context=row.data.context||(recoverable?{requested_budget:row.data.context_budget??'auto',budget_tokens:resolveBudget(row.data.context_budget??'auto'),budget_limited:row.data.context_budget!=='unlimited',estimated_input_tokens:estimateMessages(row.data.messages||[],RESEARCH_TOOLS),applied:false}:null);
-  return {id:row.id,state:row.state,backend:'api',stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,error_code:row.data.error_code||(recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,context,exports:row.data.exports||[],trace:row.data.trace||[],rounds:row.data.rounds||0,knowledge_node_ids:row.data.knowledge_node_ids||[],graph_selection:row.data.graph_selection||null};
+  return {id:row.id,state:row.state,backend:'api',step_busy:activeLease,lease_expires_at:activeLease?row.lease_until:null,stage:row.state==='stopped'?'已停止继续调度':row.data.stage||'',partial:row.data.partial||'',reply:row.data.reply||null,error:row.data.error||null,error_code:row.data.error_code||(recoverable?'CONTEXT_BUDGET_EXCEEDED':null),recoverable,context,exports:row.data.exports||[],trace:row.data.trace||[],rounds:row.data.rounds||0,knowledge_node_ids:row.data.knowledge_node_ids||[],graph_selection:row.data.graph_selection||null};
  }
  async function getSession(env,owner,id) {
   if(!idPattern.test(id||''))throw problem('会话标识无效');
@@ -219,7 +220,7 @@ export function createCloudResearch({assets,graph=null,encrypt,decrypt,remote,re
   // overwrite a replacement step, even if their clock timestamps are equal.
   const now=Date.now(),lease=now+240000,claimedData={...row.data,lease_owner:crypto.randomUUID()},ciphertext=await enc(env,claimedData);
   const claimed=await run(env,"UPDATE cloud_research_runs SET lease_until=?,updated=?,ciphertext=? WHERE id=? AND visitor_id=? AND state='running' AND lease_until<? AND ciphertext=?",lease,now,ciphertext,id,identity.id,now,row.ciphertext);
-  if(!(claimed.meta?.changes??claimed.changes))return json({...view(row),step_busy:true});
+  if(!(claimed.meta?.changes??claimed.changes))return json(view(await getRun(env,identity.id,id)));
   row={...row,data:claimedData,ciphertext,lease_until:lease};const data=row.data;
   try {
    const cfg=identity.data.selected;

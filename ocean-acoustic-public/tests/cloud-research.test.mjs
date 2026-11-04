@@ -144,11 +144,25 @@ test('foreign visitors cannot read, step, stop, rename or delete another visitor
  assert.equal((await get(s,a,id)).r.status,404);assert.equal(s.providerRequests.length,0);s.sqlite.close();
 });
 
+test('run GETs expose the active step lease, and concurrent steps do not repeat a provider call',async()=>{
+ const entered=deferred(),release=deferred(),s=harness([async()=>{entered.resolve();await release.promise;return provider('final answer after the active step');}]),cookie=await visitor(s),id=await start(s,cookie);
+ try{
+  const idle=await get(s,cookie,id);assert.equal(idle.data.step_busy,false);assert.equal(idle.data.lease_expires_at,null);
+  const pending=step(s,cookie,id);await entered.promise;
+  const busy=await get(s,cookie,id),active=await s.call('/api/research/active?session=session-research-0001','GET',undefined,cookie);
+  assert.equal(busy.data.state,'running');assert.equal(busy.data.step_busy,true);assert(Number.isFinite(busy.data.lease_expires_at));assert(busy.data.lease_expires_at>Date.now());
+  assert.equal(active.data.step_busy,true);assert.equal(active.data.lease_expires_at,busy.data.lease_expires_at);
+  const duplicate=await step(s,cookie,id);assert.equal(duplicate.data.step_busy,true);assert.equal(duplicate.data.lease_expires_at,busy.data.lease_expires_at);assert.equal(s.providerRequests.length,1);
+  release.resolve();const completed=await pending;assert.equal(completed.data.state,'done');assert.equal(completed.data.step_busy,false);assert.equal(completed.data.lease_expires_at,null);
+  const final=await get(s,cookie,id);assert.equal(final.data.step_busy,false);assert.equal(final.data.lease_expires_at,null);assert.equal(s.providerRequests.length,1);
+ }finally{release.resolve();s.sqlite.close()}
+});
+
 test('one active step holds the lease and a late provider result cannot undo stop or deleted history',async()=>{
  const entered=deferred(),release=deferred(),s=harness([async()=>{entered.resolve();await release.promise;return provider('late result',[toolCall('submit_simulation',{plan})]);}]),cookie=await visitor(s),id=await start(s,cookie);
  const first=step(s,cookie,id);await entered.promise;
  const busy=await step(s,cookie,id);assert.equal(busy.data.step_busy,true);assert.equal(s.providerRequests.length,1);
- await s.call(`/api/research/runs/${id}/stop`,'POST',{},cookie);release.resolve();assert.equal((await first).data.state,'stopped');
+ await s.call(`/api/research/runs/${id}/stop`,'POST',{},cookie);release.resolve();const stopped=(await first).data;assert.equal(stopped.state,'stopped');assert.equal(stopped.step_busy,false);assert.equal(stopped.lease_expires_at,null);
  assert.equal(s.nodeRequests.length,0);assert.equal((await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie)).data.length,1);
  assert.equal((await s.call('/api/research/sessions/session-research-0001','DELETE',undefined,cookie)).r.status,200);s.sqlite.close();
 });
@@ -156,6 +170,7 @@ test('one active step holds the lease and a late provider result cannot undo sto
 test('expired lease replacement wins over an old provider completion',async()=>{
  const entered=deferred(),release=deferred(),s=harness([async()=>{entered.resolve();await release.promise;return provider('STALE SHOULD NOT WIN');},provider('replacement completion')]),cookie=await visitor(s),id=await start(s,cookie);
  const stale=step(s,cookie,id);await entered.promise;s.sqlite.prepare('UPDATE cloud_research_runs SET lease_until=0 WHERE id=?').run(id);
+ const expired=await get(s,cookie,id);assert.equal(expired.data.state,'running');assert.equal(expired.data.step_busy,false);assert.equal(expired.data.lease_expires_at,null);
  const replacement=await step(s,cookie,id);assert.equal(replacement.data.reply,'replacement completion');release.resolve();
  assert.equal((await stale).data.reply,'replacement completion');
  const history=await s.call('/api/research/history?session=session-research-0001','GET',undefined,cookie);assert.equal(history.data.length,2);assert.equal(history.data[1].text,'replacement completion');s.sqlite.close();

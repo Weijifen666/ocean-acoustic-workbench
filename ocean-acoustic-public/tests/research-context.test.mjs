@@ -113,7 +113,7 @@ test('resource pages preserve full-file hashes, expose continuation and label pa
   assert.equal(first.content_format,'text_fragment');assert.equal(first.complete,false);assert.equal(first.has_more,true);
   assert.ok(first.returned_bytes<=256&&first.next_offset>0);
   assert.equal(first.returned_bytes,bytes(first.content));
-  assert.match(first.note,/不是完整JSON/);
+  assert.match(first.note,/分页片段/);
   assert.throws(()=>JSON.parse(first.content));
   const chunks=[];let offset=0;
   do{const page=resourcePage(resource,{offset,max_bytes:256});chunks.push(page.content);offset=page.next_offset;}while(offset!==null);

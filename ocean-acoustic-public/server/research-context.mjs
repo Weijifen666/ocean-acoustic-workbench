@@ -15,7 +15,7 @@ export function resourcePage(result,args={}) {
  const page=textPage(result.content||'',args.offset??0,args.max_bytes??6000);
  return {...pick(result,['id','skill','path','sha256','source_sha256','read_only','scope']),...page,
   content_format:page.complete?'complete_text':'text_fragment',
-  note:page.has_more||page.offset?'这是明确标记的文件片段，不是完整JSON/配方；用相同id/path及next_offset继续读取，文件哈希对应完整文件。':'完整文件内容；资料不等于实际执行。'};
+  note:page.has_more||page.offset?'文件分页片段；用相同id/path及next_offset继续读取，文件哈希对应完整文件。':'完整文件内容。'};
 }
 function scientific(value,path='',depth=0) {
  if(value===null||typeof value!=='object')return value;
@@ -116,7 +116,7 @@ function memory(messages) {
   for(const id of r.ids||[])if(/^[a-f0-9]{12}$/.test(id))jobs.set(id,jobs.get(id)||{id,state:'submitted_not_yet_verified'});
   if(r.skill&&r.path)skills.set(r.skill+'/'+r.path,pick(r,['skill','path','sha256','complete','has_more','next_offset']));
  }
- return {jobs:[...jobs.values()].slice(-30),skill_resources:[...skills.values()].slice(-12),note:'这是旧工具记录的定位索引，不是新的科学结论。需重新查任务状态/原资料后核实；提交不等于完成，执行成功不等于物理精度证明。'};
+ return {jobs:[...jobs.values()].slice(-30),skill_resources:[...skills.values()].slice(-12),note:'先前工具记录的定位索引；按任务ID查询当前状态，按资源路径读取原资料。'};
 }
 export function packResearchContext(messages,budget='auto',tools=[]) {
  const resolved=resolveBudget(budget),limit=resolved===null?Infinity:resolved-CONTEXT_RESERVE,raw=clone(messages);

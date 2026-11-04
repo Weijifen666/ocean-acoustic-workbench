@@ -23,7 +23,7 @@ export function researchStepStream(request,handle,{heartbeatMs=5000}={}){
      emit({type:'response',status:response.status,body});
     }catch(error){
      const status=[400,403,404,405,409,413,422,429,502,503,504].includes(error.status)?error.status:503;
-     emit({type:'response',status,body:{detail:error.status?String(error.message).slice(0,220):'研究步骤暂未完成，请确认保存的进度后继续。',...(typeof error.code==='string'&&/^[A-Z_]{1,80}$/.test(error.code)?{code:error.code}:{})}});
+     emit({type:'response',status,body:{detail:'研究步骤暂未完成，请确认保存的进度后继续。',code:'WORKBENCH_STEP_FAILED'}});
     }finally{
      cleanup();if(!finished){finished=true;output.close()}
     }

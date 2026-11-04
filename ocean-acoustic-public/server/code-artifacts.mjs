@@ -91,7 +91,7 @@ const string={type:'string'},integer={type:'integer'};
 const tool=(name,description,properties={},required=Object.keys(properties))=>({type:'function',function:{name,description,parameters:{type:'object',properties,required,additionalProperties:false}}});
 export const CODE_TOOL_SPECS=[
  tool('list_code_artifacts','列出当前用户保存的代码草稿，不运行代码'),
- tool('read_code_artifact','按字符位置分页读取本人代码或显式CSV；片段不等于完整文件',{id:string,field:{type:'string',enum:['code','input_csv']},offset:integer,max_bytes:integer},['id']),
+ tool('read_code_artifact','按字符位置分页读取本人代码或CSV，按next_offset读取后续内容',{id:string,field:{type:'string',enum:['code','input_csv']},offset:integer,max_bytes:integer},['id']),
  tool('write_code_artifact','保存Python/MATLAB源码草稿；修改需原revision。只保存文档，浏览器运行须用户明确点击，不能写入或伪造执行结果',{id:string,expected_revision:integer,title:string,language:{type:'string',enum:['python','matlab']},code:string,input_csv:string},['title','language','code']),
  tool('read_code_result','读取本人浏览器回传运行记录、错误或文本结果；这不是服务端独立核验。PNG只列元数据，不读取base64到模型',{id:string,field:{type:'string',enum:['stdout','stderr','file']},name:string,offset:integer,max_bytes:integer},['id']),
 ];
@@ -100,7 +100,7 @@ export async function executeCodeTool(store,name,args,env,owner,options={}){
  if(name==='list_code_artifacts')return {artifacts:await store.list(env,owner),scope:'current_visitor',execution:false};
  if(name==='write_code_artifact'){
   const row=!args.id&&options.request_key?await store.createOnce(env,owner,args,options.request_key):await store.save(env,owner,args,args.id??null);
-  return {...meta(row),workspace_url:workspace(row.id),executed:false,...(row.reused?{reused:true}:{}),note:row.reused?'复用本次工具调用此前创建的草稿；用户可能已修改，请重新读取。没有重新执行或覆盖代码。':'代码已保存；请在代码与分析页面审阅后显式运行。生成或保存源码不代表已经执行。'};
+  return {...meta(row),workspace_url:workspace(row.id),executed:false,...(row.reused?{reused:true}:{}),note:row.reused?'已复用此前创建的草稿；请读取当前版本。':'代码已保存；请在MATLAB与代码页面审阅并运行。'};
  }
  const row=await store.read(env,owner,args.id),base={...meta(row),workspace_url:workspace(row.id)};
  if(name==='read_code_artifact'){

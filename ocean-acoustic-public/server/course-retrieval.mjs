@@ -41,7 +41,7 @@ export function createCourseRetriever(graph){
   if(!lexical.length&&!focus.size)return [];
   const all=new Map(cards.map(c=>[c.id,c]));return [...fused.entries()].sort((a,b)=>((focus.has(all.get(b[0]).node_id)?1:0)+b[1])-((focus.has(all.get(a[0]).node_id)?1:0)+a[1])||a[0].localeCompare(b[0])).slice(0,limit).map(([id,score])=>{
    const c=structuredClone(all.get(id));c.score=Number(score.toFixed(5));c.retrieval={methods:['BM25','typed_graph_context','RRF'],focus:focus.has(c.node_id),role:focus.has(c.node_id)?'question_focus':context.has(c.node_id)?'graph_context':'text_match',support_status:'candidate_only',claim_support_verified:false};
-   c.related_triples=graph.edges.filter(e=>e.group!=='hierarchy'&&[e.source,e.target].includes(c.node_id)).slice(0,10).map(e=>({source:byId.get(e.source).label,relation:e.label,target:byId.get(e.target).label,relation_kind:e.group,note:e.note,provenance:'人工课程关联或建议学习顺序，不代表物理命题已得到证明。'}));
+   c.related_triples=graph.edges.filter(e=>e.group!=='hierarchy'&&[e.source,e.target].includes(c.node_id)).slice(0,10).map(e=>({source:byId.get(e.source).label,relation:e.label,target:byId.get(e.target).label,relation_kind:e.group,note:e.note,provenance:'人工整理的课程关联与建议学习顺序。'}));
    c.citation=courseCitation(c);return c;
   });
  };

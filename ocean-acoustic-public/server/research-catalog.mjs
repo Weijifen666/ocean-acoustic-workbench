@@ -32,7 +32,7 @@ export function createResearchCatalog(assets = {}) {
   const skillsById = new Map(skills.map(skill => [skill.id, skill]));
   const roots = copy(assets.roots || {workbench: '共享工作台资料', project: 'AT 输入快照'});
   const groups = copy(assets.groups || [{id: 'workbench', name: '共享代码、Skill 与说明'}, {id: 'project', name: 'AT 经典输入快照'}]);
-  const history = assets.history_scope || '模型审阅与运行记录来自历史本地环境；不表示本次公网节点已验证。';
+  const history = assets.history_scope || '模型审阅与运行记录来自历史本地环境；当前执行方式见可用工具。';
   const note = assets.note || '公共目录仅提供参考资料；执行需查询已连接计算节点的实际能力。';
 
   function catalog() {

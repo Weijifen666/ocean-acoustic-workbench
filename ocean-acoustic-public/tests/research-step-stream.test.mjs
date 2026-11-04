@@ -8,11 +8,13 @@ const request=signal=>new Request('https://course.test/api/research/runs/researc
 
 test('long step sends headers and heartbeat before work completes, then its actual response',async()=>{
  const work=deferred();let started=0;
- const response=researchStepStream(request(),async scoped=>{started++;assert.equal(await scoped.text(),'{}');await work.promise;return Response.json({id:'research-example',state:'done',reply:'完整答案'})});
+ const response=researchStepStream(request(),async scoped=>{started++;assert.equal(await scoped.text(),'{}');await work.promise;return Response.json({id:'research-example',state:'done',reply:'完整答案'})},{heartbeatMs:5});
  assert.match(response.headers.get('content-type'),/application\/x-ndjson/);
  const reader=response.body.getReader(),decoder=new TextDecoder();
  assert.deepEqual(JSON.parse(decoder.decode((await reader.read()).value)),{type:'heartbeat'});
- assert.equal(started,1);work.resolve();
+ assert.equal(started,1);
+ assert.deepEqual(JSON.parse(decoder.decode((await reader.read()).value)),{type:'heartbeat'});
+ work.resolve();
  const frames=decoder.decode((await reader.read()).value).trim().split('\n').map(JSON.parse);
  assert.deepEqual(frames,[{type:'response',status:200,body:{id:'research-example',state:'done',reply:'完整答案'}}]);
  assert.equal((await reader.read()).done,true);
@@ -25,6 +27,11 @@ test('stream keeps structured response status, and hides unexpected internal exc
  response=researchStepStream(request(),async()=>{throw new Error('secret internal request metadata')});
  frames=(await response.text()).trim().split('\n').map(JSON.parse);
  assert.equal(frames.at(-1).status,503);assert.ok(!JSON.stringify(frames).includes('secret'));
+ for(const status of [500,502]){
+  response=researchStepStream(request(),async()=>{throw Object.assign(new Error('INTERNAL_METADATA_SENTINEL'),{status,code:'PRIVATE_SENTINEL'})});
+  frames=(await response.text()).trim().split('\n').map(JSON.parse);
+  assert.ok(!JSON.stringify(frames).includes('SENTINEL'));
+ }
 });
 
 test('cancelling the response aborts exactly the in-flight step; late completion cannot enqueue',async()=>{

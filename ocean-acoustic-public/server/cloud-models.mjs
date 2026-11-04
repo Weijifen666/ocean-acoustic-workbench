@@ -40,7 +40,7 @@ export async function providerResponseError(response){
   }
  }catch{/* Invalid, interrupted or oversized error responses use a fixed fallback. */}
  const contextLimit=/context[_\s-]*length[_\s-]*exceeded|context\s+window|maximum\s+context\s+length|input[\s_-]*tokens?\s+exceeds?\b|prompt[\s_-]+(?:is[\s_-]+)?too[\s_-]+long/i;
- if(fields.some(value=>typeof value==='string'&&contextLimit.test(value)))return transportError('模型接口拒绝请求：已超过模型自身的上下文限制。应用预算不限不代表模型可接收无限输入，请缩小输入或使用该模型支持的上下文预算。','PROVIDER_CONTEXT_LIMIT');
+ if(fields.some(value=>typeof value==='string'&&contextLimit.test(value)))return transportError('模型输入超过当前模型的上下文窗口，请减少历史与资料输入，或选择窗口更大的模型。','PROVIDER_CONTEXT_LIMIT');
  const status=Number.isInteger(response.status)&&response.status>=100&&response.status<=599?response.status:502;
  return transportError(`供应商返回 HTTP ${status}：${providerError(status)}`,'PROVIDER_RESPONSE');
 }
@@ -51,7 +51,7 @@ function safeNetworkMessage(error){
  if(/certificate|tls|ssl/.test(message))return '与供应商建立 HTTPS 连接失败。';
  if(/dns|resolve|enotfound/.test(message))return '供应商域名解析失败。';
  if(/header|invalid character/.test(message))return '请求头格式不兼容，请核对密钥格式。';
- return '网络连接未建立，请稍后重试；这不表示 API Key 无效。';
+ return '网络连接未建立，请稍后重试。';
 }
 export async function providerFetch(cfg,path,options={},fetcher=fetch){
  const {timeoutMs=70000,signal,...init}=options,controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs),abort=()=>controller.abort();
@@ -77,7 +77,7 @@ export async function providerFetch(cfg,path,options={},fetcher=fetch){
  }catch(error){
   if(error.status===502)throw error;
   if(signal?.aborted)throw Object.assign(new Error('请求已停止'),{name:'AbortError',code:'CANCELLED'});
-  if(controller.signal.aborted||['AbortError','TimeoutError'].includes(error.name))throw transportError('连接供应商超时，请稍后重试；这不表示 API Key 无效。','PROVIDER_TIMEOUT');
+  if(controller.signal.aborted||['AbortError','TimeoutError'].includes(error.name))throw transportError('连接供应商超时，请稍后重试。','PROVIDER_TIMEOUT');
   const name=/^[A-Za-z]{1,40}$/.test(error.name||'')?error.name:'Error';
   throw transportError(`云端连接供应商失败（${name}）：${safeNetworkMessage(error,cfg)}`,'PROVIDER_NETWORK');
  }finally{if(!transferred)cleanup()}
@@ -285,7 +285,7 @@ export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,p
     // Providers may send HTTP 200 + whitespace while a completion is queued.
     // A model-list success cannot establish inference availability. Give this
     // explicit probe its own bounded queue budget, and propagate browser cancel.
-    const data=await remote(selected,catalog,testBody,fetcher,request.signal,{timeoutMs:180000}),checked=connectionReply(data,selected);return finish(json({ok:true,provider,requested_model:selected.model,...checked,usage:data.usage||{},note:'已收到真实文字回答，当前模型调用通过。请保存并应用配置后在知识问答中使用；此测试不表示 Agent 工具已验证。'}));
+    const data=await remote(selected,catalog,testBody,fetcher,request.signal,{timeoutMs:180000}),checked=connectionReply(data,selected);return finish(json({ok:true,provider,requested_model:selected.model,...checked,usage:data.usage||{},note:'已收到文字回答，当前模型调用通过。请保存并应用配置。'}));
    }
    const message=String(body.message||'');if(message.length<1||message.length>12000)throw Error('问题长度须为 1–12000 字符');if(!['chat','agent',undefined].includes(body.mode))throw Error('未知对话模式');
    const provider=body.provider||cfg.provider;

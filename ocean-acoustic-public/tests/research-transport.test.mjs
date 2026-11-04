@@ -43,3 +43,45 @@ test('long-running responses are not assigned a browser deadline',async t=>{
  transport(t,async(url,options)=>{assert.equal(options.signal,undefined);await new Promise(resolve=>setImmediate(resolve));return Response.json({state:'running'})});
  assert.equal((await researchApi('runs/run/step',{})).state,'running');
 });
+
+function streamResponse(lines,{split=false}={}){
+ const bytes=new TextEncoder().encode(lines),chunks=split?Array.from(bytes,value=>Uint8Array.of(value)):[bytes];
+ return new Response(new ReadableStream({start(controller){for(const chunk of chunks)controller.enqueue(chunk);controller.close()}}),{headers:{'Content-Type':'application/x-ndjson; charset=utf-8'}});
+}
+
+test('step requests accept heartbeat streams and decode a split UTF-8 final snapshot',async t=>{
+ transport(t,async(url,options)=>{
+  assert.equal(options.headers.Accept,'application/x-ndjson');
+  return streamResponse('\n'+JSON.stringify({type:'heartbeat'})+'\n'+JSON.stringify({type:'heartbeat'})+'\n'+JSON.stringify({type:'response',status:200,body:{id:'run',state:'done',reply:'声场已计算完成'}})+'\n',{split:true});
+ });
+ assert.deepEqual(await researchApi('runs/run/step',{}),{id:'run',state:'done',reply:'声场已计算完成'});
+});
+
+test('step requests retain JSON compatibility and only step POST advertises streaming',async t=>{
+ transport(t,async(url,options)=>{assert.equal(options.headers.Accept,url.endsWith('/step')&&options.method==='POST'?'application/x-ndjson':undefined);return Response.json({state:'running'})});
+ await researchApi('runs/run/step',{});await researchApi('runs/run');await researchApi('chat',{});
+});
+
+test('stream final status preserves structured provider rejection and uncertain server failure',async t=>{
+ transport(t,async()=>streamResponse(JSON.stringify({type:'response',status:422,body:{detail:'模型拒绝调用',error_code:'PROVIDER_RESPONSE'}})+'\n'));
+ await assert.rejects(researchApi('runs/run/step',{}),error=>error.kind==='server'&&error.status===422&&error.code==='PROVIDER_RESPONSE'&&!error.requestUnconfirmed);
+ global.fetch=async()=>streamResponse(JSON.stringify({type:'response',status:503,body:{detail:'暂不可用'}})+'\n');
+ await assert.rejects(researchApi('runs/run/step',{}),error=>error.kind==='server'&&error.status===503&&error.requestUnconfirmed);
+});
+
+test('early EOF and malformed streams require durable reconciliation without exposing their content',async t=>{
+ transport(t,async()=>streamResponse('{"type":"heartbeat"}\n'));
+ await assert.rejects(researchApi('runs/run/step',{}),error=>error.code==='WORKBENCH_RESPONSE_INTERRUPTED'&&error.requestUnconfirmed);
+ for(const content of ['private upstream raw response\n','{"type":"response","status":200}\n','{"type":"response","status":0,"body":{}}\n']){
+  global.fetch=async()=>streamResponse(content);
+  await assert.rejects(researchApi('runs/run/step',{}),error=>error.code==='WORKBENCH_RESPONSE_FORMAT'&&error.requestUnconfirmed&&!error.message.includes('private'));
+ }
+});
+
+test('stream read failure is uncertain while explicit cancellation stops reconciliation',async t=>{
+ transport(t,async()=>new Response(new ReadableStream({start(controller){controller.error(new TypeError('private connection error'))}}),{headers:{'Content-Type':'application/x-ndjson'}}));
+ await assert.rejects(researchApi('runs/run/step',{}),error=>error.code==='WORKBENCH_RESPONSE_INTERRUPTED'&&error.requestUnconfirmed&&!error.message.includes('private'));
+ const controller=new AbortController();
+ global.fetch=async()=>new Response(new ReadableStream({pull(output){controller.abort();output.close()}}),{headers:{'Content-Type':'application/x-ndjson'}});
+ await assert.rejects(researchApi('runs/run/step',{},undefined,{signal:controller.signal}),error=>error.code==='WORKBENCH_CANCELLED'&&!error.requestUnconfirmed);
+});

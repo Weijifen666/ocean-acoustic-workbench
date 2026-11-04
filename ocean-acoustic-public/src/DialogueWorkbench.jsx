@@ -13,13 +13,21 @@ import '../../ocean-acoustic-workbench/src/dialogue-bubbles.css';
 import {researchRounds,contextBudgetChoices,normalizeResearchBudget,estimateVisibleResearchInput,researchContextNotes} from './cloudWorkbench';
 import {researchApi as api} from './researchTransport';
 
-export async function advanceResearchRun(identity,executionMode){
+export async function advanceResearchRun(identity,executionMode,options={}){
+ const current=await api('runs/'+identity,undefined,undefined,options);
+ if(current.state!=='running'||current.step_busy===true)return current;
  if(executionMode==='poll_steps'){
-  try{await api('runs/'+identity+'/step',{})}
-  catch(error){if(error.code!=='CONTEXT_BUDGET_EXCEEDED')throw error}
+  try{return await api('runs/'+identity+'/step',{},undefined,options)}
+  catch(error){
+   // A lost acknowledgement may already have completed the paid round. Only
+   // inspect its durable state here; scheduling resumes on a later poll.
+   if(error.code!=='CONTEXT_BUDGET_EXCEEDED'&&!error.requestUnconfirmed)throw error;
+   return api('runs/'+identity,undefined,undefined,options);
+  }
  }
- return api('runs/'+identity);
+ return current;
 }
+export const RESEARCH_RECOVERY_DELAYS=[2000,4000,8000,8000,8000,8000];
 export async function resumeResearchRun(identity,contextBudget,advertised){
  return api('runs/'+identity+'/resume',{context_budget:normalizeResearchBudget(contextBudget,advertised)});
 }
@@ -50,17 +58,17 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  const [sidebarShown,setSidebarShown]=useState(false);
  const [contextBudget,setContextBudget]=useState(()=>String(normalizeResearchBudget(localStorage.getItem('ocean-cloud-research-v2-context-budget'))));
  const [text,setText]=useState(''),[messages,setMessages]=useState([]),[run,setRun]=useState(null),[loading,setLoading]=useState(true),[submitting,setSubmitting]=useState(false),[error,setError]=useState(''),[status,setStatus]=useState(null),[format,setFormat]=useState('md'),[cap,setCap]=useState(null),[sessions,setSessions]=useState([]);
- const [pendingSend,setPendingSend]=useState(null),[stepPaused,setStepPaused]=useState(false);
+ const [pendingSend,setPendingSend]=useState(null),[stepPaused,setStepPaused]=useState(false),[connectionRecovery,setConnectionRecovery]=useState(null);
  // This pending envelope lives only in this mounted personal workspace. It
  // contains no Key and is never persisted or copied into another identity.
- const pendingRef=useRef(null),lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false),currentSession=useRef(session);
+ const pendingRef=useRef(null),lastDraft=useRef(null),scroll=useRef(null),follow=useRef(true),sending=useRef(false),currentSession=useRef(session),pollControl=useRef(null),recoveryControl=useRef(null);
  currentSession.current=session;
  const budgetPaused=run?.recoverable===true&&run.error_code==='CONTEXT_BUDGET_EXCEEDED';
  const busy=submitting||(run?.state==='running'&&!budgetPaused);
  function chooseBackend(value){setBackend(value);localStorage.setItem('ocean-cloud-research-v1-backend',value)}
  const loadSessions=()=>api('sessions').then(rows=>setSessions(Array.isArray(rows)?rows:[])).catch(()=>{});
  useEffect(()=>{loadSessions()},[]);
- useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');setKnowledgeNodes([]);setStepPaused(false);
+ useEffect(()=>{let alive=true;setLoading(true);setRun(null);setMessages([]);setError('');setKnowledgeNodes([]);setStepPaused(false);setConnectionRecovery(null);
   const load=async()=>{
    const [current,capabilities]=await Promise.all([api('active?session='+encodeURIComponent(session)),api('capabilities')]);
    if(!alive)return;
@@ -68,23 +76,32 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
    const rows=await api('history?session='+encodeURIComponent(session));
    if(!alive)return;setMessages(rows);setRun(current);setError(current?.error||'');setCap(capabilities);setContextBudget(old=>String(normalizeResearchBudget(old,capabilities.context_budgets)));setRounds(old=>String(researchRounds(old,capabilities.max_rounds)));if(current?.state==='running'&&current.backend==='api')chooseBackend('api')
   };
-  load().catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}
+  load().catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false;recoveryControl.current?.abort()}
  },[session]);
  useEffect(()=>{let alive=true;setStatus(null);if(backend!=='api')api(backend+'/status').then(value=>{if(alive)setStatus(value)}).catch(e=>{if(alive)setStatus({message:e.message})});return()=>{alive=false}},[backend]);
  useEffect(()=>{if(draft&&draft.id!==lastDraft.current){lastDraft.current=draft.id;setText(draft.text);try{setKnowledgeNodes(normalizeKnowledgeSelection(draft.knowledge_nodes||[]))}catch(error){setError(error.message)}follow.current=true}},[draft]);
- useEffect(()=>{if(run?.state!=='running'||budgetPaused||stepPaused)return;let alive=true,pending=false,terminal=null;
-  const poll=async()=>{if(pending)return;pending=true;try{
-   const current=terminal||await advanceResearchRun(run.id,cap?.execution_mode);if(!alive)return;
+ useEffect(()=>{if(run?.state!=='running'||budgetPaused||stepPaused)return;
+  let alive=true,timer=null,terminal=null,reconciling=false,failures=0;
+  const controller=new AbortController(),options={signal:controller.signal};pollControl.current=controller;
+  const active=()=>alive&&!controller.signal.aborted&&currentSession.current===session;
+  const schedule=delay=>{if(active())timer=setTimeout(poll,delay)};
+  const poll=async()=>{if(!active())return;try{
+   const current=terminal||(reconciling?await api('runs/'+run.id,undefined,undefined,options):await advanceResearchRun(run.id,cap?.execution_mode,options));if(!active())return;
    if(current.state!=='running'){
     // Once finished, a failed history read retries only history. It must not
     // advance another paid model/tool step while waiting to display the answer.
     terminal=current;
-    const rows=await api('history?session='+encodeURIComponent(session));if(!alive)return;
+    const rows=await api('history?session='+encodeURIComponent(session),undefined,undefined,options);if(!active())return;
     setMessages(rows);loadSessions()
    }
-   setError(current.error||'');setRun(current)
-  }catch(e){if(alive){if(terminal)setError('研究步骤已结束，正在重新读取历史记录。'+e.message);else{setStepPaused(true);setError('研究连接中断，已暂停自动推进。'+e.message)}}}finally{pending=false}};
-  const timer=setInterval(poll,1000);poll();return()=>{alive=false;clearInterval(timer)}
+   setError(current.error||'');setRun(current);setConnectionRecovery(null);failures=0;reconciling=false;
+   if(current.state==='running')schedule(1000);
+  }catch(e){if(!active())return;
+   reconciling=true;
+   if(!e.requestUnconfirmed||failures>=RESEARCH_RECOVERY_DELAYS.length){setConnectionRecovery(null);setStepPaused(true);setError(terminal?'研究已结束，聊天记录读取失败。请检查连接后恢复。':'连接暂未恢复，请手动检查研究状态。');return}
+   const delay=RESEARCH_RECOVERY_DELAYS[failures++];setError('');setConnectionRecovery({attempt:failures,total:RESEARCH_RECOVERY_DELAYS.length,history:!!terminal});schedule(delay);
+  }};
+  poll();return()=>{alive=false;clearTimeout(timer);controller.abort();if(pollControl.current===controller)pollControl.current=null}
  },[run?.id,run?.state,session,cap?.execution_mode,budgetPaused,stepPaused]);
  useEffect(()=>{if(!scroll.current||!follow.current)return;if(!messages.length&&!run?.partial&&!run?.exports?.length)return;scroll.current.scrollTop=scroll.current.scrollHeight},[messages,run?.partial,run?.exports?.length]);
  async function submitPending(entry){
@@ -116,17 +133,27 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
  async function recoverSend(){if(pendingRef.current)await submitPending(pendingRef.current)}
  async function recoverStep(){
   if(sending.current||!run?.id)return;sending.current=true;setSubmitting(true);setError('');
+  const target=session,controller=new AbortController();recoveryControl.current=controller;
   try{
    // A recovery always reads durable status before the user explicitly allows
    // normal scheduling to continue. No failed step POST is blindly replayed.
-   const current=await api('runs/'+run.id);
-   if(current.state!=='running')setMessages(await api('history?session='+encodeURIComponent(session)));
+   const current=await api('runs/'+run.id,undefined,undefined,{signal:controller.signal});
+   const rows=current.state!=='running'?await api('history?session='+encodeURIComponent(target),undefined,undefined,{signal:controller.signal}):null;
+   if(controller.signal.aborted||currentSession.current!==target)return;
+   if(rows)setMessages(rows);
    setRun(current);setError(current.error||'');setStepPaused(false);
-  }catch(e){setError(e.message)}finally{sending.current=false;setSubmitting(false)}
+  }catch(e){if(!controller.signal.aborted&&currentSession.current===target)setError(e.message)}finally{sending.current=false;if(!controller.signal.aborted&&currentSession.current===target)setSubmitting(false);if(recoveryControl.current===controller)recoveryControl.current=null}
  }
- async function stop(){try{await api('runs/'+run.id+'/stop',{});notify('正在停止 Agent；已启动的计算可在任务页取消')}catch(e){setError(e.message)}}
+ async function stop(){
+  const target=session,id=run?.id;if(!id)return;
+  pollControl.current?.abort();setConnectionRecovery(null);setStepPaused(true);
+  const controller=new AbortController();recoveryControl.current=controller;
+  try{await api('runs/'+id+'/stop',{},undefined,{signal:controller.signal});const current=await api('runs/'+id,undefined,undefined,{signal:controller.signal});if(controller.signal.aborted||currentSession.current!==target)return;setRun(current);setStepPaused(current.state==='running');setError(current.error||'');notify('正在停止 Agent；已启动的计算可在任务页取消')}
+  catch(e){if(!controller.signal.aborted&&currentSession.current===target)setError(e.message)}
+  finally{if(recoveryControl.current===controller)recoveryControl.current=null}
+ }
  async function resume(){if(sending.current||pendingRef.current||busy||loading||!run?.recoverable)return;sending.current=true;setSubmitting(true);setError('');try{const result=await resumeResearchRun(run.id,contextBudget,cap?.context_budgets);setRun(old=>({...old,...result,id:old.id,state:result.state||'running',recoverable:result.recoverable===true,error:result.error||'',error_code:result.error_code||null}));follow.current=true}catch(e){setError(e.message);if(e.context)setRun(old=>({...old,context:e.context,error_code:e.code||old.error_code,recoverable:e.recoverable??old.recoverable}))}finally{sending.current=false;setSubmitting(false)}}
- function switchSession(next){if(pendingRef.current)return;onDraftConsumed?.(draft?.id);localStorage.setItem('ocean-cloud-research-v1-session',next);setSession(next)}
+ function switchSession(next){if(pendingRef.current)return;pollControl.current?.abort();recoveryControl.current?.abort();currentSession.current=next;onDraftConsumed?.(draft?.id);localStorage.setItem('ocean-cloud-research-v1-session',next);setSession(next)}
  function newSession(){if(busy||pendingRef.current)return;switchSession(crypto.randomUUID());loadSessions()}
  async function renameSession(item){if(pendingRef.current)return;const title=window.prompt('会话名称',item.title||'');if(title==null)return;const value=title.trim();if(!value)return;try{await api('sessions/'+encodeURIComponent(item.id),{title:value},'PATCH');loadSessions()}catch(e){setError(e.message)}}
  async function removeSession(item){if(busy||pendingRef.current)return;if(!window.confirm('删除会话「'+(item.title||'未命名')+'」？该会话的聊天记录会从本人云端空间删除，任务与计算结果不受影响。'))return;try{await api('sessions/'+encodeURIComponent(item.id),null,'DELETE');const next=item.id===session?crypto.randomUUID():session;switchSession(next);loadSessions()}catch(e){setError(e.message)}}
@@ -157,6 +184,7 @@ export default function DialogueWorkbench({draft,onDraftConsumed,notify=()=>{},o
    </div>
    <ResearchBudgetRecovery run={run} busy={busy||!!pendingSend} onResume={resume}/>
    {pendingSend&&<div className="dialogue-error" role="status" aria-label="发送状态待确认"><p>{submitting?'正在确认这一次发送…':'发送状态待确认。问题和图谱已保留，恢复时会核对同一个请求。'}</p><button className="button" disabled={submitting} onClick={recoverSend}>确认并恢复发送</button></div>}
+   {connectionRecovery&&<div className="dialogue-runtime" role="status" aria-label="正在恢复研究连接"><Loader2 size={16} className="spin"/>{connectionRecovery.history?'正在恢复聊天记录':'正在恢复连接并核对研究状态'} · {connectionRecovery.attempt}/{connectionRecovery.total}</div>}
    {stepPaused&&<div className="dialogue-error" role="status" aria-label="研究连接待恢复"><p>研究已暂停。读取服务器保存的状态后，可继续当前研究。</p><button className="button" disabled={submitting} onClick={recoverStep}>检查研究状态并继续</button></div>}
    <GraphSelection nodes={knowledgeNodes} disabled={busy||!!pendingSend} onRemove={id=>{setKnowledgeNodes(rows=>rows.filter(row=>row.id!==id));onDraftConsumed?.(draft?.id)}} onClear={()=>{setKnowledgeNodes([]);onDraftConsumed?.(draft?.id)}}/>
    <div className="dialogue-messages" role="log" aria-label="聊天记录" ref={scroll} onScroll={e=>{const el=e.currentTarget;follow.current=el.scrollHeight-el.scrollTop-el.clientHeight<100}}>

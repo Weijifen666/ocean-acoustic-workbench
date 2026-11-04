@@ -5,17 +5,17 @@ import Workbench from '../src/DialogueWorkbench';
 import {createKnowledgeDraft} from '../src/knowledgeSelection';
 
 global.IS_REACT_ACT_ENVIRONMENT=true;
-const original={fetch:global.fetch,setInterval:global.setInterval,clearInterval:global.clearInterval};
+const original={fetch:global.fetch,setTimeout:global.setTimeout,clearTimeout:global.clearTimeout};
 const answer={role:'assistant',text:'RECOVERED_ACTUAL_SERVER_HISTORY'};
 let renderer,timers,calls,storage,history,serverRun;
 function setup(route=()=>{}){
  timers=new Map();calls=[];history=[];serverRun=null;
  storage=new Map([['ocean-cloud-research-v1-session','recovery-session'],['ocean-cloud-research-v2-rounds','0'],['ocean-cloud-research-v2-context-budget','unlimited']]);
  global.localStorage={getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)};
- global.setInterval=callback=>{const id=Symbol();timers.set(id,callback);return id};global.clearInterval=id=>timers.delete(id);
+ global.setTimeout=(callback,delay)=>{const id=Symbol();timers.set(id,{callback,delay});return id};global.clearTimeout=id=>timers.delete(id);
  global.fetch=async(url,init={})=>{
   const path=String(url).replace('/api/research/',''),body=init.body?JSON.parse(init.body):undefined;
-  calls.push({path,body});const special=await route(path,body);if(special!==undefined)return special;
+  calls.push({path,body,signal:init.signal});const special=await route(path,body,init);if(special!==undefined)return special;
   if(path==='capabilities')return Response.json({api_configured:true,execution_mode:'poll_steps',max_rounds:1000,context_budgets:[4096,8192,32768,'unlimited']});
   if(path==='sessions')return Response.json([]);
   if(path.startsWith('active?'))return Response.json(null);
@@ -39,6 +39,7 @@ async function mount(Component=Workbench){await act(async()=>{renderer=TestRende
 async function enter(value){await act(async()=>input().props.onChange({target:{value}}))}
 async function click(label){const matches=buttons(label);assert.equal(matches.length,1,label);assert(!matches[0].props.disabled,label+' must be enabled');await act(async()=>matches[0].props.onClick())}
 async function submit(){assert(!send().props.disabled);await act(async()=>send().props.onClick())}
+async function tick(delay){assert.equal(timers.size,1,'Exactly one non-overlapping poll or recovery may be scheduled');const [id,timer]=timers.entries().next().value;if(delay!==undefined)assert.equal(timer.delay,delay);timers.delete(id);await act(async()=>timer.callback())}
 async function clean(){if(renderer){await act(async()=>renderer.unmount());renderer=null}assert.equal(timers.size,0)}
 function assertPending(question){
  assert.equal(input().props.value,question);assert.equal(send().props.disabled,true);
@@ -106,12 +107,82 @@ async function rejectedSendRetainsGraph(){
 }
 async function lostStepResponse(){
  setup((path,body)=>{if(path==='chat')return accept(body,'running');if(path==='runs/recovery-run/step'){serverRun={id:'recovery-run',state:'done',backend:'api'};history.push(answer);throw new TypeError('step acknowledgement lost')}});
- await mount();await enter('本轮不要自动重复付费');await submit();assert.equal(steps().length,1);assert.equal(timers.size,0,'Stop automatic step POST retries after transport loss');
- assert(text().includes('研究连接待恢复'));await click('检查研究状态并继续');assert.equal(steps().length,1,'A finished durable run must only read history on recovery');assert(text().includes(answer.text));
+ await mount();await enter('本轮不要自动重复付费');await submit();assert.equal(steps().length,1);assert.equal(timers.size,0);
+ assert(text().includes(answer.text));assert(!text().includes('研究连接待恢复'),'A lost step acknowledgement is recovered by its durable terminal state');
+}
+async function activeLeaseIsReadOnly(){
+ setup((path,body)=>{if(path==='chat'){const response=accept(body,'running');serverRun.step_busy=true;serverRun.lease_expires_at=Date.now()+240000;return response}});
+ await mount();await enter('等待仍在运行的步骤');await submit();assert.equal(steps().length,0);
+ await tick(1000);await tick(1000);assert.equal(steps().length,0,'An active server lease must never trigger another step POST');
+ serverRun={...serverRun,state:'done',step_busy:false};history.push(answer);await tick(1000);
+ assert(text().includes(answer.text));assert.equal(steps().length,0);assert.equal(timers.size,0);
+}
+async function disconnectBeforePostAcceptance(){
+ let lost=false,reconcileFailed=false;
+ setup((path,body)=>{
+  if(path==='chat')return accept(body,'running');
+  if(path==='runs/recovery-run/step'&&!lost){lost=true;throw new TypeError('not accepted')}
+  if(path==='runs/recovery-run'&&lost&&!reconcileFailed){reconcileFailed=true;throw new TypeError('still offline')}
+ });
+ await mount();await enter('恢复未接收的步骤');await submit();assert.equal(steps().length,1);assert(text().includes('正在恢复研究连接'));
+ await tick(2000);assert.equal(steps().length,1,'First recovery performs only GET');
+ await tick(1000);assert.equal(steps().length,2,'A later normal poll may advance after durable GET confirmed no lease');assert(text().includes(answer.text));assert.equal(timers.size,0);
+}
+async function boundedOfflineRecovery(){
+ let offline=false;
+ setup((path,body)=>{if(path==='chat')return accept(body,'running');if(path==='runs/recovery-run/step'){offline=true;throw new TypeError('offline')}if(path==='runs/recovery-run'&&offline)throw new TypeError('offline')});
+ await mount();await enter('持续断网');await submit();
+ for(const delay of [2000,4000,8000,8000,8000,8000]){assert(text().includes('正在恢复研究连接'));await tick(delay)}
+ assert.equal(timers.size,0);assert.equal(steps().length,1);assert(text().includes('研究连接待恢复'));assert.equal(buttons('检查研究状态并继续').length,1);
+}
+async function stopCancelsRecovery(){
+ let offline=false;
+ setup((path,body)=>{
+  if(path==='chat')return accept(body,'running');
+  if(path==='runs/recovery-run/step'){offline=true;throw new TypeError('offline')}
+  if(path==='runs/recovery-run/stop'){offline=false;serverRun={...serverRun,state:'stopped'};return Response.json({stopped:true})}
+  if(path==='runs/recovery-run'&&offline)throw new TypeError('offline');
+ });
+ await mount();await enter('停止时清除自动恢复');await submit();assert.equal(timers.size,1);
+ await click('停止当前请求');assert.equal(timers.size,0);assert.equal(steps().length,1);assert(!text().includes('正在恢复研究连接'));assert(!text().includes('研究连接待恢复'));
+}
+async function unmountIgnoresLateStatus(){
+ let reads=0,release,signal;
+ setup((path,body,init)=>{
+  if(path==='chat')return accept(body,'running');
+  if(path==='runs/recovery-run'&&++reads===2){signal=init.signal;return new Promise(resolve=>{release=resolve})}
+ });
+ await mount();await enter('离开页面后的应答');await submit();assert(release);assert.equal(steps().length,0);
+ await act(async()=>renderer.unmount());renderer=null;assert.equal(signal.aborted,true);
+ await act(async()=>release(Response.json({id:'recovery-run',state:'running',step_busy:false})));
+ assert.equal(steps().length,0,'A late snapshot after unmount cannot launch a paid step');assert.equal(timers.size,0);
+}
+async function terminalHistoryRetriesAlone(){
+ let failed=false;
+ setup((path,body)=>{
+  if(path==='chat')return accept(body,'running');
+  if(path.startsWith('history?')&&serverRun?.state==='done'&&!failed){failed=true;throw new TypeError('history unavailable')}
+ });
+ await mount();await enter('只补读完成后的记录');await submit();assert.equal(steps().length,1);assert(text().includes('正在恢复聊天记录'));
+ const reads=calls.filter(row=>row.path==='runs/recovery-run').length;
+ await tick(2000);assert(text().includes(answer.text));assert.equal(steps().length,1);assert.equal(calls.filter(row=>row.path==='runs/recovery-run').length,reads,'Known terminal recovery retries history only');assert.equal(timers.size,0);
+}
+async function sessionChangeIgnoresLateStatus(){
+ let reads=0,release;
+ setup((path,body)=>{
+  if(path==='chat')return accept(body,'running');
+  if(path==='runs/recovery-run'&&++reads===2)return new Promise(resolve=>{release=resolve});
+  if(path==='runs/recovery-run/stop'){serverRun={...serverRun,state:'stopped'};return Response.json({stopped:true})}
+  if(path.startsWith('history?')&&!path.endsWith('recovery-session'))return Response.json([]);
+ });
+ await mount();await enter('上一会话中的请求');await submit();assert(release);
+ await click('停止当前请求');await act(async()=>buttons('＋ 新对话')[0].props.onClick());
+ await act(async()=>release(Response.json({id:'recovery-run',state:'running',step_busy:false,partial:'STALE_OLD_SESSION'})));
+ assert.equal(steps().length,0);assert.equal(timers.size,0);assert(!text().includes('STALE_OLD_SESSION'));assert(!text().includes('上一会话中的请求'));
 }
 async function main(){
- const cases=[lostAcknowledgement,offlineBeforeAcceptance,()=>bodyOrGatewayFailure(false),()=>bodyOrGatewayFailure(true),acknowledgedThenReadFails,graphAcknowledgementRecovery,pendingCannotSwitchSession,rejectedSendRetainsGraph,lostStepResponse];
- try{for(const scenario of cases){try{await scenario()}finally{await clean()}}console.log('Public chat recovery: 9 scenarios passed')}
- finally{global.fetch=original.fetch;global.setInterval=original.setInterval;global.clearInterval=original.clearInterval}
+ const cases=[lostAcknowledgement,offlineBeforeAcceptance,()=>bodyOrGatewayFailure(false),()=>bodyOrGatewayFailure(true),acknowledgedThenReadFails,graphAcknowledgementRecovery,pendingCannotSwitchSession,rejectedSendRetainsGraph,lostStepResponse,activeLeaseIsReadOnly,disconnectBeforePostAcceptance,boundedOfflineRecovery,stopCancelsRecovery,unmountIgnoresLateStatus,terminalHistoryRetriesAlone,sessionChangeIgnoresLateStatus];
+ try{for(const scenario of cases){try{await scenario()}finally{await clean()}}console.log('Public chat recovery: 16 scenarios passed')}
+ finally{global.fetch=original.fetch;global.setTimeout=original.setTimeout;global.clearTimeout=original.clearTimeout}
 }
 main().then(()=>process.exit(0),error=>{console.error(error);process.exit(1)});

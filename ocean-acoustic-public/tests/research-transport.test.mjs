@@ -28,3 +28,18 @@ test('successful creation uses same-origin endpoint and exact request envelope',
  transport(t,async(url,options)=>{assert.equal(url,'/api/research/chat');assert.equal(options.method,'POST');assert.deepEqual(JSON.parse(options.body),payload);return Response.json({id:'accepted-run',state:'running'},{status:202})});
  assert.equal((await researchApi('chat',payload)).id,'accepted-run');
 });
+
+test('only explicit lifecycle cancellation aborts a request, with no transport uncertainty',async t=>{
+ const controller=new AbortController();controller.abort();let calls=0;
+ transport(t,async()=>{calls++;return Response.json({})});
+ await assert.rejects(researchApi('runs/run',undefined,undefined,{signal:controller.signal}),error=>error.code==='WORKBENCH_CANCELLED'&&error.kind==='cancelled'&&!error.requestUnconfirmed);
+ assert.equal(calls,0);
+ const reading=new AbortController();
+ global.fetch=async(url,options)=>{assert.equal(options.signal,reading.signal);return {ok:true,text:async()=>{reading.abort();throw new Error('aborted body')}}};
+ await assert.rejects(researchApi('runs/run',undefined,undefined,{signal:reading.signal}),error=>error.code==='WORKBENCH_CANCELLED');
+});
+
+test('long-running responses are not assigned a browser deadline',async t=>{
+ transport(t,async(url,options)=>{assert.equal(options.signal,undefined);await new Promise(resolve=>setImmediate(resolve));return Response.json({state:'running'})});
+ assert.equal((await researchApi('runs/run/step',{})).state,'running');
+});

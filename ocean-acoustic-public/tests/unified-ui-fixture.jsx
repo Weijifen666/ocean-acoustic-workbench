@@ -150,7 +150,7 @@ async function verifySteps(){
 const requests=[],bodies=[];
 globalThis.fetch = async (url,options={}) => {requests.push([url,options.method||'GET']);bodies.push(options.body?JSON.parse(options.body):null);return Response.json({id:'run-1',state:'running'});};
 await advanceResearchRun('run-1','poll_steps');
-assert.deepEqual(requests,[['/api/research/runs/run-1/step','POST'],['/api/research/runs/run-1','GET']]);
+assert.deepEqual(requests,[['/api/research/runs/run-1','GET'],['/api/research/runs/run-1/step','POST']]);
 requests.length=0;
 await advanceResearchRun('run-1','background');
 assert.deepEqual(requests,[['/api/research/runs/run-1','GET']]);
@@ -179,7 +179,7 @@ globalThis.fetch=async(url,options={})=>{
 };
 const paused=await advanceResearchRun('same-run','poll_steps');
 assert.equal(paused.recoverable,true);
-assert.deepEqual(requests,[['/api/research/runs/same-run/step','POST'],['/api/research/runs/same-run','GET']]);
+assert.deepEqual(requests,[['/api/research/runs/same-run','GET']],'A durable failed snapshot must not receive a step POST');
 console.log('Unified public workbench UI contracts passed.');
 }
 verifySteps().catch(error=>{console.error(error);process.exitCode=1});

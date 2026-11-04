@@ -7,7 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 
-test('real public workbench recovers ambiguous sends without duplicate requests or blind step retries',async()=>{
+test('real public workbench reconciles connections without duplicate steps and cancels stale recovery',async()=>{
  const base=path.resolve(tmpdir()),directory=await mkdtemp(path.join(base,'ocean-chat-recovery-'));
  try{
   const outfile=path.join(directory,'fixture.cjs');
@@ -16,7 +16,7 @@ test('real public workbench recovers ambiguous sends without duplicate requests 
    nodePaths:[fileURLToPath(new URL('../node_modules',import.meta.url))],loader:{'.css':'empty'},logLevel:'silent'});
   const result=spawnSync(process.execPath,[outfile],{encoding:'utf8',timeout:25000,windowsHide:true});
   assert.equal(result.status,0,result.stderr||result.stdout);
-  assert.match(result.stdout,/Public chat recovery: 9 scenarios passed/);
+  assert.match(result.stdout,/Public chat recovery: 16 scenarios passed/);
  }finally{
   if(path.dirname(directory)!==base||!path.basename(directory).startsWith('ocean-chat-recovery-'))throw Error('Unexpected recovery test output path');
   await rm(directory,{recursive:true,force:true});

@@ -53,6 +53,21 @@ GET `/api/knowledge/status` 显示 `source_coverage` 和 `coverage`，区分资�
 
 公共API问答检索云端已投喂教材、课程卡和公开网页；本地DSH使用本机授权资料索引。检索采用BM25、术语别名和概念优先权重，命中语境规则时融合最多四路排行。MATLAB计算节点独立负责仿真。
 
+## 发布教材索引到云端
+
+2026-11-04已将上述5份资料、1789页、4101个片段发布为`course-20261104-v1`，保存在网站的私有R2对象中。公网知识检索直接读取这一索引；访问者只需配置自己的模型API，无需安装教材或连接本机资料目录。
+
+维护者完成本地入库后，从仓库根目录执行：
+
+```powershell
+python scripts/export-course-knowledge.py --help
+python scripts/publish-course-knowledge.py --site-url https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site --bundle <导出的私有版本目录>
+```
+
+导出参数按`--help`指定源SQLite、输出目录和新版本标识。发布命令会隐藏输入专用发布令牌。维护者在Sites运行环境设置`COURSE_KNOWLEDGE_PUBLISH_TOKEN`并部署应用，使其与输入值一致；该令牌独立于模型Key和MATLAB桥接密钥。
+
+导入接口校验Gzip完整性、SHA-256、来源和页数，再写入版本对象，最后原子切换`course-knowledge/current.json`。连接中断时重发相同版本；内容发生变化时使用新版本标识。导出目录保持私有，不提交到GitHub。发布后检查`GET /api/knowledge/status`的`course_documents.index_ready`、版本、页数和片段数，再通过`GET /api/knowledge/search?q=简正波`确认实际命中。
+
 ## 公开网页入库与刷新
 
 v0.6 已采集 30 篇 NOAA NOS 正文，加 9 条项目自写中文导读，共 39 个可检索来源、67 个片段。42 项登记来源中的 3 个动态入口尚未接入实测数据。酸化、珊瑚、海平面、海流、漂流浮标、海啸和质控等中文问题已实际验证召回。图谱“学习资源”可查看对应来源与导读，无需 Key。

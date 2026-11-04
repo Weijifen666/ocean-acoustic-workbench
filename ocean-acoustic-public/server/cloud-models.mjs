@@ -10,6 +10,7 @@ import {createWorkspaceApi} from './workspaces.mjs';
 import {createCloudResearch} from './cloud-research.mjs';
 import {createGraphTools} from './graph-tools.mjs';
 import {createCourseDocumentIndex} from './course-document-index.mjs';
+import {researchStepStream} from './research-step-stream.mjs';
 export function defaults(catalog){const provider=catalog.providers.find(p=>p.id==='Qwen')||catalog.providers[0],model=catalog.models.find(m=>m.provider===provider.id&&m.id==='qwen3.7-plus')||catalog.models.find(m=>m.provider===provider.id);return {provider:provider.id,base_url:provider.base_url,model:model.id,api_key:''}}
 export const publicConfig=cfg=>({provider:cfg.provider,base_url:cfg.base_url,model:cfg.model,api_key_set:!!cfg.api_key,public_mode:true,storage:'cloud_encrypted'});
 export function validateConnection(cfg,catalog){
@@ -219,7 +220,7 @@ export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,p
   return mergeEvidence([...cards,...documents.matches],publicRetrieve(q),q).map(row=>({...row,retrieval:{...row.retrieval,storage:'cloud',local_node_used:false,course_documents_state:documents.status.state}}));
  }
  const researchApi=createCloudResearch({assets:researchAssets,graph,encrypt,decrypt,retrieve,retrieveEvidence:(q,request,env,ctx,identity)=>evidenceFor(q,request,env,ctx,identity.node_id),heartbeat,proxy,oceanQuery,remote:async(cfg,body,signal)=>{
-  try{return await remote(cfg,catalog,body,fetcher,signal)}catch(error){if(!error.status)error.status=502;throw error}
+  try{return await remote(cfg,catalog,body,fetcher,signal,{timeoutMs:180000})}catch(error){if(!error.status)error.status=502;throw error}
  }});
  return async(request,env,ctx,url)=>{
   const path=url.pathname,isWorkspace=/^\/api\/workspaces(?:\/|$)/.test(path),isResearch=researchApi.matches(path),known=['/api/account','/api/config','/api/models/profiles','/api/models/test','/api/models/list','/api/chat','/api/chat/history','/api/conversations','/api/conversations/selected','/api/health','/api/knowledge/search','/api/knowledge/status','/api/knowledge/public-sources','/api/knowledge/gaps','/api/session/clear-keys','/api/environment/check'];if(!known.includes(path)&&!isWorkspace&&!isResearch)return null;
@@ -229,7 +230,11 @@ export function createCloudModels({catalog,graph=null,retrieve,encrypt,decrypt,p
   let session;try{session=await load(request,env)}catch{return json({detail:'访客配置服务暂不可用，请稍后重试'},503)}
   const finish=r=>{const headers=new Headers(r.headers);headers.set('Set-Cookie',visitorCookie(session.cookie_id));headers.set('Cache-Control','no-store');headers.set('X-Content-Type-Options','nosniff');return new Response(r.body,{status:r.status,headers})};
   try{
-   if(isResearch)return finish(await researchApi.handle(request,env,ctx,url,session));
+   if(isResearch){
+    if(request.method==='POST'&&/^\/api\/research\/runs\/[A-Za-z0-9_-]{8,100}\/step$/.test(path)&&request.headers.get('accept')?.includes('application/x-ndjson'))
+     return finish(researchStepStream(request,scoped=>researchApi.handle(scoped,env,ctx,url,session)));
+    return finish(await researchApi.handle(request,env,ctx,url,session));
+   }
    if(isWorkspace)return finish(await workspaceApi(request,env,ctx,url,session));
    const cfg=session.data.selected;
    if(path==='/api/account')return finish(json({authenticated:session.account.authenticated,display_name:session.account.display_name,storage_scope:session.account.authenticated?'account':'browser_visitor',sign_in_url:'/signin-with-chatgpt?return_to=%2F',sign_out_url:'/signout-with-chatgpt?return_to=%2F',note:'登录账户与浏览器访客使用独立配置；原访客记录保留在原浏览器空间。'}));

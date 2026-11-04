@@ -1,0 +1,97 @@
+{
+  "checked_at": "2026-11-04T17:51:34.128798+08:00",
+  "site_url": "https://ocean-acoustics-workbench-30682.nguyenanhlan663.chatgpt.site",
+  "checks": [
+    {
+      "query": "什么是简正波",
+      "http_status": 200,
+      "elapsed_ms": 1828,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    },
+    {
+      "query": "简正波",
+      "http_status": 200,
+      "elapsed_ms": 1484,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    },
+    {
+      "query": "normal mode",
+      "http_status": 200,
+      "elapsed_ms": 2719,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    },
+    {
+      "query": "normal modes",
+      "http_status": 200,
+      "elapsed_ms": 609,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    },
+    {
+      "query": "normal-mode",
+      "http_status": 200,
+      "elapsed_ms": 1453,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    },
+    {
+      "query": "normal-mode field",
+      "http_status": 200,
+      "elapsed_ms": 2266,
+      "first_id": "K017",
+      "textbook_definition_chunks": [
+        "D-S17-2586f6b46fded6",
+        "D-S17-07a14ce6524e02"
+      ]
+    }
+  ],
+  "cloud_index": {
+    "retrieval_scope": "cloud_only",
+    "indexed_sources": 5,
+    "indexed_pages": 1789,
+    "chunks": 4101,
+    "local_materials_used": false,
+    "version": "course-20261104-v1"
+  },
+  "anonymous_lifecycle": {
+    "creation_http": 202,
+    "same_request_reuses_run": true,
+    "final_state": "done",
+    "history_roles": [
+      "user",
+      "assistant"
+    ],
+    "elapsed_ms": 5156,
+    "provider_call": false,
+    "note": "New isolated anonymous session without an API key; verifies persistence and retrieval, not paid-model answer generation."
+  },
+  "deployment_version": 24,
+  "source_commit": "e12844e63533e0b4f7efada40c639288f73d81e1",
+  "import_result": {
+    "manifest_sha256": "fedec03434aa66d6b9cb277e6d6c0e9d741b147a7710f78c269db2dbee602161",
+    "http_status": 200,
+    "chunks": 4101,
+    "indexed_sources": 5,
+    "compressed_bytes": 1288888,
+    "indexed_pages": 1789,
+    "version": "course-20261104-v1"
+  }
+}
